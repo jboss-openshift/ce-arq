@@ -31,13 +31,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -49,8 +45,17 @@ import com.github.dockerjava.api.model.EventStreamItem;
 import com.github.dockerjava.api.model.PushEventStreamItem;
 import com.github.dockerjava.core.DockerClientBuilder;
 import io.fabric8.kubernetes.api.KubernetesClient;
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerManifest;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.PodState;
+import io.fabric8.kubernetes.api.model.PodTemplate;
+import io.fabric8.kubernetes.api.model.Port;
+import io.fabric8.kubernetes.api.model.ReplicationController;
+import io.fabric8.kubernetes.api.model.ReplicationControllerState;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
 import org.jboss.shrinkwrap.api.Archive;
@@ -149,6 +154,58 @@ public class K8sClient implements Closeable {
         return client.createService(service);
     }
 
+    public Service getService(String serviceId) {
+        return client.getService(serviceId);
+    }
+
+    public Container createContainer(String image, String name, List<EnvVar> envVars, List<Port> ports, List<VolumeMount> volumes) throws Exception {
+        Container container = new Container();
+        container.setImage(image);
+        container.setName(name);
+        container.setEnv(envVars);
+        container.setPorts(ports);
+        container.setVolumeMounts(volumes);
+        return container;
+    }
+
+    public ContainerManifest createContainerManifest(String id, String apiVersion, List<Container> containers) throws Exception {
+        ContainerManifest cm = new ContainerManifest();
+        cm.setId(id);
+        cm.setVersion(apiVersion);
+        cm.setContainers(containers);
+        return cm;
+    }
+
+    public PodState createPodState(ContainerManifest cm) throws Exception {
+        PodState ps = new PodState();
+        ps.setManifest(cm);
+        return ps;
+    }
+
+    public PodTemplate createPodTemplate(Map<String, String> labels, PodState ps) throws Exception {
+        PodTemplate pt = new PodTemplate();
+        pt.setDesiredState(ps);
+        pt.setLabels(labels);
+        return pt;
+    }
+
+    public ReplicationControllerState createReplicationControllerState(int replicas, Map<String, String> selector, PodTemplate podTemplate) throws Exception {
+        ReplicationControllerState rcs = new ReplicationControllerState();
+        rcs.setReplicas(replicas);
+        rcs.setReplicaSelector(selector);
+        rcs.setPodTemplate(podTemplate);
+        return rcs;
+    }
+
+    public ReplicationController createReplicationController(String id, String apiVersion, Map<String, String> labels, ReplicationControllerState desiredState) throws Exception {
+        ReplicationController rc = new ReplicationController();
+        rc.setId(id);
+        rc.setApiVersion(apiVersion);
+        rc.setLabels(labels);
+        rc.setDesiredState(desiredState);
+        return rc;
+    }
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void close() throws IOException {
         for (File file : dir.listFiles()) {
@@ -164,6 +221,10 @@ public class K8sClient implements Closeable {
             output.write(buffer, 0, read);
         }
         output.flush();
+    }
+
+    public String deployReplicationController(ReplicationController rc) throws Exception {
+        return client.createReplicationController(rc);
     }
 
     private class CustomValueExpressionResolver extends ValueExpressionResolver {

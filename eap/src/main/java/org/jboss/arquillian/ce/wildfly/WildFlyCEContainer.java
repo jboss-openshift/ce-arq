@@ -24,15 +24,27 @@
 package org.jboss.arquillian.ce.wildfly;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerManifest;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.PodState;
+import io.fabric8.kubernetes.api.model.PodTemplate;
+import io.fabric8.kubernetes.api.model.Port;
+import io.fabric8.kubernetes.api.model.ReplicationController;
+import io.fabric8.kubernetes.api.model.ReplicationControllerState;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import org.jboss.arquillian.ce.utils.K8sClient;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
+import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
@@ -75,11 +87,49 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
             InputStream dockerfileTemplate = WildFlyCEConfiguration.class.getClassLoader().getResourceAsStream("Dockerfile_template");
             String imageName = client.pushImage(dockerfileTemplate, archive, properties);
 
-            client.deployService("http-service", "v1beta1", 80, 8080, Collections.singletonMap("name", "eapPod"));
-            client.deployService("https-service", "v1beta1", 443, 8443, Collections.singletonMap("name", "eapPod"));
+            final String apiVersion = "v1beta1";
 
-            // TODO
-            return null;
+            client.deployService("http-service", apiVersion, 80, 8080, Collections.singletonMap("name", "eapPod"));
+            client.deployService("https-service", apiVersion, 443, 8443, Collections.singletonMap("name", "eapPod"));
+
+            List<Port> ports = new ArrayList<>();
+            Port http = new Port();
+            http.setHostPort(9080);
+            http.setContainerPort(8080);
+            ports.add(http);
+            Port https = new Port();
+            https.setHostPort(9443);
+            https.setContainerPort(8443);
+            ports.add(https);
+
+            List<EnvVar> envVars = Collections.emptyList();
+            Container container = client.createContainer(imageName, "eap-container", envVars, ports, Collections.<VolumeMount>emptyList());
+
+            List<Container> containers = Collections.singletonList(container);
+            ContainerManifest cm = client.createContainerManifest("eapPod", apiVersion, containers);
+
+            PodState podState = client.createPodState(cm);
+            Map<String, String> podLabels = Collections.singletonMap("name", "eapPod");
+
+            PodTemplate podTemplate = client.createPodTemplate(podLabels, podState);
+
+            int replicas = 1;
+            Map<String, String> selector = Collections.singletonMap("name", "eapPod");
+            ReplicationControllerState desiredState = client.createReplicationControllerState(replicas, selector, podTemplate);
+
+            Map<String, String> labels = Collections.singletonMap("name", "eapController");
+            ReplicationController rc = client.createReplicationController("", apiVersion, labels, desiredState);
+
+            client.deployReplicationController(rc);
+
+            String host = client.getService("http-service").getPortalIP();
+
+            HTTPContext context = new HTTPContext(host, 80);
+            // TODO add ARQ servlet?
+
+            ProtocolMetaData pmd = new ProtocolMetaData();
+            pmd.addContext(context);
+            return pmd;
         } catch (Exception e) {
             throw new DeploymentException("Cannot deploy in CE env.", e);
         }
