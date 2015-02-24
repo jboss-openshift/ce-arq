@@ -23,6 +23,7 @@
 
 package org.jboss.arquillian.ce.wildfly;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,8 +47,16 @@ import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
+import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
+import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.Node;
+import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
+import org.jboss.shrinkwrap.descriptor.api.Descriptors;
+import org.jboss.shrinkwrap.descriptor.api.application5.ApplicationDescriptor;
+import org.jboss.shrinkwrap.descriptor.api.application5.ModuleType;
 import org.kohsuke.MetaInfServices;
 
 /**
@@ -125,13 +134,51 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
             String host = client.getService("http-service").getPortalIP();
 
             HTTPContext context = new HTTPContext(host, 80);
-            // TODO add ARQ servlet?
+            addServlets(context, archive);
 
             ProtocolMetaData pmd = new ProtocolMetaData();
             pmd.addContext(context);
             return pmd;
         } catch (Exception e) {
             throw new DeploymentException("Cannot deploy in CE env.", e);
+        }
+    }
+
+    private void addServlets(HTTPContext context, Archive<?> archive) throws Exception {
+        if (archive instanceof WebArchive) {
+            handleWebArchive(context, WebArchive.class.cast(archive));
+        } else if (archive instanceof EnterpriseArchive) {
+            handleEAR(context, EnterpriseArchive.class.cast(archive));
+        }
+    }
+
+    private void handleWebArchive(HTTPContext context, WebArchive war) {
+        handleWebArchive(context, war, "");
+    }
+
+    private void handleWebArchive(HTTPContext context, WebArchive war, String prefix) {
+        String name = war.getName();
+        int p = name.lastIndexOf("."); // drop .war
+        String contextRoot = prefix + name.substring(0, p);
+        Servlet arqServlet = new Servlet(ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME, contextRoot);
+        context.add(arqServlet);
+    }
+
+    private void handleEAR(HTTPContext context, EnterpriseArchive ear) throws IOException {
+        String prefix = ""; //TODO
+        final Node appXml = ear.get("META-INF/application.xml");
+        if (appXml != null) {
+            try (InputStream stream = appXml.getAsset().openStream()) {
+                ApplicationDescriptor ad = Descriptors.importAs(ApplicationDescriptor.class).fromStream(stream);
+                List<ModuleType<ApplicationDescriptor>> allModules = ad.getAllModule();
+                for (ModuleType<ApplicationDescriptor> mt : allModules) {
+                    String uri = mt.getOrCreateWeb().getWebUri();
+                    if (uri != null) {
+                        WebArchive war = ear.getAsType(WebArchive.class, uri);
+                        handleWebArchive(context, war, prefix);
+                    }
+                }
+            }
         }
     }
 
