@@ -24,6 +24,8 @@
 package org.jboss.arquillian.ce.utils;
 
 import java.io.Serializable;
+import java.util.Map;
+import java.util.Properties;
 
 import org.jboss.arquillian.container.spi.ConfigurationException;
 
@@ -33,7 +35,10 @@ import org.jboss.arquillian.container.spi.ConfigurationException;
 public abstract class Configuration implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String kubernetesMaster = System.getProperty("kubernetes-master");
+    private String kubernetesMaster = System.getenv("KUBERNETES_MASTER");
+    private String dockerHost = System.getenv("DOCKER_HOST");
+
+    private Map<Object, Object> properties = new Properties();
 
     public void validate() throws ConfigurationException {
         if (kubernetesMaster == null) {
@@ -49,4 +54,19 @@ public abstract class Configuration implements Serializable {
         this.kubernetesMaster = kubernetesMaster;
     }
 
+    public String getDockerHost() {
+        return dockerHost;
+    }
+
+    public void setDockerHost(String dockerHost) {
+        this.dockerHost = dockerHost;
+    }
+
+    public Map<Object, Object> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Map<Object, Object> properties) {
+        this.properties = properties;
+    }
 }

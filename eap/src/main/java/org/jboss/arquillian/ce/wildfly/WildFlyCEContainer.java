@@ -23,6 +23,11 @@
 
 package org.jboss.arquillian.ce.wildfly;
 
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.jboss.arquillian.ce.utils.K8sClient;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -61,8 +66,23 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
     }
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
-        // TODO
-        return null;
+        try {
+            Map<Object, Object> properties = new HashMap<>();
+            properties.put("from.name", System.getProperty("from.name", "docker-registry.usersys.redhat.com/cloud_enablement/openshift-jboss-eap:6.4"));
+            properties.put("deployment.dir", System.getProperty("deployment.dir", "/opt/eap/standalone/deployments/"));
+            properties.putAll(configuration.getProperties());
+
+            InputStream dockerfileTemplate = WildFlyCEConfiguration.class.getClassLoader().getResourceAsStream("Dockerfile_template");
+            String imageName = client.pushImage(dockerfileTemplate, archive, properties);
+
+            client.deployService("http-service", "v1beta1", 80, 8080, Collections.singletonMap("name", "eapPod"));
+            client.deployService("https-service", "v1beta1", 443, 8443, Collections.singletonMap("name", "eapPod"));
+
+            // TODO
+            return null;
+        } catch (Exception e) {
+            throw new DeploymentException("Cannot deploy in CE env.", e);
+        }
     }
 
     public void undeploy(Archive<?> archive) throws DeploymentException {
