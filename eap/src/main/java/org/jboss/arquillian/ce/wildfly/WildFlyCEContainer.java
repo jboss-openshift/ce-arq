@@ -57,6 +57,7 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.jboss.shrinkwrap.descriptor.api.Descriptors;
 import org.jboss.shrinkwrap.descriptor.api.application5.ApplicationDescriptor;
 import org.jboss.shrinkwrap.descriptor.api.application5.ModuleType;
+import org.jboss.shrinkwrap.descriptor.api.application5.WebType;
 import org.kohsuke.MetaInfServices;
 
 /**
@@ -153,33 +154,33 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
     }
 
     private void handleWebArchive(HTTPContext context, WebArchive war) {
-        handleWebArchive(context, war, "");
-    }
-
-    private void handleWebArchive(HTTPContext context, WebArchive war, String prefix) {
         String name = war.getName();
         int p = name.lastIndexOf("."); // drop .war
-        String contextRoot = prefix + name.substring(0, p);
-        Servlet arqServlet = new Servlet(ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME, contextRoot);
-        context.add(arqServlet);
+        handleWebArchive(context, war, name.substring(0, p));
     }
 
     private void handleEAR(HTTPContext context, EnterpriseArchive ear) throws IOException {
-        String prefix = ""; //TODO
         final Node appXml = ear.get("META-INF/application.xml");
         if (appXml != null) {
             try (InputStream stream = appXml.getAsset().openStream()) {
                 ApplicationDescriptor ad = Descriptors.importAs(ApplicationDescriptor.class).fromStream(stream);
                 List<ModuleType<ApplicationDescriptor>> allModules = ad.getAllModule();
                 for (ModuleType<ApplicationDescriptor> mt : allModules) {
-                    String uri = mt.getOrCreateWeb().getWebUri();
+                    WebType<ModuleType<ApplicationDescriptor>> web = mt.getOrCreateWeb();
+                    String uri = web.getWebUri();
                     if (uri != null) {
                         WebArchive war = ear.getAsType(WebArchive.class, uri);
-                        handleWebArchive(context, war, prefix);
+                        handleWebArchive(context, war, web.getContextRoot());
                     }
                 }
             }
         }
+    }
+
+    @SuppressWarnings("UnusedParameters")
+    private void handleWebArchive(HTTPContext context, WebArchive war, String contextRoot) {
+        Servlet arqServlet = new Servlet(ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME, contextRoot);
+        context.add(arqServlet);
     }
 
     public void undeploy(Archive<?> archive) throws DeploymentException {
