@@ -91,7 +91,7 @@
 
             <dependency>
                 <groupId>io.fabric8</groupId>
-                <artifactId>arquillian-fabric8</artifactId>
+                <artifactId>kubernetes-api</artifactId>
                 <version>${version.fabric8}</version>
             </dependency>
 
