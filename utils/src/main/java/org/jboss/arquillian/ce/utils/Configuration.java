@@ -44,6 +44,9 @@ public abstract class Configuration implements Serializable {
         if (kubernetesMaster == null) {
             throw new ConfigurationException("Null Kubernetes master!");
         }
+        if (dockerHost == null) {
+            throw new ConfigurationException("Null Docker host!");
+        }
     }
 
     public String getKubernetesMaster() {
