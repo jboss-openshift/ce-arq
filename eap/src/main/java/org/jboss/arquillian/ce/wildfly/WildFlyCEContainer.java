@@ -27,9 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerManifest;
@@ -89,10 +89,10 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
         try {
-            Map<Object, Object> properties = new HashMap<>();
+            Properties properties = new Properties();
             properties.put("from.name", System.getProperty("from.name", "docker-registry.usersys.redhat.com/cloud_enablement/openshift-jboss-eap:6.4"));
             properties.put("deployment.dir", System.getProperty("deployment.dir", "/opt/eap/standalone/deployments/"));
-            properties.putAll(configuration.getProperties());
+            configuration.apply(properties);
 
             InputStream dockerfileTemplate = WildFlyCEConfiguration.class.getClassLoader().getResourceAsStream("Dockerfile_template");
             String imageName = client.pushImage(dockerfileTemplate, archive, properties);

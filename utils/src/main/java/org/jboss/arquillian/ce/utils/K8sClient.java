@@ -35,6 +35,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -92,7 +93,7 @@ public class K8sClient implements Closeable {
         this.dir = new File(tmpDir, "ce_" + UUID.randomUUID().toString());
     }
 
-    public String pushImage(InputStream dockerfileTemplate, Archive deployment, Map<Object, Object> properties) throws IOException {
+    public String pushImage(InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             copy(dockerfileTemplate, baos);
@@ -228,9 +229,9 @@ public class K8sClient implements Closeable {
     }
 
     private class CustomValueExpressionResolver extends ValueExpressionResolver {
-        private final Map<Object, Object> properties;
+        private final Properties properties;
 
-        public CustomValueExpressionResolver(Map<Object, Object> properties) {
+        public CustomValueExpressionResolver(Properties properties) {
             this.properties = properties;
         }
 
