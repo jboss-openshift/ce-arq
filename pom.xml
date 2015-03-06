@@ -21,9 +21,8 @@
 
     <!-- Properties -->
     <properties>
-        <version.arquillian>1.1.5.Final</version.arquillian>
+        <version.arquillian>1.1.7.Final</version.arquillian>
         <version.dockerjava>1.0.0</version.dockerjava>
-        <version.arquillian.wildfly>1.0.0.Alpha5</version.arquillian.wildfly>
         <version.fabric8>2.0.29</version.fabric8>
         <version.meta-inf>1.1</version.meta-inf>
         <version.servlet-api>2.5</version.servlet-api>
@@ -81,12 +80,6 @@
                 <groupId>com.github.docker-java</groupId>
                 <artifactId>docker-java</artifactId>
                 <version>${version.dockerjava}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.arquillian</groupId>
-                <artifactId>wildfly-arquillian-container-remote</artifactId>
-                <version>${version.arquillian.wildfly}</version>
             </dependency>
 
             <dependency>
