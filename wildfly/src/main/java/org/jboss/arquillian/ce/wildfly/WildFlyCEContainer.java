@@ -58,12 +58,10 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptors;
 import org.jboss.shrinkwrap.descriptor.api.application5.ApplicationDescriptor;
 import org.jboss.shrinkwrap.descriptor.api.application5.ModuleType;
 import org.jboss.shrinkwrap.descriptor.api.application5.WebType;
-import org.kohsuke.MetaInfServices;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-@MetaInfServices
 public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfiguration> {
     private WildFlyCEConfiguration configuration;
     private K8sClient client;
