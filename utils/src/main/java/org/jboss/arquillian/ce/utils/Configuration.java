@@ -35,7 +35,7 @@ public abstract class Configuration implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String kubernetesMaster = System.getenv("KUBERNETES_MASTER");
-    private String dockerHost = System.getenv("DOCKER_HOST");
+    private String dockerUrl = System.getenv("DOCKER_URL");
 
     /**
      * Apply configuration to resolver properties.
@@ -48,8 +48,8 @@ public abstract class Configuration implements Serializable {
         if (kubernetesMaster == null) {
             throw new ConfigurationException("Null Kubernetes master!");
         }
-        if (dockerHost == null) {
-            throw new ConfigurationException("Null Docker host!");
+        if (dockerUrl == null) {
+            throw new ConfigurationException("Null Docker url!");
         }
     }
 
@@ -61,11 +61,11 @@ public abstract class Configuration implements Serializable {
         this.kubernetesMaster = kubernetesMaster;
     }
 
-    public String getDockerHost() {
-        return dockerHost;
+    public String getDockerUrl() {
+        return dockerUrl;
     }
 
-    public void setDockerHost(String dockerHost) {
-        this.dockerHost = dockerHost;
+    public void setDockerUrl(String dockerUrl) {
+        this.dockerUrl = dockerUrl;
     }
 }

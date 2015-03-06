@@ -118,7 +118,7 @@ public class K8sClient implements Closeable {
         ZipExporter exporter = deployment.as(ZipExporter.class);
         exporter.exportTo(new File(dir, deployment.getName()));
 
-        DockerClient dockerClient = DockerClientBuilder.getInstance(configuration.getDockerHost()).build();
+        DockerClient dockerClient = DockerClientBuilder.getInstance(configuration.getDockerUrl()).build();
 
         String imageTag;
         try (BuildImageCmd buildImageCmd = dockerClient.buildImageCmd(dir)) {
