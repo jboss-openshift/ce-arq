@@ -97,6 +97,9 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
 
             final String apiVersion = "v1beta1";
 
+            client.cleanServices("http-service", "https-service");
+            client.cleanReplicationControllers("eaprc");
+
             client.deployService("http-service", apiVersion, 80, 8080, Collections.singletonMap("name", "eapPod"));
             client.deployService("https-service", apiVersion, 443, 8443, Collections.singletonMap("name", "eapPod"));
 
@@ -126,7 +129,7 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
             ReplicationControllerState desiredState = client.createReplicationControllerState(replicas, selector, podTemplate);
 
             Map<String, String> labels = Collections.singletonMap("name", "eapController");
-            ReplicationController rc = client.createReplicationController("", apiVersion, labels, desiredState);
+            ReplicationController rc = client.createReplicationController("eaprc", apiVersion, labels, desiredState);
 
             client.deployReplicationController(rc);
 

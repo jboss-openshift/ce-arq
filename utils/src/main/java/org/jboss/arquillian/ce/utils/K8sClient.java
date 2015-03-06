@@ -42,9 +42,9 @@ import java.util.logging.Logger;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
-import com.github.dockerjava.api.model.EventStreamItem;
 import com.github.dockerjava.api.model.PushEventStreamItem;
 import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.core.DockerClientConfig;
 import io.fabric8.kubernetes.api.KubernetesClient;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerManifest;
@@ -118,14 +118,24 @@ public class K8sClient implements Closeable {
         ZipExporter exporter = deployment.as(ZipExporter.class);
         exporter.exportTo(new File(dir, deployment.getName()));
 
-        DockerClient dockerClient = DockerClientBuilder.getInstance(configuration.getDockerUrl()).build();
+        DockerClientConfig.DockerClientConfigBuilder builder = DockerClientConfig.createDefaultConfigBuilder();
+        builder.withUri(configuration.getDockerUrl());
+        builder.withUsername(configuration.getUsername());
+        builder.withPassword(configuration.getPassword());
+        builder.withEmail(configuration.getEmail());
+        builder.withServerAddress(configuration.getAddress());
+        final DockerClient dockerClient = DockerClientBuilder.getInstance(builder).build();
 
-        String imageTag;
+        String imageId;
         try (BuildImageCmd buildImageCmd = dockerClient.buildImageCmd(dir)) {
+            buildImageCmd.withTag(configuration.getImageName());
             BuildImageCmd.Response response = buildImageCmd.exec();
-            Iterable<EventStreamItem> items = response.getItems();
-            EventStreamItem item = items.iterator().next();
-            imageTag = item.getStream();
+            String output = Strings.toString(response);
+            imageId = Strings.substringBetween(output, "Successfully built ", "\\n\"}");
+            if (imageId == null) {
+                throw new IOException(String.format("Error building image: %s", output));
+            }
+            log.info(String.format("Built image: %s", imageId));
         }
 
         String dockerServiceId = (String) properties.get("docker.service.id");
@@ -136,8 +146,9 @@ public class K8sClient implements Closeable {
         String ip = service.getPortalIP();
         Integer port = service.getPort();
 
-        final String imageName = String.format("%s:%s/%s", ip, port, imageTag);
+        final String imageName = String.format("%s:%s/%s", ip, port, imageId);
         try (PushImageCmd pushImageCmd = dockerClient.pushImageCmd(imageName)) {
+            pushImageCmd.withTag(configuration.getImageName());
             PushImageCmd.Response response = pushImageCmd.exec();
             Iterable<PushEventStreamItem> items = response.getItems();
             PushEventStreamItem item = items.iterator().next();
@@ -208,6 +219,24 @@ public class K8sClient implements Closeable {
         rc.setLabels(labels);
         rc.setDesiredState(desiredState);
         return rc;
+    }
+
+    public void cleanServices(String... ids) throws Exception {
+        for (String id : ids) {
+            try {
+                log.info(String.format("Service [%s] delete: %s.", id, client.deleteService(id)));
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    public void cleanReplicationControllers(String... ids) throws Exception {
+        for (String id : ids) {
+            try {
+                log.info(String.format("RC [%s] delete: %s.", id, client.deleteReplicationController(id)));
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
