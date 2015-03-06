@@ -82,7 +82,7 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
     }
 
     public ProtocolDescription getDefaultProtocol() {
-        return ProtocolDescription.DEFAULT;
+        return new ProtocolDescription("Servlet 3.0");
     }
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
