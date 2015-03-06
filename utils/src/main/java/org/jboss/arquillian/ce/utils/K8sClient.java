@@ -91,6 +91,9 @@ public class K8sClient implements Closeable {
         this.configuration = configuration;
         this.client = new KubernetesClient(configuration.getKubernetesMaster());
         this.dir = new File(tmpDir, "ce_" + UUID.randomUUID().toString());
+        if (this.dir.mkdirs() == false) {
+            throw new IllegalStateException("Cannot create dir: " + dir);
+        }
     }
 
     public String pushImage(InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
