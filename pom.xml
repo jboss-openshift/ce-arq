@@ -33,7 +33,7 @@
 
     <modules>
         <module>utils</module>
-        <module>eap</module>
+        <module>wildfly</module>
     </modules>
 
     <!-- Maven 2 Repositories -->
