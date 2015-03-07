@@ -44,6 +44,8 @@ public abstract class Configuration implements Serializable {
     private String email = "";
     private String address = "";
 
+    private long startupTimeout = 60; // 60sec
+
     /**
      * Apply configuration to resolver properties.
      */
@@ -114,5 +116,13 @@ public abstract class Configuration implements Serializable {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public long getStartupTimeout() {
+        return startupTimeout;
+    }
+
+    public void setStartupTimeout(long startupTimeout) {
+        this.startupTimeout = startupTimeout;
     }
 }

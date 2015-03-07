@@ -41,6 +41,7 @@ import io.fabric8.kubernetes.api.model.Port;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.ReplicationControllerState;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import org.jboss.arquillian.ce.utils.Containers;
 import org.jboss.arquillian.ce.utils.K8sClient;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -146,6 +147,8 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
             addServlets(context, archive);
 
             log.info(String.format("HTTP host: %s", host));
+
+            Containers.delayArchiveDeploy(String.format("http://%s:%s", host, 80), configuration.getStartupTimeout(), 4000L);
 
             ProtocolMetaData pmd = new ProtocolMetaData();
             pmd.addContext(context);
