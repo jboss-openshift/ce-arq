@@ -50,6 +50,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerManifest;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.PodState;
 import io.fabric8.kubernetes.api.model.PodTemplate;
 import io.fabric8.kubernetes.api.model.Port;
@@ -146,9 +148,8 @@ public class K8sClient implements Closeable {
         String ip = service.getPortalIP();
         Integer port = service.getPort();
 
-        final String imageName = String.format("%s:%s/%s", ip, port, imageId);
+        final String imageName = String.format("%s:%s/%s", ip, port, configuration.getImageName());
         try (PushImageCmd pushImageCmd = dockerClient.pushImageCmd(imageName)) {
-            pushImageCmd.withTag(configuration.getImageName());
             PushImageCmd.Response response = pushImageCmd.exec();
             Iterable<PushEventStreamItem> items = response.getItems();
             PushEventStreamItem item = items.iterator().next();
@@ -234,6 +235,21 @@ public class K8sClient implements Closeable {
         for (String id : ids) {
             try {
                 log.info(String.format("RC [%s] delete: %s.", id, client.deleteReplicationController(id)));
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    public void cleanPods(String... ids) throws Exception {
+        final PodList pods = client.getPods();
+        for (String id : ids) {
+            try {
+                for (Pod pod : pods.getItems()) {
+                    String podId = pod.getId();
+                    if (podId.startsWith(id)) {
+                        log.info(String.format("Pod [%s] delete: %s.", podId, client.deletePod(podId)));
+                    }
+                }
             } catch (Exception ignored) {
             }
         }

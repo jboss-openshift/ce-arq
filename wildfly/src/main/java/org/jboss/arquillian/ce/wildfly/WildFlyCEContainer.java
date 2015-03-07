@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerManifest;
@@ -63,6 +64,8 @@ import org.jboss.shrinkwrap.descriptor.api.application5.WebType;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfiguration> {
+    private static final Logger log = Logger.getLogger(WildFlyCEContainer.class.getName());
+
     private WildFlyCEConfiguration configuration;
     private K8sClient client;
 
@@ -97,8 +100,12 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
 
             final String apiVersion = "v1beta1";
 
+            // clean old k8s stuff
             client.cleanServices("http-service", "https-service");
             client.cleanReplicationControllers("eaprc");
+            client.cleanPods("eaprc");
+
+            // add new k8s config
 
             client.deployService("http-service", apiVersion, 80, 8080, Collections.singletonMap("name", "eapPod"));
             client.deployService("https-service", apiVersion, 443, 8443, Collections.singletonMap("name", "eapPod"));
@@ -137,6 +144,8 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
 
             HTTPContext context = new HTTPContext(host, 80);
             addServlets(context, archive);
+
+            log.info(String.format("HTTP host: %s", host));
 
             ProtocolMetaData pmd = new ProtocolMetaData();
             pmd.addContext(context);
