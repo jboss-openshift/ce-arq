@@ -42,7 +42,6 @@ import java.util.logging.Logger;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
-import com.github.dockerjava.api.model.PushEventStreamItem;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import io.fabric8.kubernetes.api.KubernetesClient;
@@ -99,6 +98,7 @@ public class K8sClient implements Closeable {
     }
 
     public String pushImage(InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
+        // Create Dockerfile
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             copy(dockerfileTemplate, baos);
@@ -117,9 +117,24 @@ public class K8sClient implements Closeable {
             copy(bais, fos);
         }
 
+        // Export test deployment to Docker dir
         ZipExporter exporter = deployment.as(ZipExporter.class);
         exporter.exportTo(new File(dir, deployment.getName()));
 
+        // Grab Docker registry service
+        String dockerServiceId = (String) properties.get("docker.service.id");
+        if (dockerServiceId == null) {
+            dockerServiceId = "docker-registry";
+        }
+        Service service = client.getService(dockerServiceId);
+        String ip = service.getPortalIP();
+        Integer port = service.getPort();
+
+        // our Docker image name
+        final String imageName = String.format("%s:%s/%s", ip, port, configuration.getImageName());
+        log.info(String.format("Docker image name: %s", imageName));
+
+        // Docker-java requires AuthConfig, hence this user/pass stuff
         DockerClientConfig.DockerClientConfigBuilder builder = DockerClientConfig.createDefaultConfigBuilder();
         builder.withUri(configuration.getDockerUrl());
         builder.withUsername(configuration.getUsername());
@@ -128,9 +143,10 @@ public class K8sClient implements Closeable {
         builder.withServerAddress(configuration.getAddress());
         final DockerClient dockerClient = DockerClientBuilder.getInstance(builder).build();
 
+        // Build image on your Docker host
         String imageId;
         try (BuildImageCmd buildImageCmd = dockerClient.buildImageCmd(dir)) {
-            buildImageCmd.withTag(configuration.getImageName());
+            buildImageCmd.withTag(imageName);
             BuildImageCmd.Response response = buildImageCmd.exec();
             String output = Strings.toString(response);
             imageId = Strings.substringBetween(output, "Successfully built ", "\\n\"}");
@@ -140,21 +156,13 @@ public class K8sClient implements Closeable {
             log.info(String.format("Built image: %s", imageId));
         }
 
-        String dockerServiceId = (String) properties.get("docker.service.id");
-        if (dockerServiceId == null) {
-            dockerServiceId = "docker-registry";
-        }
-        Service service = client.getService(dockerServiceId);
-        String ip = service.getPortalIP();
-        Integer port = service.getPort();
-
-        final String imageName = String.format("%s:%s/%s", ip, port, configuration.getImageName());
+        // Push image to Docker registry service
         try (PushImageCmd pushImageCmd = dockerClient.pushImageCmd(imageName)) {
             PushImageCmd.Response response = pushImageCmd.exec();
-            Iterable<PushEventStreamItem> items = response.getItems();
-            PushEventStreamItem item = items.iterator().next();
-            log.info(String.format("Push image [%s] status: %s", imageName, item.getStatus()));
+            String pushInfo = Strings.toString(response);
+            log.info(String.format("Push image [%s] info: %s", imageName, pushInfo));
         }
+
         return imageName;
     }
 
