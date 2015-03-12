@@ -102,14 +102,13 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
             final String apiVersion = "v1beta1";
 
             // clean old k8s stuff
-            client.cleanServices("http-service", "https-service");
-            client.cleanReplicationControllers("eaprc");
-            client.cleanPods("eaprc");
+            cleanup();
 
             // add new k8s config
 
             client.deployService("http-service", apiVersion, 80, 8080, Collections.singletonMap("name", "eapPod"));
             client.deployService("https-service", apiVersion, 443, 8443, Collections.singletonMap("name", "eapPod"));
+            client.deployService("mgmt-service", apiVersion, 9990, configuration.getMgmtPort(), Collections.singletonMap("name", "eapPod"));
 
             List<Port> ports = new ArrayList<>();
             Port http = new Port();
@@ -119,7 +118,11 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
             Port https = new Port();
             https.setHostPort(9443);
             https.setContainerPort(8443);
-            ports.add(https);
+            Port mgmt = new Port();
+            mgmt.setName("mgmt");
+            mgmt.setHostPort(9990);
+            mgmt.setContainerPort(configuration.getMgmtPort());
+            ports.add(mgmt);
 
             List<EnvVar> envVars = Collections.emptyList();
             Container container = client.createContainer(imageName, "eap-container", envVars, ports, Collections.<VolumeMount>emptyList());
@@ -156,6 +159,12 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
         } catch (Exception e) {
             throw new DeploymentException("Cannot deploy in CE env.", e);
         }
+    }
+
+    private void cleanup() throws Exception {
+        client.cleanServices("http-service", "https-service", "mgmt-service");
+        client.cleanReplicationControllers("eaprc");
+        client.cleanPods("eaprc");
     }
 
     private void addServlets(HTTPContext context, Archive<?> archive) throws Exception {
@@ -197,6 +206,20 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
     }
 
     public void undeploy(Archive<?> archive) throws DeploymentException {
+        // do we keep test config around for some more?
+        if (configuration.isIgnoreCleanup() == false) {
+            try {
+                cleanup();
+            } catch (Exception ignored) {
+            }
+        } else {
+            log.info(String.format("Ignore Kubernetes cleanup -- test config is still available."));
+        }
+
+        try {
+            client.close();
+        } catch (IOException ignored) {
+        }
     }
 
     public void deploy(Descriptor descriptor) throws DeploymentException {

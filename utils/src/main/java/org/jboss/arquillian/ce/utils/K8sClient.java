@@ -142,6 +142,7 @@ public class K8sClient implements Closeable {
         builder.withEmail(configuration.getEmail());
         builder.withServerAddress(configuration.getAddress());
         final DockerClient dockerClient = DockerClientBuilder.getInstance(builder).build();
+        log.info(String.format("Docker client: %s", configuration.getDockerUrl()));
 
         // Build image on your Docker host
         String imageId;

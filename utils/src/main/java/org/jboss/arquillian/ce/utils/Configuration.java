@@ -46,10 +46,8 @@ public abstract class Configuration implements Serializable {
 
     private long startupTimeout = 60; // 60sec
 
-    /**
-     * Apply configuration to resolver properties.
-     */
-    @SuppressWarnings("UnusedParameters")
+    private boolean ignoreCleanup = Boolean.getBoolean("kubernetes.ignore.cleanup");
+
     public void apply(Properties properties) {
     }
 
@@ -124,5 +122,13 @@ public abstract class Configuration implements Serializable {
 
     public void setStartupTimeout(long startupTimeout) {
         this.startupTimeout = startupTimeout;
+    }
+
+    public boolean isIgnoreCleanup() {
+        return ignoreCleanup;
+    }
+
+    public void setIgnoreCleanup(boolean ignoreCleanup) {
+        this.ignoreCleanup = ignoreCleanup;
     }
 }
