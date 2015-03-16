@@ -23,6 +23,8 @@
 
 package org.jboss.test.arquillian.ce;
 
+import java.util.logging.Logger;
+
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -35,6 +37,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(Arquillian.class)
 public class SmokeTest {
+    private static Logger log = Logger.getLogger(SmokeTest.class.getName());
 
     @Deployment
     public static WebArchive getDeployment() throws Exception {
@@ -43,7 +46,7 @@ public class SmokeTest {
 
     @Test
     public void testBasic() throws Exception {
-        System.err.println("BANG!");
+        log.info("BANG!!");
     }
 
 }
