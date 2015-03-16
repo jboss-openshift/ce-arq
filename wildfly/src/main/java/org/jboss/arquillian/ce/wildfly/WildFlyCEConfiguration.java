@@ -34,7 +34,7 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
 public class WildFlyCEConfiguration extends Configuration implements ContainerConfiguration, Serializable {
     private static final long serialVersionUID = 1L;
 
-    private int mgmtPort = Integer.parseInt(System.getProperty("container.mgmt.port", "9999"));
+    private int mgmtPort = Integer.parseInt(System.getProperty("container.mgmt.port", "9990"));
 
     public int getMgmtPort() {
         return mgmtPort;
