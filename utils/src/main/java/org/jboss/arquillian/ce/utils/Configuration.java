@@ -37,6 +37,7 @@ public abstract class Configuration implements Serializable {
     private String kubernetesMaster = System.getenv("KUBERNETES_MASTER");
     private String dockerUrl = System.getenv("DOCKER_URL");
 
+    private String apiVersion = System.getProperty("kubernetes.api.version", "v1beta1");
     private String imageName = "cetestimage";
 
     private String username = "";
@@ -74,6 +75,14 @@ public abstract class Configuration implements Serializable {
 
     public void setDockerUrl(String dockerUrl) {
         this.dockerUrl = dockerUrl;
+    }
+
+    public String getApiVersion() {
+        return apiVersion;
+    }
+
+    public void setApiVersion(String apiVersion) {
+        this.apiVersion = apiVersion;
     }
 
     public String getImageName() {

@@ -99,7 +99,7 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
             InputStream dockerfileTemplate = WildFlyCEConfiguration.class.getClassLoader().getResourceAsStream("Dockerfile_template");
             String imageName = client.pushImage(dockerfileTemplate, archive, properties);
 
-            final String apiVersion = "v1beta1";
+            final String apiVersion = configuration.getApiVersion();
 
             // clean old k8s stuff
             cleanup();
