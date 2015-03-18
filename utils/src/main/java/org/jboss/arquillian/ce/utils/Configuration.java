@@ -40,12 +40,12 @@ public abstract class Configuration implements Serializable {
     private String apiVersion = System.getProperty("kubernetes.api.version", "v1beta1");
     private String imageName = "cetestimage";
 
-    private String username = "";
+    private String username = System.getProperty("docker.username", "");
     private String password = System.getProperty("docker.password", "");
-    private String email = "";
-    private String address = "";
+    private String email = System.getProperty("docker.email", "");
+    private String address = System.getProperty("docker.address", "");
 
-    private long startupTimeout = 60; // 60sec
+    private long startupTimeout = Integer.parseInt(System.getProperty("arquillian.startup.timeout", "60")); // 60sec
 
     private boolean ignoreCleanup = Boolean.getBoolean("kubernetes.ignore.cleanup");
 

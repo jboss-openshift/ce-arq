@@ -54,7 +54,7 @@ public class Containers {
         }
 
         final URL server = new URL(serverURL);
-        log.info("Pinging server url: " + serverURL);
+        log.info(String.format("Pinging server url: %s [%ss]", serverURL, startupTimeout));
 
         long timeout = startupTimeout * 1000;
         while (timeout > 0) {

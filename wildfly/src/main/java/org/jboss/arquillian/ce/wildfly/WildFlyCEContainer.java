@@ -181,8 +181,13 @@ public class WildFlyCEContainer implements DeployableContainer<WildFlyCEConfigur
 
     private void handleWebArchive(HTTPContext context, WebArchive war) {
         String name = war.getName();
-        int p = name.lastIndexOf("."); // drop .war
-        handleWebArchive(context, war, name.substring(0, p));
+        String contextRoot = "";
+        // ROOT --> "/" on WildFly / EAP
+        if ("ROOT.war".equals(name) == false) {
+            int p = name.lastIndexOf("."); // drop .war
+            contextRoot = name.substring(0, p);
+        }
+        handleWebArchive(context, war, contextRoot);
     }
 
     private void handleEAR(HTTPContext context, EnterpriseArchive ear) throws IOException {
