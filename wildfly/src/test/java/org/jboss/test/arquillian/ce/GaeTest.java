@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,7 +45,9 @@ public class GaeTest {
     @Deployment
     public static WebArchive getDeployment() throws Exception {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "ROOT.war");
+        war.setWebXML("web.xml");
         war.addAsWebInfResource("appengine-web.xml");
+        war.add(new StringAsset("<html><body>GAE!</body></html>"), "index.html");
         return war;
     }
 
