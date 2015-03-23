@@ -21,25 +21,36 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.wildfly;
+package org.jboss.test.arquillian.ce;
 
-import java.io.Serializable;
+import java.util.logging.Logger;
 
-import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class WildFlyCEConfiguration extends Configuration implements Serializable {
-    private static final long serialVersionUID = 1L;
+@RunWith(Arquillian.class)
+public class SmokeTest {
+    private static Logger log = Logger.getLogger(SmokeTest.class.getName());
 
-    private int mgmtPort = Integer.parseInt(System.getProperty("container.mgmt.port", "9990"));
-
-    public int getMgmtPort() {
-        return mgmtPort;
+    @Deployment
+    public static WebArchive getDeployment() throws Exception {
+        WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
+        war.setWebXML("web.xml");
+        war.add(new StringAsset("<html><body>JWS!</body></html>"), "index.html");
+        return war;
     }
 
-    public void setMgmtPort(int mgmtPort) {
-        this.mgmtPort = mgmtPort;
+    @Test
+    public void testBasic() throws Exception {
+        log.info("JWS!!");
     }
+
 }

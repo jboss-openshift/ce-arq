@@ -21,25 +21,18 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.wildfly;
+package org.jboss.arquillian.ce.web;
 
-import java.io.Serializable;
-
-import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
+import org.jboss.arquillian.core.spi.LoadableExtension;
+import org.kohsuke.MetaInfServices;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class WildFlyCEConfiguration extends Configuration implements Serializable {
-    private static final long serialVersionUID = 1L;
-
-    private int mgmtPort = Integer.parseInt(System.getProperty("container.mgmt.port", "9990"));
-
-    public int getMgmtPort() {
-        return mgmtPort;
-    }
-
-    public void setMgmtPort(int mgmtPort) {
-        this.mgmtPort = mgmtPort;
+@MetaInfServices
+public class WebCEExtension implements LoadableExtension {
+    public void register(ExtensionBuilder builder) {
+        builder.service(DeployableContainer.class, WebCEContainer.class);
     }
 }

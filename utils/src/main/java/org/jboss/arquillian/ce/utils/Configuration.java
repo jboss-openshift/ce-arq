@@ -27,11 +27,12 @@ import java.io.Serializable;
 import java.util.Properties;
 
 import org.jboss.arquillian.container.spi.ConfigurationException;
+import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public abstract class Configuration implements Serializable {
+public abstract class Configuration implements ContainerConfiguration, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String kubernetesMaster = System.getenv("KUBERNETES_MASTER");

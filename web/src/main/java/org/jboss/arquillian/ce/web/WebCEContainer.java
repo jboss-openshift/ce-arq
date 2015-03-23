@@ -21,9 +21,8 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.wildfly;
+package org.jboss.arquillian.ce.web;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -36,14 +35,14 @@ import org.jboss.shrinkwrap.api.Archive;
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfiguration> {
-    public Class<WildFlyCEConfiguration> getConfigurationClass() {
-        return WildFlyCEConfiguration.class;
+public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
+    public Class<WebCEConfiguration> getConfigurationClass() {
+        return WebCEConfiguration.class;
     }
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
         try {
-            String imageName = buildImage(archive, "docker-registry.usersys.redhat.com/cloud_enablement/openshift-jboss-eap:6.4", "/opt/eap/standalone/deployments/");
+            String imageName = buildImage(archive, "docker-registry.usersys.redhat.com/cloud_enablement/jboss-webserver-tomcat7:2.1", "/usr/local/tomcat/webapps/"); // TODO right dir
 
             final String apiVersion = configuration.getApiVersion();
 
@@ -52,29 +51,15 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
 
             // add new k8s config
 
-            client.deployService("http-service", apiVersion, 80, 8080, Collections.singletonMap("name", "eapPod"));
-            client.deployService("https-service", apiVersion, 443, 8443, Collections.singletonMap("name", "eapPod"));
-            client.deployService("mgmt-service", apiVersion, 9990, configuration.getMgmtPort(), Collections.singletonMap("name", "eapPod"));
+            client.deployService("http-service", apiVersion, 80, 8080, Collections.singletonMap("name", "jwsPod"));
 
-            List<Port> ports = new ArrayList<>();
             // http
             Port http = new Port();
             http.setHostPort(9080);
             http.setContainerPort(8080);
-            ports.add(http);
-            // https / ssl
-            Port https = new Port();
-            https.setHostPort(9443);
-            https.setContainerPort(8443);
-            ports.add(https);
-            // DMR / management
-            Port mgmt = new Port();
-            mgmt.setName("mgmt");
-            mgmt.setHostPort(9990);
-            mgmt.setContainerPort(configuration.getMgmtPort());
-            ports.add(mgmt);
+            List<Port> ports = Collections.singletonList(http);
 
-            deployPod(imageName, ports, "eap", 1);
+            deployPod(imageName, ports, "jws", 1);
 
             return getProtocolMetaData(archive);
         } catch (Exception e) {
@@ -83,9 +68,9 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
     }
 
     protected void cleanup() throws Exception {
-        client.cleanServices("http-service", "https-service", "mgmt-service");
-        client.cleanReplicationControllers("eaprc");
-        client.cleanPods("eaprc");
+        client.cleanServices("http-service");
+        client.cleanReplicationControllers("jwsrc");
+        client.cleanPods("jwsrc");
     }
 
 }

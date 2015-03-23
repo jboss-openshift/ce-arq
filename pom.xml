@@ -33,6 +33,7 @@
 
     <modules>
         <module>utils</module>
+        <module>web</module>
         <module>wildfly</module>
     </modules>
 
