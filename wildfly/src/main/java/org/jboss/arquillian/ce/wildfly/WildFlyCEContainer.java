@@ -59,18 +59,15 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
             List<Port> ports = new ArrayList<>();
             // http
             Port http = new Port();
-            http.setHostPort(9080);
             http.setContainerPort(8080);
             ports.add(http);
             // https / ssl
             Port https = new Port();
-            https.setHostPort(9443);
             https.setContainerPort(8443);
             ports.add(https);
             // DMR / management
             Port mgmt = new Port();
             mgmt.setName("mgmt");
-            mgmt.setHostPort(9990);
             mgmt.setContainerPort(configuration.getMgmtPort());
             ports.add(mgmt);
 

@@ -55,7 +55,6 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
 
             // http
             Port http = new Port();
-            http.setHostPort(9080);
             http.setContainerPort(8080);
             List<Port> ports = Collections.singletonList(http);
 
