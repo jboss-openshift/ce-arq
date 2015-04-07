@@ -90,7 +90,10 @@ public class K8sClient implements Closeable {
 
     public K8sClient(Configuration configuration) {
         this.configuration = configuration;
+
         this.client = new KubernetesClient(configuration.getKubernetesMaster());
+        this.client.setNamespace(configuration.getNamespace());
+
         this.dir = new File(tmpDir, "ce_" + UUID.randomUUID().toString());
         if (this.dir.mkdirs() == false) {
             throw new IllegalStateException("Cannot create dir: " + dir);

@@ -39,6 +39,7 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private String dockerUrl = System.getenv("DOCKER_URL");
 
     private String apiVersion = System.getProperty("kubernetes.api.version", "v1beta1");
+    private String namespace = System.getProperty("kubernetes.namespace", "default");
     private String imageName = "cetestimage";
 
     private String username = System.getProperty("docker.username", "");
@@ -84,6 +85,14 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setApiVersion(String apiVersion) {
         this.apiVersion = apiVersion;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
 
     public String getImageName() {
