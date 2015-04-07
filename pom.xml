@@ -26,7 +26,7 @@
         <version.fabric8>2.0.39</version.fabric8>
         <version.meta-inf>1.1</version.meta-inf>
         <version.servlet-api>2.5</version.servlet-api>
-        <version.junit>4.8.1</version.junit>
+        <version.junit>4.10</version.junit>
         <version.surefire.plugin>2.12.1</version.surefire.plugin>
         <version.dmr>1.2.0.Final</version.dmr>
     </properties>
