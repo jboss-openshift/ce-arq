@@ -27,7 +27,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import io.fabric8.kubernetes.api.model.Port;
+import io.fabric8.kubernetes.api.model.ContainerPort;
+import io.fabric8.kubernetes.api.model.Service;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -45,7 +46,7 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
         try {
             String imageName = buildImage(archive, "docker-registry.usersys.redhat.com/cloud_enablement/openshift-jboss-eap:6.4", "/opt/eap/standalone/deployments/");
 
-            final String apiVersion = configuration.getApiVersion();
+            final Service.ApiVersion apiVersion = Service.ApiVersion.fromValue(configuration.getApiVersion());
 
             // clean old k8s stuff
             cleanup();
@@ -56,17 +57,18 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
             client.deployService("https-service", apiVersion, 443, 8443, Collections.singletonMap("name", "eapPod"));
             client.deployService("mgmt-service", apiVersion, 9990, configuration.getMgmtPort(), Collections.singletonMap("name", "eapPod"));
 
-            List<Port> ports = new ArrayList<>();
+            List<ContainerPort> ports = new ArrayList<>();
             // http
-            Port http = new Port();
+            ContainerPort http = new ContainerPort();
             http.setContainerPort(8080);
             ports.add(http);
             // https / ssl
-            Port https = new Port();
+            ContainerPort https = new ContainerPort();
             https.setContainerPort(8443);
             ports.add(https);
             // DMR / management
-            Port mgmt = new Port();
+            ContainerPort mgmt = new ContainerPort
+                ();
             mgmt.setName("mgmt");
             mgmt.setContainerPort(configuration.getMgmtPort());
             ports.add(mgmt);

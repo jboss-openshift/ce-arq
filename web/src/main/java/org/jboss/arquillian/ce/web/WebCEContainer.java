@@ -26,7 +26,8 @@ package org.jboss.arquillian.ce.web;
 import java.util.Collections;
 import java.util.List;
 
-import io.fabric8.kubernetes.api.model.Port;
+import io.fabric8.kubernetes.api.model.ContainerPort;
+import io.fabric8.kubernetes.api.model.Service;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -44,7 +45,7 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
         try {
             String imageName = buildImage(archive, "docker-registry.usersys.redhat.com/cloud_enablement/jboss-webserver-tomcat7:2.1", "/opt/webserver/webapps/");
 
-            final String apiVersion = configuration.getApiVersion();
+            final Service.ApiVersion apiVersion = Service.ApiVersion.fromValue(configuration.getApiVersion());
 
             // clean old k8s stuff
             cleanup();
@@ -54,9 +55,9 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
             client.deployService("http-service", apiVersion, 80, 8080, Collections.singletonMap("name", "jwsPod"));
 
             // http
-            Port http = new Port();
+            ContainerPort http = new ContainerPort();
             http.setContainerPort(8080);
-            List<Port> ports = Collections.singletonList(http);
+            List<ContainerPort> ports = Collections.singletonList(http);
 
             deployPod(imageName, ports, "jws", 1);
 

@@ -33,10 +33,10 @@ import java.util.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerManifest;
+import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.PodState;
 import io.fabric8.kubernetes.api.model.PodTemplate;
-import io.fabric8.kubernetes.api.model.Port;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.ReplicationControllerState;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -98,7 +98,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return client.pushImage(dockerfileTemplate, archive, properties);
     }
 
-    protected void deployPod(String imageName, List<Port> ports, String name, int replicas) throws Exception {
+    protected void deployPod(String imageName, List<ContainerPort> ports, String name, int replicas) throws Exception {
         String apiVersion = configuration.getApiVersion();
 
         List<EnvVar> envVars = Collections.emptyList();
@@ -116,7 +116,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         ReplicationControllerState desiredState = client.createReplicationControllerState(replicas, selector, podTemplate);
 
         Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
-        ReplicationController rc = client.createReplicationController(name + "rc", apiVersion, labels, desiredState);
+        ReplicationController rc = client.createReplicationController(name + "rc", ReplicationController.ApiVersion.fromValue(apiVersion), labels, desiredState);
 
         client.deployReplicationController(rc);
     }

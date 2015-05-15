@@ -47,12 +47,12 @@ import com.github.dockerjava.core.DockerClientConfig;
 import io.fabric8.kubernetes.api.KubernetesClient;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerManifest;
+import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.PodState;
 import io.fabric8.kubernetes.api.model.PodTemplate;
-import io.fabric8.kubernetes.api.model.Port;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.ReplicationControllerState;
 import io.fabric8.kubernetes.api.model.Service;
@@ -170,7 +170,7 @@ public class K8sClient implements Closeable {
         return imageName;
     }
 
-    public String deployService(String id, String apiVersion, int port, int containerPort, Map<String, String> selector) throws Exception {
+    public String deployService(String id, Service.ApiVersion apiVersion, int port, int containerPort, Map<String, String> selector) throws Exception {
         Service service = new Service();
         service.setId(id);
         service.setApiVersion(apiVersion);
@@ -186,7 +186,7 @@ public class K8sClient implements Closeable {
         return client.getService(serviceId);
     }
 
-    public Container createContainer(String image, String name, List<EnvVar> envVars, List<Port> ports, List<VolumeMount> volumes) throws Exception {
+    public Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes) throws Exception {
         Container container = new Container();
         container.setImage(image);
         container.setName(name);
@@ -225,7 +225,7 @@ public class K8sClient implements Closeable {
         return rcs;
     }
 
-    public ReplicationController createReplicationController(String id, String apiVersion, Map<String, String> labels, ReplicationControllerState desiredState) throws Exception {
+    public ReplicationController createReplicationController(String id, ReplicationController.ApiVersion apiVersion, Map<String, String> labels, ReplicationControllerState desiredState) throws Exception {
         ReplicationController rc = new ReplicationController();
         rc.setId(id);
         rc.setApiVersion(apiVersion);
