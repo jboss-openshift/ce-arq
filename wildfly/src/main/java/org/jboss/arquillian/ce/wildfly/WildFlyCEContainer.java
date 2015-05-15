@@ -60,20 +60,21 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
             List<ContainerPort> ports = new ArrayList<>();
             // http
             ContainerPort http = new ContainerPort();
+            http.setName("http");
             http.setContainerPort(8080);
             ports.add(http);
             // https / ssl
             ContainerPort https = new ContainerPort();
+            https.setName("https");
             https.setContainerPort(8443);
             ports.add(https);
             // DMR / management
-            ContainerPort mgmt = new ContainerPort
-                ();
+            ContainerPort mgmt = new ContainerPort();
             mgmt.setName("mgmt");
             mgmt.setContainerPort(configuration.getMgmtPort());
             ports.add(mgmt);
 
-            deployPod(imageName, ports, "eap", 1);
+            deployPod(imageName, ports, "eap", 1, configuration.getPreStopPath());
 
             return getProtocolMetaData(archive);
         } catch (Exception e) {

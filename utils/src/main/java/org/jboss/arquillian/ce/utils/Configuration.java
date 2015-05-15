@@ -40,6 +40,7 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     private String apiVersion = System.getProperty("kubernetes.api.version", "v1beta1");
     private String namespace = System.getProperty("kubernetes.namespace", "default");
+    private String preStopPath = System.getProperty("kubernetes.container.pre-stop", "/pre-stop/_hook");
     private String imageName = "cetestimage";
 
     private String username = System.getProperty("docker.username", "");
@@ -93,6 +94,14 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setNamespace(String namespace) {
         this.namespace = namespace;
+    }
+
+    public String getPreStopPath() {
+        return ("NONE".equals(preStopPath)) ? null : preStopPath;
+    }
+
+    public void setPreStopPath(String preStopPath) {
+        this.preStopPath = preStopPath;
     }
 
     public String getImageName() {

@@ -35,11 +35,15 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerManifest;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HTTPGetAction;
+import io.fabric8.kubernetes.api.model.Handler;
+import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.PodState;
 import io.fabric8.kubernetes.api.model.PodTemplate;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.ReplicationControllerState;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.util.IntOrString;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
@@ -98,11 +102,22 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return client.pushImage(dockerfileTemplate, archive, properties);
     }
 
-    protected void deployPod(String imageName, List<ContainerPort> ports, String name, int replicas) throws Exception {
+    protected void deployPod(String imageName, List<ContainerPort> ports, String name, int replicas, String preStopPath) throws Exception {
         String apiVersion = configuration.getApiVersion();
 
         List<EnvVar> envVars = Collections.emptyList();
-        Container container = client.createContainer(imageName, name + "-container", envVars, ports, Collections.<VolumeMount>emptyList());
+        Lifecycle lifecycle = null;
+        if (preStopPath != null) {
+            lifecycle = new Lifecycle();
+            Handler preStopHandler = new Handler();
+            HTTPGetAction httpGet = new HTTPGetAction();
+            httpGet.setPath(preStopPath);
+            httpGet.setPort(findHttpPort(ports));
+            preStopHandler.setHttpGet(httpGet);
+            lifecycle.setPreStop(preStopHandler);
+        }
+        List<VolumeMount> volumes = Collections.emptyList();
+        Container container = client.createContainer(imageName, name + "-container", envVars, ports, volumes, lifecycle);
 
         List<Container> containers = Collections.singletonList(container);
         ContainerManifest cm = client.createContainerManifest(name + "Pod", apiVersion, containers);
@@ -119,6 +134,31 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         ReplicationController rc = client.createReplicationController(name + "rc", ReplicationController.ApiVersion.fromValue(apiVersion), labels, desiredState);
 
         client.deployReplicationController(rc);
+    }
+
+    private static IntOrString toIntOrString(ContainerPort port) {
+        IntOrString intOrString = new IntOrString();
+        intOrString.setIntVal(port.getContainerPort());
+        return intOrString;
+    }
+
+    private static IntOrString findHttpPort(List<ContainerPort> ports) {
+        return findPort(ports, "http");
+    }
+
+    static IntOrString findPort(List<ContainerPort> ports, String name) {
+        if (ports.isEmpty()) {
+            throw new IllegalArgumentException("Empty ports!");
+        }
+        if (ports.size() == 1) {
+            return toIntOrString(ports.get(0));
+        }
+        for (ContainerPort port : ports) {
+            if (name.equals(port.getName())) {
+                return toIntOrString(port);
+            }
+        }
+        throw new IllegalArgumentException("No such port: " + name);
     }
 
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive) throws Exception {

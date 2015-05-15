@@ -49,6 +49,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerManifest;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.PodState;
@@ -186,13 +187,14 @@ public class K8sClient implements Closeable {
         return client.getService(serviceId);
     }
 
-    public Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes) throws Exception {
+    public Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle) throws Exception {
         Container container = new Container();
         container.setImage(image);
         container.setName(name);
         container.setEnv(envVars);
         container.setPorts(ports);
         container.setVolumeMounts(volumes);
+        container.setLifecycle(lifecycle);
         return container;
     }
 

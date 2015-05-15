@@ -56,10 +56,11 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
 
             // http
             ContainerPort http = new ContainerPort();
+            http.setName("http");
             http.setContainerPort(8080);
             List<ContainerPort> ports = Collections.singletonList(http);
 
-            deployPod(imageName, ports, "jws", 1);
+            deployPod(imageName, ports, "jws", 1, null);
 
             return getProtocolMetaData(archive);
         } catch (Exception e) {
