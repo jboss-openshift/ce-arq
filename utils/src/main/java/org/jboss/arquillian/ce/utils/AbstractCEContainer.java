@@ -32,18 +32,14 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerManifest;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HTTPGetAction;
 import io.fabric8.kubernetes.api.model.Handler;
 import io.fabric8.kubernetes.api.model.Lifecycle;
-import io.fabric8.kubernetes.api.model.PodState;
-import io.fabric8.kubernetes.api.model.PodTemplate;
+import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ReplicationController;
-import io.fabric8.kubernetes.api.model.ReplicationControllerState;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.util.IntOrString;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
@@ -112,7 +108,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             Handler preStopHandler = new Handler();
             HTTPGetAction httpGet = new HTTPGetAction();
             httpGet.setPath(preStopPath);
-            httpGet.setPort(findHttpPort(ports));
+            httpGet.setPort(K8sClient.findHttpContainerPort(ports));
             preStopHandler.setHttpGet(httpGet);
             lifecycle.setPreStop(preStopHandler);
         }
@@ -120,49 +116,18 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         Container container = client.createContainer(imageName, name + "-container", envVars, ports, volumes, lifecycle);
 
         List<Container> containers = Collections.singletonList(container);
-        ContainerManifest cm = client.createContainerManifest(name + "Pod", apiVersion, containers);
-
-        PodState podState = client.createPodState(cm);
         Map<String, String> podLabels = Collections.singletonMap("name", name + "Pod");
-
-        PodTemplate podTemplate = client.createPodTemplate(podLabels, podState);
+        PodTemplateSpec podTemplate = client.createPodTemplateSpec(podLabels, containers);
 
         Map<String, String> selector = Collections.singletonMap("name", name + "Pod");
-        ReplicationControllerState desiredState = client.createReplicationControllerState(replicas, selector, podTemplate);
-
         Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
-        ReplicationController rc = client.createReplicationController(name + "rc", ReplicationController.ApiVersion.fromValue(apiVersion), labels, desiredState);
+        ReplicationController rc = client.createReplicationController(name + "rc", ReplicationController.ApiVersion.fromValue(apiVersion), labels, replicas, selector, podTemplate);
 
         client.deployReplicationController(rc);
     }
 
-    private static IntOrString toIntOrString(ContainerPort port) {
-        IntOrString intOrString = new IntOrString();
-        intOrString.setIntVal(port.getContainerPort());
-        return intOrString;
-    }
-
-    private static IntOrString findHttpPort(List<ContainerPort> ports) {
-        return findPort(ports, "http");
-    }
-
-    static IntOrString findPort(List<ContainerPort> ports, String name) {
-        if (ports.isEmpty()) {
-            throw new IllegalArgumentException("Empty ports!");
-        }
-        if (ports.size() == 1) {
-            return toIntOrString(ports.get(0));
-        }
-        for (ContainerPort port : ports) {
-            if (name.equals(port.getName())) {
-                return toIntOrString(port);
-            }
-        }
-        throw new IllegalArgumentException("No such port: " + name);
-    }
-
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive) throws Exception {
-        String host = client.getService("http-service").getPortalIP();
+        String host = client.getService("http-service").getSpec().getPortalIP();
 
         HTTPContext context = new HTTPContext(host, 80);
         addServlets(context, archive);
@@ -227,7 +192,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             } catch (Exception ignored) {
             }
         } else {
-            log.info(String.format("Ignore Kubernetes cleanup -- test config is still available."));
+            log.info("Ignore Kubernetes cleanup -- test config is still available.");
         }
 
         try {

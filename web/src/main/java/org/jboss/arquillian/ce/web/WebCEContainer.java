@@ -52,7 +52,7 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
 
             // add new k8s config
 
-            client.deployService("http-service", apiVersion, 80, 8080, Collections.singletonMap("name", "jwsPod"));
+            client.deployService("http-service", apiVersion, "http", 80, 8080, Collections.singletonMap("name", "jwsPod"));
 
             // http
             ContainerPort http = new ContainerPort();

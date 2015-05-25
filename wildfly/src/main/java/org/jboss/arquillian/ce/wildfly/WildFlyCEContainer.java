@@ -53,9 +53,9 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
 
             // add new k8s config
 
-            client.deployService("http-service", apiVersion, 80, 8080, Collections.singletonMap("name", "eapPod"));
-            client.deployService("https-service", apiVersion, 443, 8443, Collections.singletonMap("name", "eapPod"));
-            client.deployService("mgmt-service", apiVersion, 9990, configuration.getMgmtPort(), Collections.singletonMap("name", "eapPod"));
+            client.deployService("http-service", apiVersion, "http", 80, 8080, Collections.singletonMap("name", "eapPod"));
+            client.deployService("https-service", apiVersion, "https", 443, 8443, Collections.singletonMap("name", "eapPod"));
+            client.deployService("mgmt-service", apiVersion, "mgmt", 9990, configuration.getMgmtPort(), Collections.singletonMap("name", "eapPod"));
 
             List<ContainerPort> ports = new ArrayList<>();
             // http

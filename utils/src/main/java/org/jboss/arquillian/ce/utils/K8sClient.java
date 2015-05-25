@@ -33,8 +33,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -45,18 +47,21 @@ import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import io.fabric8.kubernetes.api.KubernetesClient;
+import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerManifest;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Lifecycle;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
-import io.fabric8.kubernetes.api.model.PodState;
-import io.fabric8.kubernetes.api.model.PodTemplate;
+import io.fabric8.kubernetes.api.model.PodSpec;
+import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ReplicationController;
-import io.fabric8.kubernetes.api.model.ReplicationControllerState;
+import io.fabric8.kubernetes.api.model.ReplicationControllerSpec;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.util.IntOrString;
 import org.jboss.dmr.ValueExpression;
@@ -131,8 +136,9 @@ public class K8sClient implements Closeable {
             dockerServiceId = "docker-registry";
         }
         Service service = client.getService(dockerServiceId);
-        String ip = service.getPortalIP();
-        Integer port = service.getPort();
+        ServiceSpec spec = service.getSpec();
+        String ip = spec.getPortalIP();
+        Integer port = findHttpServicePort(spec.getPorts());
 
         // our Docker image name
         final String imageName = String.format("%s:%s/%s", ip, port, configuration.getImageName());
@@ -171,15 +177,26 @@ public class K8sClient implements Closeable {
         return imageName;
     }
 
-    public String deployService(String id, Service.ApiVersion apiVersion, int port, int containerPort, Map<String, String> selector) throws Exception {
+    public String deployService(String name, Service.ApiVersion apiVersion, String portName, int port, int containerPort, Map<String, String> selector) throws Exception {
         Service service = new Service();
-        service.setId(id);
+
         service.setApiVersion(apiVersion);
-        service.setPort(port);
-        IntOrString cp = new IntOrString();
-        cp.setIntVal(containerPort);
-        service.setContainerPort(cp);
-        service.setSelector(selector);
+
+        ObjectMeta objectMeta = new ObjectMeta();
+        service.setMetadata(objectMeta);
+        objectMeta.setName(name);
+
+        ServiceSpec spec = new ServiceSpec();
+        service.setSpec(spec);
+
+        ServicePort sp = new ServicePort();
+        sp.setName(portName);
+        sp.setPort(port);
+        sp.setTargetPort(new IntOrString(containerPort));
+        spec.setPorts(Collections.singletonList(sp));
+
+        spec.setSelector(selector);
+
         return client.createService(service);
     }
 
@@ -198,41 +215,36 @@ public class K8sClient implements Closeable {
         return container;
     }
 
-    public ContainerManifest createContainerManifest(String id, String apiVersion, List<Container> containers) throws Exception {
-        ContainerManifest cm = new ContainerManifest();
-        cm.setId(id);
-        cm.setVersion(apiVersion);
-        cm.setContainers(containers);
-        return cm;
+    public PodTemplateSpec createPodTemplateSpec(Map<String, String> labels, List<Container> containers) throws Exception {
+        PodTemplateSpec pts = new PodTemplateSpec();
+
+        ObjectMeta objectMeta = new ObjectMeta();
+        pts.setMetadata(objectMeta);
+        objectMeta.setLabels(labels);
+
+        PodSpec ps = new PodSpec();
+        pts.setSpec(ps);
+        ps.setContainers(containers);
+
+        return pts;
     }
 
-    public PodState createPodState(ContainerManifest cm) throws Exception {
-        PodState ps = new PodState();
-        ps.setManifest(cm);
-        return ps;
-    }
-
-    public PodTemplate createPodTemplate(Map<String, String> labels, PodState ps) throws Exception {
-        PodTemplate pt = new PodTemplate();
-        pt.setDesiredState(ps);
-        pt.setLabels(labels);
-        return pt;
-    }
-
-    public ReplicationControllerState createReplicationControllerState(int replicas, Map<String, String> selector, PodTemplate podTemplate) throws Exception {
-        ReplicationControllerState rcs = new ReplicationControllerState();
-        rcs.setReplicas(replicas);
-        rcs.setReplicaSelector(selector);
-        rcs.setPodTemplate(podTemplate);
-        return rcs;
-    }
-
-    public ReplicationController createReplicationController(String id, ReplicationController.ApiVersion apiVersion, Map<String, String> labels, ReplicationControllerState desiredState) throws Exception {
+    public ReplicationController createReplicationController(String name, ReplicationController.ApiVersion apiVersion, Map<String, String> labels, int replicas, Map<String, String> selector, PodTemplateSpec podTemplate) throws Exception {
         ReplicationController rc = new ReplicationController();
-        rc.setId(id);
+
         rc.setApiVersion(apiVersion);
-        rc.setLabels(labels);
-        rc.setDesiredState(desiredState);
+
+        ObjectMeta objectMeta = new ObjectMeta();
+        rc.setMetadata(objectMeta);
+        objectMeta.setName(name);
+        objectMeta.setLabels(labels);
+
+        ReplicationControllerSpec spec = new ReplicationControllerSpec();
+        rc.setSpec(spec);
+        spec.setReplicas(replicas);
+        spec.setSelector(selector);
+        spec.setTemplate(podTemplate);
+
         return rc;
     }
 
@@ -254,19 +266,23 @@ public class K8sClient implements Closeable {
         }
     }
 
-    public void cleanPods(String... ids) throws Exception {
+    public void cleanPods(String... names) throws Exception {
         final PodList pods = client.getPods();
-        for (String id : ids) {
+        for (String name : names) {
             try {
                 for (Pod pod : pods.getItems()) {
-                    String podId = pod.getId();
-                    if (podId.startsWith(id)) {
+                    String podId = KubernetesHelper.getName(pod);
+                    if (podId.startsWith(name)) {
                         log.info(String.format("Pod [%s] delete: %s.", podId, client.deletePod(podId)));
                     }
                 }
             } catch (Exception ignored) {
             }
         }
+    }
+
+    public String deployReplicationController(ReplicationController rc) throws Exception {
+        return client.createReplicationController(rc);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -277,6 +293,50 @@ public class K8sClient implements Closeable {
         dir.delete();
     }
 
+    static IntOrString toIntOrString(ContainerPort port) {
+        IntOrString intOrString = new IntOrString();
+        intOrString.setIntVal(port.getContainerPort());
+        return intOrString;
+    }
+
+    static Integer findHttpServicePort(List<ServicePort> ports) {
+        return findServicePort(ports, "http");
+    }
+
+    static Integer findServicePort(List<ServicePort> ports, String name) {
+        if (ports.isEmpty()) {
+            throw new IllegalArgumentException("Empty ports!");
+        }
+        if (ports.size() == 1) {
+            return ports.get(0).getPort();
+        }
+        for (ServicePort port : ports) {
+            if (name.equals(port.getName())) {
+                return port.getPort();
+            }
+        }
+        throw new IllegalArgumentException("No such port: " + name);
+    }
+
+    static IntOrString findHttpContainerPort(List<ContainerPort> ports) {
+        return findContainerPort(ports, "http");
+    }
+
+    static IntOrString findContainerPort(List<ContainerPort> ports, String name) {
+        if (ports.isEmpty()) {
+            throw new IllegalArgumentException("Empty ports!");
+        }
+        if (ports.size() == 1) {
+            return toIntOrString(ports.get(0));
+        }
+        for (ContainerPort port : ports) {
+            if (name.equals(port.getName())) {
+                return toIntOrString(port);
+            }
+        }
+        throw new IllegalArgumentException("No such port: " + name);
+    }
+
     private static void copy(InputStream input, OutputStream output) throws IOException {
         final byte[] buffer = new byte[4096];
         int read;
@@ -284,10 +344,6 @@ public class K8sClient implements Closeable {
             output.write(buffer, 0, read);
         }
         output.flush();
-    }
-
-    public String deployReplicationController(ReplicationController rc) throws Exception {
-        return client.createReplicationController(rc);
     }
 
     private class CustomValueExpressionResolver extends ValueExpressionResolver {

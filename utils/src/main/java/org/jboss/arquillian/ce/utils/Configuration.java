@@ -38,7 +38,7 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private String kubernetesMaster = System.getenv("KUBERNETES_MASTER");
     private String dockerUrl = System.getenv("DOCKER_URL");
 
-    private String apiVersion = System.getProperty("kubernetes.api.version", "v1beta1");
+    private String apiVersion = System.getProperty("kubernetes.api.version", "v1beta3");
     private String namespace = System.getProperty("kubernetes.namespace", "default");
     private String preStopPath = System.getProperty("kubernetes.container.pre-stop", "/pre-stop/_hook");
     private String imageName = "cetestimage";
