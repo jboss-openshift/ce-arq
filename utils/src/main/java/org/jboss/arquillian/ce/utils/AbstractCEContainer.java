@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.ExecAction;
 import io.fabric8.kubernetes.api.model.HTTPGetAction;
 import io.fabric8.kubernetes.api.model.Handler;
 import io.fabric8.kubernetes.api.model.Lifecycle;
@@ -98,18 +99,14 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return client.pushImage(dockerfileTemplate, archive, properties);
     }
 
-    protected void deployPod(String imageName, List<ContainerPort> ports, String name, int replicas, String preStopPath) throws Exception {
+    protected void deployPod(String imageName, List<ContainerPort> ports, String name, int replicas, HookType hookType, String preStopPath) throws Exception {
         String apiVersion = configuration.getApiVersion();
 
         List<EnvVar> envVars = Collections.emptyList();
         Lifecycle lifecycle = null;
-        if (preStopPath != null) {
+        if (hookType != null && preStopPath != null) {
             lifecycle = new Lifecycle();
-            Handler preStopHandler = new Handler();
-            HTTPGetAction httpGet = new HTTPGetAction();
-            httpGet.setPath(preStopPath);
-            httpGet.setPort(K8sClient.findHttpContainerPort(ports));
-            preStopHandler.setHttpGet(httpGet);
+            Handler preStopHandler = createHandler(hookType, preStopPath, ports);
             lifecycle.setPreStop(preStopHandler);
         }
         List<VolumeMount> volumes = Collections.emptyList();
@@ -124,6 +121,25 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         ReplicationController rc = client.createReplicationController(name + "rc", ReplicationController.ApiVersion.fromValue(apiVersion), labels, replicas, selector, podTemplate);
 
         client.deployReplicationController(rc);
+    }
+
+    private Handler createHandler(HookType hookType, String preStopPath, List<ContainerPort> ports) {
+        Handler preStopHandler = new Handler();
+        switch (hookType) {
+            case HTTP_GET:
+                HTTPGetAction httpGet = new HTTPGetAction();
+                httpGet.setPath(preStopPath);
+                httpGet.setPort(K8sClient.findHttpContainerPort(ports));
+                preStopHandler.setHttpGet(httpGet);
+                break;
+            case EXEC:
+                ExecAction exec = new ExecAction(Collections.singletonList(preStopPath));
+                preStopHandler.setExec(exec);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported hook type: " + hookType);
+        }
+        return preStopHandler;
     }
 
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive) throws Exception {
