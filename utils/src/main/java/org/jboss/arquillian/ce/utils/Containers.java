@@ -26,6 +26,7 @@ package org.jboss.arquillian.ce.utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.logging.Logger;
 
 /**
@@ -38,8 +39,11 @@ public class Containers {
         delayArchiveDeploy(serverURL, startupTimeout, checkPeriod, new URLChecker() {
             public boolean check(URL stream) {
                 try {
+                    URLConnection connection = stream.openConnection();
+                    connection.setConnectTimeout(5000);
+                    connection.setReadTimeout(10000);
                     //noinspection EmptyTryBlock,UnusedDeclaration
-                    try (InputStream is = stream.openStream()) {}
+                    try (InputStream is = connection.getInputStream()) {}
                     return true;
                 } catch (IOException e) {
                     return false;
