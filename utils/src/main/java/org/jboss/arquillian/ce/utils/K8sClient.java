@@ -51,6 +51,7 @@ import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -63,7 +64,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.util.IntOrString;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
 import org.jboss.shrinkwrap.api.Archive;
@@ -137,7 +137,7 @@ public class K8sClient implements Closeable {
         }
         Service service = client.getService(dockerServiceId);
         ServiceSpec spec = service.getSpec();
-        String ip = spec.getPortalIP();
+        String ip = spec.getClusterIP();
         Integer port = findHttpServicePort(spec.getPorts());
 
         // our Docker image name

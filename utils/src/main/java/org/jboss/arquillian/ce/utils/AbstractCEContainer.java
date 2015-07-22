@@ -143,7 +143,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive) throws Exception {
-        String host = client.getService("http-service").getSpec().getPortalIP();
+        String host = client.getService("http-service").getSpec().getClusterIP();
 
         HTTPContext context = new HTTPContext(host, 80);
         addServlets(context, archive);
