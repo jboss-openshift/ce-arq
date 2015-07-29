@@ -36,7 +36,6 @@ import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -46,7 +45,6 @@ import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
-import io.fabric8.kubernetes.api.KubernetesClient;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -64,6 +62,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
 import org.jboss.shrinkwrap.api.Archive;
@@ -97,8 +97,7 @@ public class K8sClient implements Closeable {
     public K8sClient(Configuration configuration) {
         this.configuration = configuration;
 
-        this.client = new KubernetesClient(configuration.getKubernetesMaster());
-        this.client.setNamespace(configuration.getNamespace());
+        this.client = new DefaultKubernetesClient(configuration.getKubernetesMaster());
 
         this.dir = new File(tmpDir, "ce_" + UUID.randomUUID().toString());
         if (this.dir.mkdirs() == false) {
@@ -131,11 +130,11 @@ public class K8sClient implements Closeable {
         exporter.exportTo(new File(dir, deployment.getName()));
 
         // Grab Docker registry service
-        String dockerServiceId = (String) properties.get("docker.service.id");
-        if (dockerServiceId == null) {
-            dockerServiceId = "docker-registry";
+        String dockerServiceName = (String) properties.get("docker.service.name");
+        if (dockerServiceName == null) {
+            dockerServiceName = "docker-registry";
         }
-        Service service = client.getService(dockerServiceId);
+        Service service = getService(dockerServiceName);
         ServiceSpec spec = service.getSpec();
         String ip = spec.getClusterIP();
         Integer port = findHttpServicePort(spec.getPorts());
@@ -197,11 +196,11 @@ public class K8sClient implements Closeable {
 
         spec.setSelector(selector);
 
-        return client.createService(service);
+        return client.services().inNamespace(configuration.getNamespace()).create(service).getMetadata().getName();
     }
 
-    public Service getService(String serviceId) {
-        return client.getService(serviceId);
+    public Service getService(String serviceName) {
+        return client.services().inNamespace(configuration.getNamespace()).withName(serviceName).getIfExists();
     }
 
     public Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle) throws Exception {
@@ -251,7 +250,8 @@ public class K8sClient implements Closeable {
     public void cleanServices(String... ids) throws Exception {
         for (String id : ids) {
             try {
-                log.info(String.format("Service [%s] delete: %s.", id, client.deleteService(id)));
+                boolean exists = client.services().inNamespace(configuration.getNamespace()).withName(id).deleteIfExists();
+                log.info(String.format("Service [%s] delete: %s.", id, exists));
             } catch (Exception ignored) {
             }
         }
@@ -260,20 +260,22 @@ public class K8sClient implements Closeable {
     public void cleanReplicationControllers(String... ids) throws Exception {
         for (String id : ids) {
             try {
-                log.info(String.format("RC [%s] delete: %s.", id, client.deleteReplicationController(id)));
+                boolean exists = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(id).deleteIfExists();
+                log.info(String.format("RC [%s] delete: %s.", id, exists));
             } catch (Exception ignored) {
             }
         }
     }
 
     public void cleanPods(String... names) throws Exception {
-        final PodList pods = client.getPods();
+        final PodList pods = client.pods().inNamespace(configuration.getNamespace()).list();
         for (String name : names) {
             try {
                 for (Pod pod : pods.getItems()) {
                     String podId = KubernetesHelper.getName(pod);
                     if (podId.startsWith(name)) {
-                        log.info(String.format("Pod [%s] delete: %s.", podId, client.deletePod(podId)));
+                        boolean exists = client.pods().inNamespace(configuration.getNamespace()).withName(podId).deleteIfExists();
+                        log.info(String.format("Pod [%s] delete: %s.", podId, exists));
                     }
                 }
             } catch (Exception ignored) {
@@ -282,7 +284,7 @@ public class K8sClient implements Closeable {
     }
 
     public String deployReplicationController(ReplicationController rc) throws Exception {
-        return client.createReplicationController(rc);
+        return client.replicationControllers().inNamespace(configuration.getNamespace()).create(rc).getMetadata().getName();
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
