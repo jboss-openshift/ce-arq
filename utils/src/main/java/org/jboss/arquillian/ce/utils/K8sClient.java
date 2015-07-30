@@ -97,7 +97,9 @@ public class K8sClient implements Closeable {
     public K8sClient(Configuration configuration) {
         this.configuration = configuration;
 
-        this.client = new DefaultKubernetesClient(configuration.getKubernetesMaster());
+        DefaultKubernetesClient.Config config = new DefaultKubernetesClient.ConfigBuilder().masterUrl(configuration.getKubernetesMaster()).build();
+
+        this.client = new DefaultKubernetesClient(config);
 
         this.dir = new File(tmpDir, "ce_" + UUID.randomUUID().toString());
         if (this.dir.mkdirs() == false) {
