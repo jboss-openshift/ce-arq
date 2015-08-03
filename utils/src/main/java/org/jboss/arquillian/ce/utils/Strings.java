@@ -36,7 +36,35 @@ import org.apache.commons.io.LineIterator;
 class Strings {
     private static final int INDEX_NOT_FOUND = -1;
 
-    static String toString(InputStream stream)  {
+    private static String getSystemPropertyOrEnvVar(String systemPropertyName, String envVarName, String defaultValue) {
+        String answer = System.getProperty(systemPropertyName);
+        if (answer != null) {
+            return answer;
+        }
+
+        answer = System.getenv(envVarName);
+        if (answer != null) {
+            return answer;
+        }
+
+        return defaultValue;
+    }
+
+    private static String convertSystemPropertyNameToEnvVar(String systemPropertyName) {
+        return systemPropertyName.toUpperCase().replaceAll("[.-]", "_");
+    }
+
+    // ---
+
+    static String getSystemPropertyOrEnvVar(String key) {
+        return getSystemPropertyOrEnvVar(key, null);
+    }
+
+    static String getSystemPropertyOrEnvVar(String key, String defaultValue) {
+        return getSystemPropertyOrEnvVar(key, convertSystemPropertyNameToEnvVar(key), defaultValue);
+    }
+
+    static String toString(InputStream stream) {
         try {
             StringWriter writer = new StringWriter();
             LineIterator itr = IOUtils.lineIterator(stream, "UTF-8");

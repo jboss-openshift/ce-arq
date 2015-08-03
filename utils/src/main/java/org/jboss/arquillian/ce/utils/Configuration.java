@@ -23,6 +23,8 @@
 
 package org.jboss.arquillian.ce.utils;
 
+import static org.jboss.arquillian.ce.utils.Strings.*;
+
 import java.io.Serializable;
 import java.util.Properties;
 
@@ -35,26 +37,26 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
 public abstract class Configuration implements ContainerConfiguration, Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String kubernetesMaster = System.getenv("KUBERNETES_MASTER");
-    private String dockerUrl = System.getenv("DOCKER_URL");
+    private String kubernetesMaster = getSystemPropertyOrEnvVar("kubernetes.master");
+    private String dockerUrl = getSystemPropertyOrEnvVar("docker.url");
 
-    private String apiVersion = System.getProperty("kubernetes.api.version", "v1");
-    private String namespace = System.getProperty("kubernetes.namespace", "default");
+    private String apiVersion = getSystemPropertyOrEnvVar("kubernetes.api.version", "v1");
+    private String namespace = getSystemPropertyOrEnvVar("kubernetes.namespace", "default");
 
-    private String preStopHookType = System.getProperty("kubernetes.container.pre-stop-hook-type", HookType.HTTP_GET.name());
-    private String preStopPath = System.getProperty("kubernetes.container.pre-stop", "/pre-stop/_hook");
+    private String preStopHookType = getSystemPropertyOrEnvVar("kubernetes.container.pre-stop-hook-type", HookType.HTTP_GET.name());
+    private String preStopPath = getSystemPropertyOrEnvVar("kubernetes.container.pre-stop", "/pre-stop/_hook");
 
-    private String project = System.getProperty("docker.test.namespace", "default");
-    private String imageName = System.getProperty("docker.test.image", "cetestimage");
+    private String project = getSystemPropertyOrEnvVar("docker.test.namespace", "default");
+    private String imageName = getSystemPropertyOrEnvVar("docker.test.image", "cetestimage");
 
-    private String username = System.getProperty("docker.username", "");
-    private String password = System.getProperty("docker.password", "");
-    private String email = System.getProperty("docker.email", "");
-    private String address = System.getProperty("docker.address", "");
+    private String username = getSystemPropertyOrEnvVar("docker.username", "");
+    private String password = getSystemPropertyOrEnvVar("docker.password", "");
+    private String email = getSystemPropertyOrEnvVar("docker.email", "");
+    private String address = getSystemPropertyOrEnvVar("docker.address", "");
 
-    private long startupTimeout = Integer.parseInt(System.getProperty("arquillian.startup.timeout", "60")); // 60sec
+    private long startupTimeout = Integer.parseInt(getSystemPropertyOrEnvVar("arquillian.startup.timeout", "60")); // 60sec
 
-    private boolean ignoreCleanup = Boolean.getBoolean("kubernetes.ignore.cleanup");
+    private boolean ignoreCleanup = Boolean.parseBoolean(getSystemPropertyOrEnvVar("kubernetes.ignore.cleanup"));
 
     public void apply(Properties properties) {
     }
