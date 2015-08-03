@@ -99,7 +99,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return client.pushImage(dockerfileTemplate, archive, properties);
     }
 
-    protected void deployPod(String imageName, List<ContainerPort> ports, String name, int replicas, HookType hookType, String preStopPath) throws Exception {
+    protected String deployPod(String imageName, List<ContainerPort> ports, String name, int replicas, HookType hookType, String preStopPath) throws Exception {
         String apiVersion = configuration.getApiVersion();
 
         List<EnvVar> envVars = Collections.emptyList();
@@ -120,7 +120,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
         ReplicationController rc = client.createReplicationController(name + "rc", ReplicationController.ApiVersion.fromValue(apiVersion), labels, replicas, selector, podTemplate);
 
-        client.deployReplicationController(rc);
+        return client.deployReplicationController(rc);
     }
 
     private Handler createHandler(HookType hookType, String preStopPath, List<ContainerPort> ports) {
