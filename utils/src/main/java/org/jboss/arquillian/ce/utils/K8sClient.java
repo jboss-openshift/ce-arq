@@ -142,7 +142,7 @@ public class K8sClient implements Closeable {
         Integer port = findHttpServicePort(spec.getPorts());
 
         // our Docker image name
-        final String imageName = String.format("%s:%s/%s", ip, port, configuration.getImageName());
+        final String imageName = String.format("%s:%s/%s/%s", ip, port, configuration.getProject(), configuration.getImageName());
         log.info(String.format("Docker image name: %s", imageName));
 
         // Docker-java requires AuthConfig, hence this user/pass stuff
