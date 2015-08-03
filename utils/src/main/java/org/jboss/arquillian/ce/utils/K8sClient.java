@@ -202,7 +202,7 @@ public class K8sClient implements Closeable {
     }
 
     public Service getService(String serviceName) {
-        return client.services().inNamespace(configuration.getNamespace()).withName(serviceName).getIfExists();
+        return client.services().inNamespace(configuration.getNamespace()).withName(serviceName).get();
     }
 
     public Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle) throws Exception {
