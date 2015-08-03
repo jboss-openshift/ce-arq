@@ -96,10 +96,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         log.info(String.format("FROM %s [%s]", from, deployment));
 
         InputStream dockerfileTemplate = getClass().getClassLoader().getResourceAsStream("Dockerfile_template");
-        return client.pushImage(dockerfileTemplate, archive, properties);
+        return client.buildAndPushImage(dockerfileTemplate, archive, properties);
     }
 
-    protected String deployPod(String imageName, List<ContainerPort> ports, String name, int replicas, HookType hookType, String preStopPath) throws Exception {
+    protected String deployReplicationController(String imageName, List<ContainerPort> ports, String name, int replicas, HookType hookType, String preStopPath) throws Exception {
         String apiVersion = configuration.getApiVersion();
 
         List<EnvVar> envVars = Collections.emptyList();

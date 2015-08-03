@@ -74,8 +74,8 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
             mgmt.setContainerPort(configuration.getMgmtPort());
             ports.add(mgmt);
 
-            String pod = deployPod(imageName, ports, "eap", 1, configuration.getPreStopHookType(), configuration.getPreStopPath());
-            log.info("Deployed pod: " + pod);
+            String rc = deployReplicationController(imageName, ports, "eap", 1, configuration.getPreStopHookType(), configuration.getPreStopPath());
+            log.info("Deployed replication controller: " + rc);
 
             return getProtocolMetaData(archive);
         } catch (Exception e) {
