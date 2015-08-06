@@ -136,7 +136,7 @@ public class K8sClient implements Closeable {
         if (dockerServiceName == null) {
             dockerServiceName = "docker-registry";
         }
-        Service service = getService(dockerServiceName);
+        Service service = getService(configuration.getRegistryNamespace(), dockerServiceName);
         ServiceSpec spec = service.getSpec();
         String ip = spec.getClusterIP();
         Integer port = findHttpServicePort(spec.getPorts());
@@ -201,8 +201,8 @@ public class K8sClient implements Closeable {
         return client.services().inNamespace(configuration.getNamespace()).create(service).getMetadata().getName();
     }
 
-    public Service getService(String serviceName) {
-        return client.services().inNamespace(configuration.getNamespace()).withName(serviceName).get();
+    public Service getService(String namespace, String serviceName) {
+        return client.services().inNamespace(namespace).withName(serviceName).get();
     }
 
     public Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle) throws Exception {
