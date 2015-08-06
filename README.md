@@ -36,6 +36,8 @@ Additional properties you **can** set / change.
 
 -Dkubernetes.registry.namespace=[K8s/OpenShift docker-registry namespace], default is "default"
 
+-Dkubernetes.registry.service.name=[K8s/OpenShift docker-registry service name], default is "docker-registry"
+
 -Darquillian.startup.timeout=[boot timeout in seconds], default is 60sec
 
 -Dkubernetes.api.version=[K8s API version], default is "v1"

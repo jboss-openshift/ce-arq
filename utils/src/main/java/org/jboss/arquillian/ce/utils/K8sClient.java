@@ -132,11 +132,7 @@ public class K8sClient implements Closeable {
         exporter.exportTo(new File(dir, deployment.getName()));
 
         // Grab Docker registry service
-        String dockerServiceName = (String) properties.get("docker.service.name");
-        if (dockerServiceName == null) {
-            dockerServiceName = "docker-registry";
-        }
-        Service service = getService(configuration.getRegistryNamespace(), dockerServiceName);
+        Service service = getService(configuration.getRegistryNamespace(), configuration.getRegistryServiceName());
         ServiceSpec spec = service.getSpec();
         String ip = spec.getClusterIP();
         Integer port = findHttpServicePort(spec.getPorts());

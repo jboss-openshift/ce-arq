@@ -42,7 +42,9 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     private String apiVersion = getSystemPropertyOrEnvVar("kubernetes.api.version", "v1");
     private String namespace = getSystemPropertyOrEnvVar("kubernetes.namespace", "default");
+
     private String registryNamespace = getSystemPropertyOrEnvVar("kubernetes.registry.namespace", "default");
+    private String registryServiceName = getSystemPropertyOrEnvVar("kubernetes.registry.service.name", "docker-registry");
 
     private String preStopHookType = getSystemPropertyOrEnvVar("kubernetes.container.pre-stop-hook-type", HookType.HTTP_GET.name());
     private String preStopPath = getSystemPropertyOrEnvVar("kubernetes.container.pre-stop", "/pre-stop/_hook");
@@ -110,6 +112,14 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setRegistryNamespace(String registryNamespace) {
         this.registryNamespace = registryNamespace;
+    }
+
+    public String getRegistryServiceName() {
+        return registryServiceName;
+    }
+
+    public void setRegistryServiceName(String registryServiceName) {
+        this.registryServiceName = registryServiceName;
     }
 
     public HookType getPreStopHookType() {
