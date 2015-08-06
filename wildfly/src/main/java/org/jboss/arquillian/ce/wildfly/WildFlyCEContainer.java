@@ -44,7 +44,7 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
         try {
-            String imageName = buildImage(archive, "docker-registry.usersys.redhat.com/cloud_enablement/openshift-jboss-eap:6.4", "/opt/eap/standalone/deployments/");
+            String imageName = buildImage(archive, "registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4", "/opt/eap/standalone/deployments/");
 
             final Service.ApiVersion apiVersion = Service.ApiVersion.fromValue(configuration.getApiVersion());
 

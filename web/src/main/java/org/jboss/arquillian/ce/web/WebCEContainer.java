@@ -43,7 +43,7 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
         try {
-            String imageName = buildImage(archive, "docker-registry.usersys.redhat.com/cloud_enablement/jboss-webserver-tomcat7:2.1", "/opt/webserver/webapps/");
+            String imageName = buildImage(archive, "registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:3.0", "/opt/webserver/webapps/");
 
             final Service.ApiVersion apiVersion = Service.ApiVersion.fromValue(configuration.getApiVersion());
 
