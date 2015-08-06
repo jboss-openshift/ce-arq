@@ -60,7 +60,7 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
             http.setContainerPort(8080);
             List<ContainerPort> ports = Collections.singletonList(http);
 
-            String rc = deployReplicationController(imageName, ports, "jws", 1, null, null);
+            String rc = deployReplicationController(imageName, ports, "jws", 1, null, null, true);
             log.info("Deployed replication controller: " + rc);
 
             return getProtocolMetaData(archive);

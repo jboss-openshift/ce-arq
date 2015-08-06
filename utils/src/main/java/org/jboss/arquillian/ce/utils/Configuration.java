@@ -45,6 +45,7 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     private String preStopHookType = getSystemPropertyOrEnvVar("kubernetes.container.pre-stop-hook-type", HookType.HTTP_GET.name());
     private String preStopPath = getSystemPropertyOrEnvVar("kubernetes.container.pre-stop", "/pre-stop/_hook");
+    private boolean ignorePreStop = Boolean.parseBoolean(getSystemPropertyOrEnvVar("kubernetes.container.pre-stop-ignore"));
 
     private String project = getSystemPropertyOrEnvVar("docker.test.namespace", "default");
     private String imageName = getSystemPropertyOrEnvVar("docker.test.image", "cetestimage");
@@ -116,6 +117,14 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setPreStopPath(String preStopPath) {
         this.preStopPath = preStopPath;
+    }
+
+    public boolean isIgnorePreStop() {
+        return ignorePreStop;
+    }
+
+    public void setIgnorePreStop(boolean ignorePreStop) {
+        this.ignorePreStop = ignorePreStop;
     }
 
     public String getProject() {

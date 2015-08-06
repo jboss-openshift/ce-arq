@@ -99,12 +99,12 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return client.buildAndPushImage(dockerfileTemplate, archive, properties);
     }
 
-    protected String deployReplicationController(String imageName, List<ContainerPort> ports, String name, int replicas, HookType hookType, String preStopPath) throws Exception {
+    protected String deployReplicationController(String imageName, List<ContainerPort> ports, String name, int replicas, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
         String apiVersion = configuration.getApiVersion();
 
         List<EnvVar> envVars = Collections.emptyList();
         Lifecycle lifecycle = null;
-        if (hookType != null && preStopPath != null) {
+        if (!ignorePreStop && hookType != null && preStopPath != null) {
             lifecycle = new Lifecycle();
             Handler preStopHandler = createHandler(hookType, preStopPath, ports);
             lifecycle.setPreStop(preStopHandler);

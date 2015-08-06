@@ -30,6 +30,20 @@ Additional properties you **can** set / change.
 
 -Ddocker.test.namespace=[Docker namespace], default is "default"
 
+-Ddocker.test.image=[Docker test image name], default is "cetestimage"
+
 -Dkubernetes.namespace=[K8s/OpenShift namespace], default is "default"
 
 -Darquillian.startup.timeout=[boot timeout in seconds], default is 60sec
+
+-Dkubernetes.api.version=[K8s API version], default is "v1"
+
+-Dkubernetes.container.pre-stop-hook-type=[Pre-stop hook type], default is "HTTP_GET";
+
+-Dkubernetes.container.pre-stop=[Pre-stop path], default is "/pre-stop/_hook"
+
+-Dkubernetes.container.pre-stop-ignore=(true|false), default is "false"
+ 
+-Ddocker.email=[Email]
+ 
+-Ddocker.address=[Address]
