@@ -62,6 +62,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.jboss.dmr.ValueExpression;
@@ -97,7 +99,7 @@ public class K8sClient implements Closeable {
     public K8sClient(Configuration configuration) {
         this.configuration = configuration;
 
-        DefaultKubernetesClient.Config config = new DefaultKubernetesClient.ConfigBuilder().masterUrl(configuration.getKubernetesMaster()).build();
+        Config config = new ConfigBuilder().withMasterUrl(configuration.getKubernetesMaster()).build();
 
         this.client = new DefaultKubernetesClient(config);
 
@@ -248,7 +250,7 @@ public class K8sClient implements Closeable {
     public void cleanServices(String... ids) throws Exception {
         for (String id : ids) {
             try {
-                boolean exists = client.services().inNamespace(configuration.getNamespace()).withName(id).deleteIfExists();
+                boolean exists = client.services().inNamespace(configuration.getNamespace()).withName(id).delete();
                 log.info(String.format("Service [%s] delete: %s.", id, exists));
             } catch (Exception ignored) {
             }
@@ -258,7 +260,7 @@ public class K8sClient implements Closeable {
     public void cleanReplicationControllers(String... ids) throws Exception {
         for (String id : ids) {
             try {
-                boolean exists = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(id).deleteIfExists();
+                boolean exists = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(id).delete();
                 log.info(String.format("RC [%s] delete: %s.", id, exists));
             } catch (Exception ignored) {
             }
@@ -272,7 +274,7 @@ public class K8sClient implements Closeable {
                 for (Pod pod : pods.getItems()) {
                     String podId = KubernetesHelper.getName(pod);
                     if (podId.startsWith(name)) {
-                        boolean exists = client.pods().inNamespace(configuration.getNamespace()).withName(podId).deleteIfExists();
+                        boolean exists = client.pods().inNamespace(configuration.getNamespace()).withName(podId).delete();
                         log.info(String.format("Pod [%s] delete: %s.", podId, exists));
                     }
                 }
