@@ -58,6 +58,8 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private String email = getSystemPropertyOrEnvVar("docker.email", "");
     private String address = getSystemPropertyOrEnvVar("docker.address", "");
 
+    private String webContext = getSystemPropertyOrEnvVar("arquillian.server.context", "");
+
     private long startupTimeout = Integer.parseInt(getSystemPropertyOrEnvVar("arquillian.startup.timeout", "60")); // 60sec
 
     private boolean ignoreCleanup = Boolean.parseBoolean(getSystemPropertyOrEnvVar("kubernetes.ignore.cleanup"));
@@ -192,6 +194,14 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getWebContext() {
+        return webContext;
+    }
+
+    public void setWebContext(String webContext) {
+        this.webContext = webContext;
     }
 
     public long getStartupTimeout() {

@@ -150,7 +150,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         log.info(String.format("HTTP host: %s", host));
 
-        Containers.delayArchiveDeploy(String.format("http://%s:%s", host, 80), configuration.getStartupTimeout(), 4000L);
+        Containers.delayArchiveDeploy(String.format("http://%s:%s%s", host, 80, configuration.getWebContext()), configuration.getStartupTimeout(), 4000L);
 
         ProtocolMetaData pmd = new ProtocolMetaData();
         pmd.addContext(context);
