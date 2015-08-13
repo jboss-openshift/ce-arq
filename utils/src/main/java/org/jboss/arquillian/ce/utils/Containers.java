@@ -23,6 +23,7 @@
 
 package org.jboss.arquillian.ce.utils;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -45,6 +46,8 @@ public class Containers {
                     //noinspection EmptyTryBlock,UnusedDeclaration
                     try (InputStream is = connection.getInputStream()) {}
                     return true;
+                } catch (FileNotFoundException e) {
+                    return true; // 404 is OK, as somebody served that response
                 } catch (IOException e) {
                     return false;
                 }
