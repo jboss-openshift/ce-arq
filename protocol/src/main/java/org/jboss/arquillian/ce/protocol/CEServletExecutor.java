@@ -41,14 +41,14 @@ import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClien
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.ListenableFuture;
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.Response;
 import org.jboss.arquillian.ce.utils.Strings;
+import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
+import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.container.test.spi.command.CommandCallback;
 import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
 import org.jboss.arquillian.test.spi.TestMethodExecutor;
 import org.jboss.arquillian.test.spi.TestResult;
-import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -56,34 +56,32 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 public class CEServletExecutor extends ServletMethodExecutor {
     private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s/proxy" + "%s?port=8080&%s";
 
-    private Archive<?> archive;
+    private String contextRoot;
     private KubernetesClient client;
 
     public CEServletExecutor(CEProtocolConfiguration configuration, ProtocolMetaData protocolMetaData, CommandCallback callback) {
         this.config = configuration;
         this.callback = callback;
 
-        Collection<Archive> archives = protocolMetaData.getContexts(Archive.class);
-        if (archives.size() == 0) {
-            throw new IllegalStateException("No archive in protocol metadata!");
-        }
-        this.archive = archives.iterator().next();
+        this.contextRoot = readContextRoot(protocolMetaData);
 
         Config config = new ConfigBuilder().withMasterUrl(configuration.getKubernetesMaster()).build();
         this.client = new DefaultKubernetesClient(config);
     }
 
-    private CEProtocolConfiguration config() {
-        return CEProtocolConfiguration.class.cast(config);
+    private String readContextRoot(ProtocolMetaData protocolMetaData) {
+        Collection<HTTPContext> contexts = protocolMetaData.getContexts(HTTPContext.class);
+        for (HTTPContext context : contexts) {
+            Servlet arqServlet = context.getServletByName(ARQUILLIAN_SERVLET_NAME);
+            if (arqServlet != null) {
+                return arqServlet.getContextRoot();
+            }
+        }
+        throw new IllegalArgumentException("No Arquillian servlet in HTTPContext meta data!");
     }
 
-    private String readContextRoot() {
-        // TODO handle .ear + grab context root info from descriptors
-        if (archive instanceof WebArchive) {
-            String name = WebArchive.class.cast(archive).getName();
-            return name.substring(0, name.indexOf("."));
-        }
-        throw new IllegalArgumentException("Can only handle .war deployments atm: " + archive);
+    private CEProtocolConfiguration config() {
+        return CEProtocolConfiguration.class.cast(config);
     }
 
     public TestResult invoke(final TestMethodExecutor testMethodExecutor) {
@@ -97,7 +95,6 @@ public class CEServletExecutor extends ServletMethodExecutor {
         String version = config().getApiVersion();
         String namespace = config().getNamespace();
         String pod = locatePod(testMethodExecutor);
-        String contextRoot = readContextRoot();
 
         String url = String.format(PROXY_URL, host, version, namespace, pod, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
         String eventUrl = String.format(PROXY_URL, host, version, namespace, pod, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
