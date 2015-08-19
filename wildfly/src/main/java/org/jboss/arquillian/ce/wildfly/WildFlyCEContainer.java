@@ -85,7 +85,7 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
             int replicas = readReplicas();
 
             String rc = deployReplicationController(imageName, ports, "eap", replicas, configuration.getPreStopHookType(), configuration.getPreStopPath(), configuration.isIgnorePreStop());
-            log.info("Deployed replication controller: " + rc);
+            log.info(String.format("Deployed replication controller [%s]: %s", replicas, rc));
 
             return getProtocolMetaData(archive);
         } catch (Exception e) {
