@@ -96,8 +96,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
             eventTimer = createCommandServicePullTimer(eventUrl);
             return executeWithRetry(url, TestResult.class);
         } catch (Exception e) {
-            throw new IllegalStateException("Error launching test " + testClass.getName() + " "
-                + testMethodExecutor.getMethod(), e);
+            throw new IllegalStateException("Error launching test " + testClass.getName() + " " + testMethodExecutor.getMethod(), e);
         } finally {
             if (eventTimer != null) {
                 eventTimer.cancel();
@@ -112,14 +111,11 @@ public class CEServletExecutor extends ServletMethodExecutor {
 
         if (requestObject != null) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            try {
+            try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
                 oos.writeObject(requestObject);
+                oos.flush();
             } catch (Exception e) {
                 throw new RuntimeException("Error sending request Object, " + requestObject, e);
-            } finally {
-                oos.flush();
-                oos.close();
             }
             builder.setBody(baos.toByteArray());
         }
