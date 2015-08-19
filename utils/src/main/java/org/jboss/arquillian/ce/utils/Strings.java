@@ -33,7 +33,7 @@ import org.apache.commons.io.LineIterator;
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-class Strings {
+public class Strings {
     private static final int INDEX_NOT_FOUND = -1;
 
     private static String getSystemPropertyOrEnvVar(String systemPropertyName, String envVarName, String defaultValue) {
@@ -52,6 +52,22 @@ class Strings {
 
     private static String convertSystemPropertyNameToEnvVar(String systemPropertyName) {
         return systemPropertyName.toUpperCase().replaceAll("[.-]", "_");
+    }
+
+    // ---
+
+    public static int parseNumber(String value) {
+        int k = 1;
+        int n = 0;
+        for (int i = value.length() - 1; i >= 0; i--) {
+            char ch = value.charAt(i);
+            if (Character.isDigit(ch) == false) {
+                break;
+            }
+            n += (ch - '0') * k;
+            k *= 10;
+        }
+        return n;
     }
 
     // ---

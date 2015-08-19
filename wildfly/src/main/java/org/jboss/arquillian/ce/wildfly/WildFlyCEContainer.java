@@ -23,23 +23,30 @@
 
 package org.jboss.arquillian.ce.wildfly;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.ContainerPort;
-import io.fabric8.kubernetes.api.model.Service;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
+import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
+import org.jboss.arquillian.container.test.api.TargetsContainer;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
+import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfiguration> {
+    @Inject
+    private Instance<TestClass> tc;
+
     public Class<WildFlyCEConfiguration> getConfigurationClass() {
         return WildFlyCEConfiguration.class;
     }
@@ -53,16 +60,10 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
         try {
             String imageName = buildImage(archive, "registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4", "/opt/eap/standalone/deployments/");
 
-            final Service.ApiVersion apiVersion = Service.ApiVersion.fromValue(configuration.getApiVersion());
-
             // clean old k8s stuff
             cleanup();
 
             // add new k8s config
-
-            client.deployService("http-service", apiVersion, "http", 80, 8080, Collections.singletonMap("name", "eapPod"));
-            client.deployService("https-service", apiVersion, "https", 443, 8443, Collections.singletonMap("name", "eapPod"));
-            client.deployService("mgmt-service", apiVersion, "mgmt", 9990, configuration.getMgmtPort(), Collections.singletonMap("name", "eapPod"));
 
             List<ContainerPort> ports = new ArrayList<>();
             // http
@@ -81,7 +82,9 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
             mgmt.setContainerPort(configuration.getMgmtPort());
             ports.add(mgmt);
 
-            String rc = deployReplicationController(imageName, ports, "eap", 1, configuration.getPreStopHookType(), configuration.getPreStopPath(), configuration.isIgnorePreStop());
+            int replicas = readReplicas();
+
+            String rc = deployReplicationController(imageName, ports, "eap", replicas, configuration.getPreStopHookType(), configuration.getPreStopPath(), configuration.isIgnorePreStop());
             log.info("Deployed replication controller: " + rc);
 
             return getProtocolMetaData(archive);
@@ -90,8 +93,20 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
         }
     }
 
+    private int readReplicas() {
+        Method[] containers = tc.get().getMethods(TargetsContainer.class);
+        if (containers.length == 0) {
+            return 1;
+        }
+
+        int max = 0;
+        for (Method c : containers) {
+            max = Math.max(max, Strings.parseNumber(c.getAnnotation(TargetsContainer.class).value()));
+        }
+        return max;
+    }
+
     protected void cleanup() throws Exception {
-        client.cleanServices("http-service", "https-service", "mgmt-service");
         client.cleanReplicationControllers("eaprc");
         client.cleanPods("eaprc");
     }

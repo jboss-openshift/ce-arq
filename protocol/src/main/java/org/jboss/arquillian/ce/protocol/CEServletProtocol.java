@@ -49,6 +49,6 @@ public class CEServletProtocol implements Protocol<CEProtocolConfiguration> {
     }
 
     public ContainerMethodExecutor getExecutor(CEProtocolConfiguration servletProtocolConfiguration, ProtocolMetaData metaData, CommandCallback commandCallback) {
-        return new CEServletExecutor(servletProtocolConfiguration, commandCallback);
+        return new CEServletExecutor(servletProtocolConfiguration, metaData, commandCallback);
     }
 }

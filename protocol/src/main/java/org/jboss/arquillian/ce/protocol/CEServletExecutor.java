@@ -28,6 +28,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
+import java.util.Collection;
 import java.util.List;
 import java.util.Timer;
 
@@ -39,11 +40,15 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClient;
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.ListenableFuture;
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.Response;
+import org.jboss.arquillian.ce.utils.Strings;
+import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.container.test.spi.command.CommandCallback;
 import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
 import org.jboss.arquillian.test.spi.TestMethodExecutor;
 import org.jboss.arquillian.test.spi.TestResult;
+import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -51,11 +56,18 @@ import org.jboss.arquillian.test.spi.TestResult;
 public class CEServletExecutor extends ServletMethodExecutor {
     private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s/proxy" + "%s?port=8080&%s";
 
+    private Archive<?> archive;
     private KubernetesClient client;
 
-    public CEServletExecutor(CEProtocolConfiguration configuration, CommandCallback callback) {
+    public CEServletExecutor(CEProtocolConfiguration configuration, ProtocolMetaData protocolMetaData, CommandCallback callback) {
         this.config = configuration;
         this.callback = callback;
+
+        Collection<Archive> archives = protocolMetaData.getContexts(Archive.class);
+        if (archives.size() == 0) {
+            throw new IllegalStateException("No archive in protocol metadata!");
+        }
+        this.archive = archives.iterator().next();
 
         Config config = new ConfigBuilder().withMasterUrl(configuration.getKubernetesMaster()).build();
         this.client = new DefaultKubernetesClient(config);
@@ -63,6 +75,15 @@ public class CEServletExecutor extends ServletMethodExecutor {
 
     private CEProtocolConfiguration config() {
         return CEProtocolConfiguration.class.cast(config);
+    }
+
+    private String readContextRoot() {
+        // TODO handle .ear + grab context root info from descriptors
+        if (archive instanceof WebArchive) {
+            String name = WebArchive.class.cast(archive).getName();
+            return name.substring(0, name.indexOf("."));
+        }
+        throw new IllegalArgumentException("Can only handle .war deployments atm: " + archive);
     }
 
     public TestResult invoke(final TestMethodExecutor testMethodExecutor) {
@@ -76,7 +97,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
         String version = config().getApiVersion();
         String namespace = config().getNamespace();
         String pod = locatePod(testMethodExecutor);
-        String contextRoot = ""; // TODO
+        String contextRoot = readContextRoot();
 
         String url = String.format(PROXY_URL, host, version, namespace, pod, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
         String eventUrl = String.format(PROXY_URL, host, version, namespace, pod, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
@@ -145,27 +166,13 @@ public class CEServletExecutor extends ServletMethodExecutor {
         int index = 0;
         if (tc != null) {
             String value = tc.value();
-            index = parseNumber(value);
+            index = Strings.parseNumber(value);
         }
         List<Pod> items = client.pods().inNamespace(config().getNamespace()).list().getItems();
         if (index >= items.size()) {
             throw new IllegalStateException(String.format("Not enough pods (%s) to invoke pod %s!", items.size(), index));
         }
         return items.get(index).getMetadata().getName();
-    }
-
-    private int parseNumber(String value) {
-        int k = 1;
-        int n = 0;
-        for (int i = value.length() - 1; i >= 0; i--) {
-            char ch = value.charAt(i);
-            if (Character.isDigit(ch) == false) {
-                break;
-            }
-            n += (ch - '0') * k;
-            k *= 10;
-        }
-        return n;
     }
 }
 
