@@ -29,8 +29,10 @@ import java.util.List;
 
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.Service;
+import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
+import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.shrinkwrap.api.Archive;
 
@@ -40,6 +42,11 @@ import org.jboss.shrinkwrap.api.Archive;
 public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfiguration> {
     public Class<WildFlyCEConfiguration> getConfigurationClass() {
         return WildFlyCEConfiguration.class;
+    }
+
+    @Override
+    public ProtocolDescription getDefaultProtocol() {
+        return new ProtocolDescription(CEServletProtocol.PROTOCOL_NAME);
     }
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
