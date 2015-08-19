@@ -154,9 +154,11 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         HTTPContext context = new HTTPContext("<DUMMY>", 80); // we don't use the host, as we use proxy
         addServlets(context, archive);
 
+        URLChecker checker = new K8sURLChecker(client.getClient());
+
         List<String> proxies = proxy.urls(configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), configuration.getWebContext());
         for (String url : proxies) {
-            Containers.delayArchiveDeploy(url, configuration.getStartupTimeout(), 4000L);
+            Containers.delayArchiveDeploy(url, configuration.getStartupTimeout(), 4000L, checker);
         }
 
         ProtocolMetaData pmd = new ProtocolMetaData();
