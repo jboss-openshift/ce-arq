@@ -54,6 +54,10 @@ public class Proxy {
         return client.getHttpClient();
     }
 
+    public String url(String host, String version, String namespace, String podName, String path, String parameters) {
+        return String.format(PROXY_URL, host, version, namespace, podName, path, parameters);
+    }
+
     public String url(String host, String version, String namespace, int index, String path, String parameters) {
         List<Pod> items = client.pods().inNamespace(namespace).list().getItems();
         if (index >= items.size()) {
@@ -61,7 +65,7 @@ public class Proxy {
         }
         String pod = items.get(index).getMetadata().getName();
 
-        return String.format(PROXY_URL, host, version, namespace, pod, path, parameters);
+        return url(host, version, namespace, pod, path, parameters);
     }
 
     public List<String> urls(String host, String namespace, String version, String path) {
@@ -69,7 +73,7 @@ public class Proxy {
 
         List<String> urls = new ArrayList<>();
         for (Pod pod : items) {
-            urls.add(String.format(PROXY_URL, host, version, namespace, pod, path, ""));
+            urls.add(url(host, version, namespace, pod.getMetadata().getName(), path, ""));
         }
         return urls;
     }
