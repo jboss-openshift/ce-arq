@@ -94,16 +94,11 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
     }
 
     private int readReplicas() {
-        Method[] containers = tc.get().getMethods(TargetsContainer.class);
-        if (containers.length == 0) {
-            return 1;
-        }
-
         int max = 0;
-        for (Method c : containers) {
+        for (Method c : tc.get().getMethods(TargetsContainer.class)) {
             max = Math.max(max, Strings.parseNumber(c.getAnnotation(TargetsContainer.class).value()));
         }
-        return max;
+        return max + 1;
     }
 
     protected void cleanup() throws Exception {
