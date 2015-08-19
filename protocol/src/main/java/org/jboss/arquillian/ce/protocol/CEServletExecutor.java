@@ -29,17 +29,12 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.util.Collection;
-import java.util.List;
 import java.util.Timer;
 
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClient;
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.ListenableFuture;
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.Response;
+import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -54,10 +49,8 @@ import org.jboss.arquillian.test.spi.TestResult;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class CEServletExecutor extends ServletMethodExecutor {
-    private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s/proxy" + "%s?port=8080&%s";
-
     private String contextRoot;
-    private KubernetesClient client;
+    private Proxy proxy;
 
     public CEServletExecutor(CEProtocolConfiguration configuration, ProtocolMetaData protocolMetaData, CommandCallback callback) {
         this.config = configuration;
@@ -65,8 +58,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
 
         this.contextRoot = readContextRoot(protocolMetaData);
 
-        Config config = new ConfigBuilder().withMasterUrl(configuration.getKubernetesMaster()).build();
-        this.client = new DefaultKubernetesClient(config);
+        this.proxy = new Proxy(configuration.getKubernetesMaster());
     }
 
     private String readContextRoot(ProtocolMetaData protocolMetaData) {
@@ -94,10 +86,10 @@ public class CEServletExecutor extends ServletMethodExecutor {
         String host = config().getKubernetesMaster();
         String version = config().getApiVersion();
         String namespace = config().getNamespace();
-        String pod = locatePod(testMethodExecutor);
+        int index = locatePodIndex(testMethodExecutor);
 
-        String url = String.format(PROXY_URL, host, version, namespace, pod, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
-        String eventUrl = String.format(PROXY_URL, host, version, namespace, pod, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
+        String url = proxy.url(host, version, namespace, index, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "&outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
+        String eventUrl = proxy.url(host, version, namespace, index, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "&outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
 
         Timer eventTimer = null;
         try {
@@ -114,7 +106,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
     }
 
     protected <T> T execute(String url, Class<T> returnType, Object requestObject) throws Exception {
-        final AsyncHttpClient httpClient = client.getHttpClient();
+        final AsyncHttpClient httpClient = proxy.getHttpClient();
 
         AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
 
@@ -151,13 +143,13 @@ public class CEServletExecutor extends ServletMethodExecutor {
         } else if (responseCode == HttpURLConnection.HTTP_NO_CONTENT) {
             return null;
         } else if (responseCode != HttpURLConnection.HTTP_NOT_FOUND) {
-            throw new IllegalStateException("Error launching test at " + url + ". " + "Got " + responseCode + " (" + response.getStatusText() + ")");
+            throw new IllegalStateException("Error launching test at " + url + ". Got " + responseCode + " (" + response.getStatusText() + ")");
         }
 
         return null; // TODO
     }
 
-    private String locatePod(TestMethodExecutor testMethodExecutor) {
+    private int locatePodIndex(TestMethodExecutor testMethodExecutor) {
         Method method = testMethodExecutor.getMethod();
         TargetsContainer tc = method.getAnnotation(TargetsContainer.class);
         int index = 0;
@@ -165,11 +157,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
             String value = tc.value();
             index = Strings.parseNumber(value);
         }
-        List<Pod> items = client.pods().inNamespace(config().getNamespace()).list().getItems();
-        if (index >= items.size()) {
-            throw new IllegalStateException(String.format("Not enough pods (%s) to invoke pod %s!", items.size(), index));
-        }
-        return items.get(index).getMetadata().getName();
+        return index;
     }
 }
 

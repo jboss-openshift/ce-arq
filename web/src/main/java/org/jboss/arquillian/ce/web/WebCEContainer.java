@@ -27,9 +27,10 @@ import java.util.Collections;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.ContainerPort;
-import io.fabric8.kubernetes.api.model.Service;
+import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
+import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.shrinkwrap.api.Archive;
 
@@ -41,18 +42,19 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
         return WebCEConfiguration.class;
     }
 
+    @Override
+    public ProtocolDescription getDefaultProtocol() {
+        return new ProtocolDescription(CEServletProtocol.PROTOCOL_NAME);
+    }
+
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
         try {
             String imageName = buildImage(archive, "registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:3.0", "/opt/webserver/webapps/");
-
-            final Service.ApiVersion apiVersion = Service.ApiVersion.fromValue(configuration.getApiVersion());
 
             // clean old k8s stuff
             cleanup();
 
             // add new k8s config
-
-            client.deployService("http-service", apiVersion, "http", 80, 8080, Collections.singletonMap("name", "jwsPod"));
 
             // http
             ContainerPort http = new ContainerPort();
@@ -70,7 +72,6 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
     }
 
     protected void cleanup() throws Exception {
-        client.cleanServices("http-service");
         client.cleanReplicationControllers("jwsrc");
         client.cleanPods("jwsrc");
     }

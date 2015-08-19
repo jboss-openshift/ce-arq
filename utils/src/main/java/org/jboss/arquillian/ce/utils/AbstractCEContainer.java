@@ -48,7 +48,10 @@ import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
+import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
@@ -65,14 +68,19 @@ import org.jboss.shrinkwrap.descriptor.api.application7.WebType;
 public abstract class AbstractCEContainer<T extends Configuration> implements DeployableContainer<T> {
     protected final Logger log = Logger.getLogger(getClass().getName());
 
+    @Inject
+    protected Instance<TestClass> tc;
+
     protected T configuration;
     protected K8sClient client;
+    protected Proxy proxy;
 
     protected abstract void cleanup() throws Exception;
 
     public void setup(T configuration) {
         this.configuration = getConfigurationClass().cast(configuration);
         this.client = new K8sClient(configuration);
+        this.proxy = new Proxy(client.getClient());
     }
 
     public void start() throws LifecycleException {
@@ -143,14 +151,13 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive) throws Exception {
-        String host = client.getService(configuration.getNamespace(), "http-service").getSpec().getClusterIP();
-
-        HTTPContext context = new HTTPContext(host, 80);
+        HTTPContext context = new HTTPContext("<DUMMY>", 80); // we don't use the host, as we use proxy
         addServlets(context, archive);
 
-        log.info(String.format("HTTP host: %s", host));
-
-        Containers.delayArchiveDeploy(String.format("http://%s:%s%s", host, 80, configuration.getWebContext()), configuration.getStartupTimeout(), 4000L);
+        List<String> proxies = proxy.urls(configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), configuration.getWebContext());
+        for (String url : proxies) {
+            Containers.delayArchiveDeploy(url, configuration.getStartupTimeout(), 4000L);
+        }
 
         ProtocolMetaData pmd = new ProtocolMetaData();
         pmd.addContext(context);

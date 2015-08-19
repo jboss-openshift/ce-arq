@@ -109,6 +109,10 @@ public class K8sClient implements Closeable {
         }
     }
 
+    public KubernetesClient getClient() {
+        return client;
+    }
+
     public String buildAndPushImage(InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
         // Create Dockerfile
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

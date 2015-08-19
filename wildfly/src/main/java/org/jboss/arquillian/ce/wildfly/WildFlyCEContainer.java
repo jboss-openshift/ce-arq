@@ -35,18 +35,12 @@ import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfiguration> {
-    @Inject
-    private Instance<TestClass> tc;
-
     public Class<WildFlyCEConfiguration> getConfigurationClass() {
         return WildFlyCEConfiguration.class;
     }
