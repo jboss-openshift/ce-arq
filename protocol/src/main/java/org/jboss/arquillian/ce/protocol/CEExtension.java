@@ -36,7 +36,7 @@ public class CEExtension implements LoadableExtension {
     public void register(LoadableExtension.ExtensionBuilder builder) {
         builder.service(Protocol.class, CEServletProtocol.class);
         // handle client
-        builder.observer(ClientProvider.class);
+        builder.observer(ClientCreator.class);
         builder.service(ResourceProvider.class, ClientProvider.class);
     }
 }

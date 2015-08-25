@@ -23,16 +23,11 @@
 
 package org.jboss.arquillian.ce.protocol;
 
-import java.io.InputStream;
 import java.lang.annotation.Annotation;
 
-import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClient;
 import org.jboss.arquillian.ce.api.Client;
-import org.jboss.arquillian.ce.utils.Proxy;
-import org.jboss.arquillian.core.api.InstanceProducer;
-import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
+import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 
@@ -42,39 +37,18 @@ import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 public class ClientProvider implements ResourceProvider {
 
     @Inject
-    @ApplicationScoped
-    InstanceProducer<Client> clientInstanceProducer;
-
-    public void createClient(final @Observes CEProtocolConfiguration configuration) {
-        final Proxy proxy = new Proxy(configuration.getKubernetesMaster());
-        Client client = new Client() {
-            @Override
-            public InputStream execute(int pod, String path) throws Exception {
-                String url = proxy.url(
-                    configuration.getKubernetesMaster(),
-                    configuration.getApiVersion(),
-                    configuration.getNamespace(),
-                    pod,
-                    path,
-                    null
-                );
-                AsyncHttpClient httpClient = proxy.getHttpClient();
-                AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
-                return builder.execute().get().getResponseBodyAsStream();
-            }
-        };
-        clientInstanceProducer.set(client);
-    }
+    Instance<Client> clientInstance;
 
     public boolean canProvide(Class<?> type) {
         return Client.class.isAssignableFrom(type);
     }
 
     public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
-        Client client = clientInstanceProducer.get();
+        Client client = clientInstance.get();
         if (client == null) {
             throw new IllegalStateException("Unable to inject client into test.");
         }
         return client;
     }
+
 }
