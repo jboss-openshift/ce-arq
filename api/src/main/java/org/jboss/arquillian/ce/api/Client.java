@@ -21,22 +21,13 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.protocol;
+package org.jboss.arquillian.ce.api;
 
-import org.jboss.arquillian.container.test.spi.client.protocol.Protocol;
-import org.jboss.arquillian.core.spi.LoadableExtension;
-import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
-import org.kohsuke.MetaInfServices;
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-@MetaInfServices
-public class CEExtension implements LoadableExtension {
-    public void register(LoadableExtension.ExtensionBuilder builder) {
-        builder.service(Protocol.class, CEServletProtocol.class);
-        // handle client
-        builder.observer(ClientProvider.class);
-        builder.service(ResourceProvider.class, ClientProvider.class);
-    }
+public interface Client {
+    InputStream execute(int pod, String path) throws Exception;
 }
