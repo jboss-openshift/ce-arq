@@ -156,9 +156,14 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         URLChecker checker = new K8sURLChecker(client.getClient());
 
-        List<String> proxies = proxy.urls(configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), configuration.getWebContext());
-        for (String url : proxies) {
-            Containers.delayArchiveDeploy(url, configuration.getStartupTimeout(), 4000L, checker);
+        List<Servlet> servlets = context.getServlets();
+        for (Servlet servlet : servlets) {
+            if (ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME.equals(servlet.getName())) {
+                List<String> proxies = proxy.urls(configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), servlet.getContextRoot());
+                for (String url : proxies) {
+                    Containers.delayArchiveDeploy(url, configuration.getStartupTimeout(), 4000L, checker);
+                }
+            }
         }
 
         ProtocolMetaData pmd = new ProtocolMetaData();

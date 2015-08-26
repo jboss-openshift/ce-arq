@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.ContainerPort;
+import org.jboss.arquillian.ce.api.Replicas;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.Strings;
@@ -35,6 +36,7 @@ import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
+import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
 
 /**
@@ -88,11 +90,28 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
     }
 
     private int readReplicas() {
-        int max = 0;
-        for (Method c : tc.get().getMethods(TargetsContainer.class)) {
-            max = Math.max(max, Strings.parseNumber(c.getAnnotation(TargetsContainer.class).value()));
+        TestClass testClass = tc.get();
+        Replicas replicas = testClass.getAnnotation(Replicas.class);
+        int r = -1;
+        if (replicas != null) {
+            if (replicas.value() <= 0) {
+                throw new IllegalArgumentException("Non-positive replicas size: " + replicas.value());
+            }
+            r = replicas.value();
         }
-        return max + 1;
+        int max = 0;
+        for (Method c : testClass.getMethods(TargetsContainer.class)) {
+            int index = Strings.parseNumber(c.getAnnotation(TargetsContainer.class).value());
+            if (r > 0 && index >= r) {
+                throw new IllegalArgumentException(String.format("Node / pod index bigger then replicas; %s >= %s ! (%s)", index, r, c));
+            }
+            max = Math.max(max, index);
+        }
+        if (r < 0) {
+            return max + 1;
+        } else {
+            return r;
+        }
     }
 
     protected void cleanup() throws Exception {

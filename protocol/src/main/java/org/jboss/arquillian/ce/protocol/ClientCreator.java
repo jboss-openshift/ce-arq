@@ -27,6 +27,7 @@ import java.io.InputStream;
 
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClient;
 import org.jboss.arquillian.ce.api.Client;
+import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
@@ -42,7 +43,7 @@ public class ClientCreator {
     @ApplicationScoped
     InstanceProducer<Client> clientInstanceProducer;
 
-    public void createClient(final @Observes CEProtocolConfiguration configuration) {
+    public void createClient(final @Observes Configuration configuration) {
         final Proxy proxy = new Proxy(configuration.getKubernetesMaster());
         Client client = new Client() {
             @Override
