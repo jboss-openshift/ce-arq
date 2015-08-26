@@ -49,6 +49,8 @@ import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
 import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.InstanceProducer;
+import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
 import org.jboss.arquillian.test.spi.TestClass;
@@ -69,6 +71,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected final Logger log = Logger.getLogger(getClass().getName());
 
     @Inject
+    @ApplicationScoped
+    private InstanceProducer<Configuration> configurationInstanceProducer;
+
+    @Inject
     protected Instance<TestClass> tc;
 
     protected T configuration;
@@ -79,6 +85,8 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     public void setup(T configuration) {
         this.configuration = getConfigurationClass().cast(configuration);
+        this.configurationInstanceProducer.set(configuration);
+
         this.client = new K8sClient(configuration);
         this.proxy = new Proxy(client.getClient());
     }
