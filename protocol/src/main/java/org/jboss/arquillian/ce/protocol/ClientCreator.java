@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.protocol;
 
 import java.io.InputStream;
+import java.util.logging.Logger;
 
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClient;
 import org.jboss.arquillian.ce.api.Client;
@@ -38,6 +39,7 @@ import org.jboss.arquillian.core.api.annotation.Observes;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class ClientCreator {
+    private static final Logger log = Logger.getLogger(ClientCreator.class.getName());
 
     @Inject
     @ApplicationScoped
@@ -54,8 +56,11 @@ public class ClientCreator {
                     configuration.getNamespace(),
                     pod,
                     path,
-                    null
+                    ""
                 );
+
+                log.info(String.format("Invoking url: %s", url));
+
                 AsyncHttpClient httpClient = proxy.getHttpClient();
                 AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
                 return builder.execute().get().getResponseBodyAsStream();
