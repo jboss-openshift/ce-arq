@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.utils;
 
 import java.net.URL;
+import java.util.logging.Logger;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClient;
@@ -33,6 +34,8 @@ import io.fabric8.kubernetes.client.internal.com.ning.http.client.Response;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class K8sURLChecker implements URLChecker {
+    private static final Logger log = Logger.getLogger(K8sURLChecker.class.getName());
+
     private KubernetesClient client;
 
     public K8sURLChecker(KubernetesClient client) {
@@ -44,7 +47,8 @@ public class K8sURLChecker implements URLChecker {
         AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url.toExternalForm());
         try {
             Response response = builder.execute().get();
-            response.getStatusCode();
+            int statusCode = response.getStatusCode();
+            log.info(String.format("URL [%s] returned status code %s", url, statusCode));
             return true;
         } catch (Exception e) {
             return false;
