@@ -84,8 +84,8 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
             log.info(String.format("Deployed replication controller [%s]: %s", replicas, rc));
 
             return getProtocolMetaData(archive);
-        } catch (Exception e) {
-            throw new DeploymentException("Cannot deploy in CE env.", e);
+        } catch (Throwable t) {
+            throw new DeploymentException("Cannot deploy in CE env.", t);
         }
     }
 

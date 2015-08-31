@@ -66,8 +66,8 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
             log.info("Deployed replication controller: " + rc);
 
             return getProtocolMetaData(archive);
-        } catch (Exception e) {
-            throw new DeploymentException("Cannot deploy in CE env.", e);
+        } catch (Throwable t) {
+            throw new DeploymentException("Cannot deploy in CE env.", t);
         }
     }
 
