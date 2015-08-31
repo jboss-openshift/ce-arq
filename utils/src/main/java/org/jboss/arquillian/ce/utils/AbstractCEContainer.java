@@ -167,7 +167,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         List<Servlet> servlets = context.getServlets();
         for (Servlet servlet : servlets) {
             if (ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME.equals(servlet.getName())) {
-                List<String> proxies = proxy.urls(configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), servlet.getContextRoot());
+                List<String> proxies = proxy.urls(configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), servlet.getContextRoot() + "/_poke");
                 for (String url : proxies) {
                     Containers.delayArchiveDeploy(url, configuration.getStartupTimeout(), 4000L, checker);
                 }

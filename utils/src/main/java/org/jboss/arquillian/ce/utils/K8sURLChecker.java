@@ -49,8 +49,8 @@ public class K8sURLChecker implements URLChecker {
             Response response = builder.execute().get();
             int statusCode = response.getStatusCode();
             log.info(String.format("URL [%s] returned status code %s", url, statusCode));
-            // 2xx or 4xx should be OK?
-            return (inRange(statusCode, 200, 299) || inRange(statusCode, 400, 499));
+            // only 2xx should be OK?
+            return inRange(statusCode, 200, 299);
         } catch (Throwable e) {
             return false;
         }
