@@ -49,8 +49,9 @@ public class K8sURLChecker implements URLChecker {
             Response response = builder.execute().get();
             int statusCode = response.getStatusCode();
             log.info(String.format("URL [%s] returned status code %s", url, statusCode));
-            return true;
-        } catch (Exception e) {
+            // 200 or 4xx should be OK?
+            return (statusCode == 200 || (statusCode >= 400 && statusCode < 500));
+        } catch (Throwable e) {
             return false;
         }
     }
