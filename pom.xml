@@ -21,7 +21,7 @@
 
     <!-- Properties -->
     <properties>
-        <version.arquillian>1.1.7.Final</version.arquillian>
+        <version.arquillian>1.1.8.Final</version.arquillian>
         <version.dockerjava>1.4.0</version.dockerjava>
         <version.fabric8>2.2.21</version.fabric8>
         <version.meta-inf>1.1</version.meta-inf>
