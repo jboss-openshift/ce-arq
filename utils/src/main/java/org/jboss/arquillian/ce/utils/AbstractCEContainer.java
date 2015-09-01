@@ -158,8 +158,19 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return preStopHandler;
     }
 
-    protected ProtocolMetaData getProtocolMetaData(Archive<?> archive) throws Exception {
+    protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final int replicas) throws Exception {
         log.info("Creating ProtocolMetaData ...");
+
+        Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
+            public boolean check() {
+                return (proxy.podsSize(configuration.getNamespace()) >= replicas);
+            }
+
+            @Override
+            public String toString() {
+                return String.format("(Required pods: %s)", replicas);
+            }
+        });
 
         HTTPContext context = new HTTPContext("<DUMMY>", 80); // we don't use the host, as we use proxy
         addServlets(context, archive);

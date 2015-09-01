@@ -39,7 +39,7 @@ import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClien
 public class Proxy {
     private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s/proxy%s?port=8080%s";
 
-    private KubernetesClient client;
+    private final KubernetesClient client;
 
     public Proxy(String kubernetesMaster) {
         Config config = new ConfigBuilder().withMasterUrl(kubernetesMaster).build();
@@ -76,5 +76,9 @@ public class Proxy {
             urls.add(url(host, version, namespace, pod.getMetadata().getName(), path, ""));
         }
         return urls;
+    }
+
+    public int podsSize(String namespace) {
+        return client.pods().inNamespace(namespace).list().getItems().size();
     }
 }

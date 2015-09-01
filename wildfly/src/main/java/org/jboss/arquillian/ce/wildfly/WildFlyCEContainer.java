@@ -83,7 +83,7 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
             String rc = deployReplicationController(imageName, ports, "eap", replicas, configuration.getPreStopHookType(), configuration.getPreStopPath(), configuration.isIgnorePreStop());
             log.info(String.format("Deployed replication controller [%s]: %s", replicas, rc));
 
-            return getProtocolMetaData(archive);
+            return getProtocolMetaData(archive, replicas);
         } catch (Throwable t) {
             throw new DeploymentException("Cannot deploy in CE env.", t);
         }

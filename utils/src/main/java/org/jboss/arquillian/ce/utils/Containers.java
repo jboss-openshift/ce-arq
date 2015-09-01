@@ -36,6 +36,23 @@ import java.util.logging.Logger;
 public class Containers {
     private static final Logger log = Logger.getLogger(Containers.class.getName());
 
+    public static void delay(long startupTimeout, long checkPeriod, Checker checker) throws Exception {
+        long timeout = startupTimeout * 1000;
+        while (timeout > 0) {
+            Thread.sleep(checkPeriod);
+
+            if (checker.check()) {
+                log.info(String.format("Checker [%s] is ready.", checker));
+                break;
+            }
+
+            timeout -= checkPeriod;
+        }
+        if (timeout <= 0) {
+            throw new IllegalStateException(String.format("Checker [%s] failed to pass.", checker));
+        }
+    }
+
     public static void delayArchiveDeploy(String serverURL, long startupTimeout, long checkPeriod) throws Exception {
         delayArchiveDeploy(serverURL, startupTimeout, checkPeriod, new URLChecker() {
             public boolean check(URL stream) {
@@ -55,7 +72,7 @@ public class Containers {
         });
     }
 
-    public static void delayArchiveDeploy(String serverURL, long startupTimeout, long checkPeriod, URLChecker checker) throws Exception {
+    public static void delayArchiveDeploy(final String serverURL, long startupTimeout, long checkPeriod, final URLChecker checker) throws Exception {
         if (serverURL == null) {
             throw new IllegalArgumentException("Null server url");
         }
@@ -63,19 +80,17 @@ public class Containers {
         final URL server = new URL(serverURL);
         log.info(String.format("Pinging server url: %s [%ss]", serverURL, startupTimeout));
 
-        long timeout = startupTimeout * 1000;
-        while (timeout > 0) {
-            Thread.sleep(checkPeriod);
-
-            if (checker.check(server)) {
-                log.info(String.format("Server [%s] is up and running.", serverURL));
-                break;
+        final Checker c = new Checker() {
+            public boolean check() {
+                return checker.check(server);
             }
 
-            timeout -= checkPeriod;
-        }
-        if (timeout <= 0) {
-            throw new IllegalStateException(String.format("Cannot connect to server [%s], timed out.", serverURL));
-        }
+            @Override
+            public String toString() {
+                return serverURL;
+            }
+        };
+
+        delay(startupTimeout, checkPeriod, c);
     }
 }
