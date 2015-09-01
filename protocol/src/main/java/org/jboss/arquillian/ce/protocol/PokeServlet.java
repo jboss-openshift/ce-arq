@@ -40,6 +40,6 @@ public class PokeServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         log("Poke!!");
-        resp.setStatus(200);
+        resp.setStatus(HttpServletResponse.SC_OK);
     }
 }
