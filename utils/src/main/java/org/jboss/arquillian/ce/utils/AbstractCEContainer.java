@@ -159,15 +159,19 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive) throws Exception {
+        log.info("Creating ProtocolMetaData ...");
+
         HTTPContext context = new HTTPContext("<DUMMY>", 80); // we don't use the host, as we use proxy
         addServlets(context, archive);
 
         URLChecker checker = new K8sURLChecker(client.getClient());
 
         List<Servlet> servlets = context.getServlets();
+        log.info(String.format("Found servlets: %s", servlets));
         for (Servlet servlet : servlets) {
             if (ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME.equals(servlet.getName())) {
                 List<String> proxies = proxy.urls(configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), servlet.getContextRoot() + "/_poke");
+                log.info(String.format("Waiting on proxies: %s", proxies));
                 for (String url : proxies) {
                     Containers.delayArchiveDeploy(url, configuration.getStartupTimeout(), 4000L, checker);
                 }
