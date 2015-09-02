@@ -77,6 +77,11 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
             mgmt.setName("mgmt");
             mgmt.setContainerPort(configuration.getMgmtPort());
             ports.add(mgmt);
+            // jgroups / ping
+            ContainerPort ping = new ContainerPort();
+            ping.setName("ping");
+            ping.setContainerPort(8888);
+            ports.add(ping);
 
             int replicas = readReplicas();
 
