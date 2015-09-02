@@ -72,6 +72,10 @@ public class Strings {
 
     // ---
 
+    static String toValue(String value, String defaultValue) {
+        return (value != null) ? value : defaultValue;
+    }
+
     static String getSystemPropertyOrEnvVar(String key) {
         return getSystemPropertyOrEnvVar(key, null);
     }

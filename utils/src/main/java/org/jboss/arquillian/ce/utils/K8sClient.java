@@ -128,6 +128,7 @@ public class K8sClient implements Closeable {
 
         ValueExpression expression = new ValueExpression(baos.toString());
         String df = expression.resolveString(resolver);
+        log.info(String.format("Docker file:\n---\n%s---", df));
         ByteArrayInputStream bais = new ByteArrayInputStream(df.getBytes());
         try (FileOutputStream fos = new FileOutputStream(new File(dir, "Dockerfile"))) {
             copy(bais, fos);

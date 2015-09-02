@@ -23,7 +23,7 @@
 
 package org.jboss.arquillian.ce.utils;
 
-import static org.jboss.arquillian.ce.utils.Strings.*;
+import static org.jboss.arquillian.ce.utils.Strings.getSystemPropertyOrEnvVar;
 
 import java.io.Serializable;
 import java.util.Properties;
@@ -42,6 +42,9 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     private String apiVersion = getSystemPropertyOrEnvVar("kubernetes.api.version", "v1");
     private String namespace = getSystemPropertyOrEnvVar("kubernetes.namespace", "default");
+
+    private String fromParent = getSystemPropertyOrEnvVar("from.parent");
+    private String deploymentDir = getSystemPropertyOrEnvVar("deployment.dir");
 
     private String registryNamespace = getSystemPropertyOrEnvVar("kubernetes.registry.namespace", "default");
     private String registryServiceName = getSystemPropertyOrEnvVar("kubernetes.registry.service.name", "docker-registry");
@@ -65,6 +68,7 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private boolean ignoreCleanup = Boolean.parseBoolean(getSystemPropertyOrEnvVar("kubernetes.ignore.cleanup"));
 
     public void apply(Properties properties) {
+        properties.put("namespace", getNamespace());
     }
 
     public void validate() throws ConfigurationException {
@@ -106,6 +110,22 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setNamespace(String namespace) {
         this.namespace = namespace;
+    }
+
+    public String getFromParent() {
+        return fromParent;
+    }
+
+    public void setFromParent(String fromParent) {
+        this.fromParent = fromParent;
+    }
+
+    public String getDeploymentDir() {
+        return deploymentDir;
+    }
+
+    public void setDeploymentDir(String deploymentDir) {
+        this.deploymentDir = deploymentDir;
     }
 
     public String getRegistryNamespace() {

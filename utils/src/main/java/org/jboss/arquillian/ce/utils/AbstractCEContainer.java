@@ -103,9 +103,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected String buildImage(Archive<?> archive, String parent, String dir) throws IOException {
         Properties properties = new Properties();
-        String from = System.getProperty("from.name", parent);
+
+        String from = Strings.toValue(configuration.getFromParent(), parent);
         properties.put("from.name", from);
-        String deployment = System.getProperty("deployment.dir", dir);
+        String deployment = Strings.toValue(configuration.getDeploymentDir(), dir);
         properties.put("deployment.dir", deployment);
         configuration.apply(properties);
 
