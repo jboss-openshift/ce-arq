@@ -21,39 +21,11 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.protocol;
-
-import java.lang.annotation.Annotation;
-import java.util.logging.Logger;
-
-import org.jboss.arquillian.ce.api.Client;
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
+package org.jboss.arquillian.ce.api;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class ClientProvider implements ResourceProvider {
-    private static final Logger log = Logger.getLogger(ClientProvider.class.getName());
-
-    @Inject
-    Instance<Client> clientInstance;
-
-    public boolean canProvide(Class<?> type) {
-        return Client.class.isAssignableFrom(type);
-    }
-
-    public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
-        Client client = clientInstance.get();
-        if (client == null) {
-            throw new IllegalStateException("Unable to inject client into test.");
-        }
-
-        log.info(String.format("Providing client [%s] instance.", client));
-
-        return client;
-    }
-
+public interface ClientFactory {
+    Client create(); // TODO
 }

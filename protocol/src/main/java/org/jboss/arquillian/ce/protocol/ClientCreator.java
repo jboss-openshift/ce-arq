@@ -45,28 +45,30 @@ public class ClientCreator {
     @ApplicationScoped
     InstanceProducer<Client> clientInstanceProducer;
 
-    public void createClient(final @Observes Configuration configuration) {
-        final Proxy proxy = new Proxy(configuration.getKubernetesMaster());
-        Client client = new Client() {
-            @Override
-            public InputStream execute(int pod, String path) throws Exception {
-                String url = proxy.url(
-                    configuration.getKubernetesMaster(),
-                    configuration.getApiVersion(),
-                    configuration.getNamespace(),
-                    pod,
-                    path,
-                    ""
-                );
+    public synchronized void createClient(final @Observes Configuration configuration) {
+        if (clientInstanceProducer.get() == null) {
+            final Proxy proxy = new Proxy(configuration.getKubernetesMaster());
+            Client client = new Client() {
+                @Override
+                public InputStream execute(int pod, String path) throws Exception {
+                    String url = proxy.url(
+                        configuration.getKubernetesMaster(),
+                        configuration.getApiVersion(),
+                        configuration.getNamespace(),
+                        pod,
+                        path,
+                        ""
+                    );
 
-                log.info(String.format("Invoking url: %s", url));
+                    log.info(String.format("Invoking url: %s", url));
 
-                AsyncHttpClient httpClient = proxy.getHttpClient();
-                AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
-                return builder.execute().get().getResponseBodyAsStream();
-            }
-        };
-        clientInstanceProducer.set(client);
+                    AsyncHttpClient httpClient = proxy.getHttpClient();
+                    AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
+                    return builder.execute().get().getResponseBodyAsStream();
+                }
+            };
+            clientInstanceProducer.set(client);
+        }
     }
 
 }
