@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.logging.Logger;
 
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClient;
+import io.fabric8.kubernetes.client.internal.com.ning.http.client.Response;
 import org.jboss.arquillian.ce.api.Client;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Proxy;
@@ -64,7 +65,8 @@ public class ClientCreator {
 
                     AsyncHttpClient httpClient = proxy.getHttpClient();
                     AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
-                    return builder.execute().get().getResponseBodyAsStream();
+                    Response response = builder.execute().get();
+                    return response.getResponseBodyAsStream();
                 }
             };
             clientInstanceProducer.set(client);
