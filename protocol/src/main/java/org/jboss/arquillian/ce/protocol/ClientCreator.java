@@ -24,10 +24,14 @@
 package org.jboss.arquillian.ce.protocol;
 
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClient;
 import io.fabric8.kubernetes.client.internal.com.ning.http.client.Response;
+import io.fabric8.kubernetes.client.internal.com.ning.http.client.cookie.Cookie;
 import org.jboss.arquillian.ce.api.Client;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Proxy;
@@ -50,8 +54,10 @@ public class ClientCreator {
         if (clientInstanceProducer.get() == null) {
             final Proxy proxy = new Proxy(configuration.getKubernetesMaster());
             Client client = new Client() {
+                private Map<String, Cookie> cookieMap = new TreeMap<>();
+
                 @Override
-                public InputStream execute(int pod, String path) throws Exception {
+                public synchronized InputStream execute(int pod, String path) throws Exception {
                     String url = proxy.url(
                         configuration.getKubernetesMaster(),
                         configuration.getApiVersion(),
@@ -65,7 +71,30 @@ public class ClientCreator {
 
                     AsyncHttpClient httpClient = proxy.getHttpClient();
                     AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
+
+                    Cookie match = null;
+                    for (Map.Entry<String, Cookie> entry : cookieMap.entrySet()) {
+                        if (path.startsWith(entry.getKey())) {
+                            match = entry.getValue();
+                            break;
+                        }
+                    }
+                    if (match != null) {
+                        builder.addCookie(match);
+                    }
+
                     Response response = builder.execute().get();
+
+                    // handle cookies
+                    List<Cookie> cookies = response.getCookies();
+                    if (cookies != null) {
+                        for (Cookie cookie : cookies) {
+                            if (cookie.getName().equalsIgnoreCase("JSESSIONID")) {
+                                cookieMap.put(cookie.getPath(), cookie);
+                            }
+                        }
+                    }
+
                     return response.getResponseBodyAsStream();
                 }
             };
