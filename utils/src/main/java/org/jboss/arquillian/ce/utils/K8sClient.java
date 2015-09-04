@@ -113,7 +113,7 @@ public class K8sClient implements Closeable {
         return client;
     }
 
-    public String buildAndPushImage(InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
+    public String buildAndPushImage(DockerFileTemplateHandler dth, InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
         // Create Dockerfile
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
@@ -124,8 +124,12 @@ public class K8sClient implements Closeable {
 
         properties.put("deployment.name", deployment.getName());
 
-        final ValueExpressionResolver resolver = new CustomValueExpressionResolver(properties);
+        // apply custom DockerFile changes
+        if (dth != null) {
+            dth.apply(baos);
+        }
 
+        final ValueExpressionResolver resolver = new CustomValueExpressionResolver(properties);
         ValueExpression expression = new ValueExpression(baos.toString());
         String df = expression.resolveString(resolver);
         log.info(String.format("Docker file:\n---\n%s---", df));

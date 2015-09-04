@@ -70,19 +70,19 @@ public class Strings {
         return n;
     }
 
-    // ---
-
-    static String toValue(String value, String defaultValue) {
+    public static String toValue(String value, String defaultValue) {
         return (value != null) ? value : defaultValue;
     }
 
-    static String getSystemPropertyOrEnvVar(String key) {
+    public static String getSystemPropertyOrEnvVar(String key) {
         return getSystemPropertyOrEnvVar(key, null);
     }
 
-    static String getSystemPropertyOrEnvVar(String key, String defaultValue) {
+    public static String getSystemPropertyOrEnvVar(String key, String defaultValue) {
         return getSystemPropertyOrEnvVar(key, convertSystemPropertyNameToEnvVar(key), defaultValue);
     }
+
+    // ---
 
     static String toString(InputStream stream) {
         try {

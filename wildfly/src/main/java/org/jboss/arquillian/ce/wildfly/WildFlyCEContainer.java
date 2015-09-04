@@ -23,6 +23,8 @@
 
 package org.jboss.arquillian.ce.wildfly;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +47,11 @@ import org.jboss.shrinkwrap.api.Archive;
 public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfiguration> {
     public Class<WildFlyCEConfiguration> getConfigurationClass() {
         return WildFlyCEConfiguration.class;
+    }
+
+    public void apply(OutputStream outputStream) throws IOException {
+        String hqEnv = String.format("ENV HORNETQ_CLUSTER_PASSWORD %s", configuration.getHornetQClusterPassword());
+        outputStream.write(("\n" + hqEnv + "\n").getBytes());
     }
 
     @Override

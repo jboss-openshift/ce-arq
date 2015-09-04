@@ -23,6 +23,7 @@
 
 package org.jboss.arquillian.ce.web;
 
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
 
@@ -40,6 +41,10 @@ import org.jboss.shrinkwrap.api.Archive;
 public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
     public Class<WebCEConfiguration> getConfigurationClass() {
         return WebCEConfiguration.class;
+    }
+
+    public void apply(OutputStream outputStream) {
+        // nothing atm
     }
 
     @Override

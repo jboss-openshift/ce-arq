@@ -67,7 +67,7 @@ import org.jboss.shrinkwrap.descriptor.api.application7.WebType;
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public abstract class AbstractCEContainer<T extends Configuration> implements DeployableContainer<T> {
+public abstract class AbstractCEContainer<T extends Configuration> implements DeployableContainer<T>, DockerFileTemplateHandler {
     protected final Logger log = Logger.getLogger(getClass().getName());
 
     @Inject
@@ -113,7 +113,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         log.info(String.format("FROM %s [%s]", from, deployment));
 
         InputStream dockerfileTemplate = getClass().getClassLoader().getResourceAsStream("Dockerfile_template");
-        return client.buildAndPushImage(dockerfileTemplate, archive, properties);
+        return client.buildAndPushImage(this, dockerfileTemplate, archive, properties);
     }
 
     protected String deployReplicationController(String imageName, List<ContainerPort> ports, String name, int replicas, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {

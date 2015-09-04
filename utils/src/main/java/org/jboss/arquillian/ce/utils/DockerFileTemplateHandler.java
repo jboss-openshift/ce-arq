@@ -21,36 +21,22 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.wildfly;
+package org.jboss.arquillian.ce.utils;
 
-import java.io.Serializable;
-import java.util.UUID;
-
-import org.jboss.arquillian.ce.utils.Configuration;
-import org.jboss.arquillian.ce.utils.Strings;
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
+ * Custom DockerFile template handler.
+ *
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class WildFlyCEConfiguration extends Configuration implements Serializable {
-    private static final long serialVersionUID = 1L;
-
-    private int mgmtPort = Integer.parseInt(Strings.getSystemPropertyOrEnvVar("container.mgmt.port", "9990"));
-    private String hornetQClusterPassword = Strings.getSystemPropertyOrEnvVar("hornetq.cluster.password", UUID.randomUUID().toString());
-
-    public int getMgmtPort() {
-        return mgmtPort;
-    }
-
-    public void setMgmtPort(int mgmtPort) {
-        this.mgmtPort = mgmtPort;
-    }
-
-    public String getHornetQClusterPassword() {
-        return hornetQClusterPassword;
-    }
-
-    public void setHornetQClusterPassword(String hornetQClusterPassword) {
-        this.hornetQClusterPassword = hornetQClusterPassword;
-    }
+public interface DockerFileTemplateHandler {
+    /**
+     * Apply any custom cmd, envs, etc to DockerFile template outputStream.
+     *
+     * @param outputStream the DockerFile template output stream
+     * @throws IOException for any I/O error
+     */
+    void apply(OutputStream outputStream) throws IOException;
 }
