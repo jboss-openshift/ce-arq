@@ -23,17 +23,10 @@
 
 package org.jboss.arquillian.ce.protocol;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
 import java.util.Collection;
 import java.util.Timer;
 
-import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClient;
-import io.fabric8.kubernetes.client.internal.com.ning.http.client.ListenableFuture;
-import io.fabric8.kubernetes.client.internal.com.ning.http.client.Response;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
@@ -105,44 +98,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
     }
 
     protected <T> T execute(String url, Class<T> returnType, Object requestObject) throws Exception {
-        final AsyncHttpClient httpClient = proxy.getHttpClient();
-
-        AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
-
-        if (requestObject != null) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-                oos.writeObject(requestObject);
-                oos.flush();
-            } catch (Exception e) {
-                throw new RuntimeException("Error sending request Object, " + requestObject, e);
-            }
-            builder.setBody(baos.toByteArray());
-        }
-
-        ListenableFuture<Response> future = builder.execute();
-        Response response = future.get();
-
-        int responseCode = response.getStatusCode();
-
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            Object o;
-            try (ObjectInputStream ois = new ObjectInputStream(response.getResponseBodyAsStream())) {
-                o = ois.readObject();
-            }
-
-            if (returnType.isInstance(o) == false) {
-                throw new IllegalStateException("Error reading results, expected a " + returnType.getName() + " but got " + o);
-            }
-
-            return returnType.cast(o);
-        } else if (responseCode == HttpURLConnection.HTTP_NO_CONTENT) {
-            return null;
-        } else if (responseCode != HttpURLConnection.HTTP_NOT_FOUND) {
-            throw new IllegalStateException("Error launching test at " + url + ". Got " + responseCode + " (" + response.getStatusText() + ")");
-        }
-
-        return null; // TODO
+        return proxy.post(url, returnType, requestObject);
     }
 
     private int locatePodIndex(TestMethodExecutor testMethodExecutor) {
