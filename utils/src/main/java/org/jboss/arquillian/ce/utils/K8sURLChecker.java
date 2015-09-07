@@ -26,28 +26,21 @@ package org.jboss.arquillian.ce.utils;
 import java.net.URL;
 import java.util.logging.Logger;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClient;
-import io.fabric8.kubernetes.client.internal.com.ning.http.client.Response;
-
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class K8sURLChecker implements URLChecker {
     private static final Logger log = Logger.getLogger(K8sURLChecker.class.getName());
 
-    private KubernetesClient client;
+    private Proxy proxy;
 
-    public K8sURLChecker(KubernetesClient client) {
-        this.client = client;
+    public K8sURLChecker(Proxy proxy) {
+        this.proxy = proxy;
     }
 
     public boolean check(URL url) {
-        AsyncHttpClient httpClient = client.getHttpClient();
-        AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url.toExternalForm());
         try {
-            Response response = builder.execute().get();
-            int statusCode = response.getStatusCode();
+            int statusCode = proxy.status(url);
             log.info(String.format("URL [%s] returned status code %s", url, statusCode));
             // only 2xx should be OK?
             return inRange(statusCode, 200, 299);

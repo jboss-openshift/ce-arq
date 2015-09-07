@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -171,5 +172,12 @@ public class Proxy {
         }
 
         return response.getResponseBodyAsStream();
+    }
+
+    public int status(URL url) throws Exception {
+        AsyncHttpClient httpClient = getHttpClient();
+        AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url.toExternalForm());
+        Response response = builder.execute().get();
+        return response.getStatusCode();
     }
 }

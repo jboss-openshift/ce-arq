@@ -176,7 +176,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         HTTPContext context = new HTTPContext("<DUMMY>", 80); // we don't use the host, as we use proxy
         addServlets(context, archive);
 
-        URLChecker checker = new K8sURLChecker(client.getClient());
+        URLChecker checker = new K8sURLChecker(proxy);
 
         List<Servlet> servlets = context.getServlets();
         log.info(String.format("Found servlets: %s", servlets));
