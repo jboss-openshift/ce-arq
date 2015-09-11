@@ -146,6 +146,9 @@ public class K8sClient implements Closeable {
         Service service = getService(configuration.getRegistryNamespace(), configuration.getRegistryServiceName());
         ServiceSpec spec = service.getSpec();
         String ip = spec.getClusterIP();
+        if (ip == null) {
+            ip = spec.getPortalIP();
+        }
         Integer port = findHttpServicePort(spec.getPorts());
 
         // our Docker image name
