@@ -283,7 +283,8 @@ public class K8sClient implements Closeable, RegistryLookup {
             try {
                 boolean exists = client.services().inNamespace(configuration.getNamespace()).withName(id).delete();
                 log.info(String.format("Service [%s] delete: %s.", id, exists));
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                log.info(String.format("Exception while deleting service [%s]: %s", id, e));
             }
         }
     }
@@ -293,7 +294,8 @@ public class K8sClient implements Closeable, RegistryLookup {
             try {
                 boolean exists = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(id).delete();
                 log.info(String.format("RC [%s] delete: %s.", id, exists));
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                log.info(String.format("Exception while deleting RC [%s]: %s", id, e));
             }
         }
     }
@@ -309,7 +311,8 @@ public class K8sClient implements Closeable, RegistryLookup {
                         log.info(String.format("Pod [%s] delete: %s.", podId, exists));
                     }
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                log.info(String.format("Exception while deleting pod [%s]: %s", name, e));
             }
         }
     }
