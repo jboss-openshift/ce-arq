@@ -45,6 +45,8 @@ import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.command.BuildImageResultCallback;
+import com.github.dockerjava.core.command.PushImageResultCallback;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -185,23 +187,15 @@ public class K8sClient implements Closeable, RegistryLookup {
         log.info(String.format("Docker client: %s", configuration.getDockerUrl()));
 
         // Build image on your Docker host
-        String imageId;
         try (BuildImageCmd buildImageCmd = dockerClient.buildImageCmd(dir)) {
-            buildImageCmd.withTag(imageName);
-            BuildImageCmd.Response response = buildImageCmd.exec();
-            String output = Strings.toString(response);
-            imageId = Strings.substringBetween(output, "Successfully built ", "\\n\"}");
-            if (imageId == null) {
-                throw new IOException(String.format("Error building image: %s", output));
-            }
+            String imageId = buildImageCmd.withTag(imageName).exec(new BuildImageResultCallback()).awaitImageId();
             log.info(String.format("Built image: %s", imageId));
         }
 
         // Push image to Docker registry service
         try (PushImageCmd pushImageCmd = dockerClient.pushImageCmd(imageName)) {
-            PushImageCmd.Response response = pushImageCmd.exec();
-            String pushInfo = Strings.toString(response);
-            log.info(String.format("Push image [%s] info: %s", imageName, pushInfo));
+            pushImageCmd.exec(new PushImageResultCallback()).awaitSuccess();
+            log.info(String.format("Pushed image %s.", imageName));
         }
 
         return imageName;
