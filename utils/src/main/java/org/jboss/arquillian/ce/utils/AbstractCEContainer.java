@@ -88,7 +88,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         this.configurationInstanceProducer.set(configuration);
 
         this.client = new K8sClient(configuration);
-        this.proxy = new Proxy(client.getClient());
+        this.proxy = client.createProxy();
     }
 
     public void start() throws LifecycleException {

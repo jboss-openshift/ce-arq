@@ -74,7 +74,7 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class K8sClient implements Closeable {
+public class K8sClient implements Closeable, RegistryLookup {
     private final static Logger log = Logger.getLogger(K8sClient.class.getName());
     private static final File tmpDir;
 
@@ -85,6 +85,7 @@ public class K8sClient implements Closeable {
     private final Configuration configuration;
     private final KubernetesClient client;
     private File dir;
+    private RegistryLookup lookup;
 
     protected static File getTempRoot() {
         return AccessController.doPrivileged(new PrivilegedAction<File>() {
@@ -107,10 +108,28 @@ public class K8sClient implements Closeable {
         if (this.dir.mkdirs() == false) {
             throw new IllegalStateException("Cannot create dir: " + dir);
         }
+
+        if ("static".equalsIgnoreCase(configuration.getRegistryType())) {
+            lookup = new StaticRegistryLookup(configuration);
+        } else {
+            lookup = this;
+        }
     }
 
-    public KubernetesClient getClient() {
-        return client;
+    public RegistryLookupEntry lookup() {
+        // Grab Docker registry service
+        Service service = getService(configuration.getRegistryNamespace(), configuration.getRegistryServiceName());
+        ServiceSpec spec = service.getSpec();
+        String ip = spec.getClusterIP();
+        if (ip == null) {
+            ip = spec.getPortalIP();
+        }
+        Integer port = findHttpServicePort(spec.getPorts());
+        return new RegistryLookupEntry(ip, String.valueOf(port));
+    }
+
+    public Proxy createProxy() {
+        return new Proxy(client);
     }
 
     public String buildAndPushImage(DockerFileTemplateHandler dth, InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
@@ -143,16 +162,16 @@ public class K8sClient implements Closeable {
         exporter.exportTo(new File(dir, deployment.getName()));
 
         // Grab Docker registry service
-        Service service = getService(configuration.getRegistryNamespace(), configuration.getRegistryServiceName());
-        ServiceSpec spec = service.getSpec();
-        String ip = spec.getClusterIP();
-        if (ip == null) {
-            ip = spec.getPortalIP();
-        }
-        Integer port = findHttpServicePort(spec.getPorts());
+        RegistryLookupEntry rle = lookup.lookup();
 
+        String port = rle.getPort();
         // our Docker image name
-        final String imageName = String.format("%s:%s/%s/%s", ip, port, configuration.getProject(), configuration.getImageName());
+        String imageName;
+        if (port != null) {
+            imageName = String.format("%s:%s/%s/%s", rle.getIp(), rle.getPort(), configuration.getProject(), configuration.getImageName());
+        } else {
+            imageName = String.format("%s/%s/%s", rle.getIp(), configuration.getProject(), configuration.getImageName());
+        }
         log.info(String.format("Docker image name: %s", imageName));
 
         // Docker-java requires AuthConfig, hence this user/pass stuff

@@ -46,6 +46,9 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private String fromParent = getSystemPropertyOrEnvVar("from.parent");
     private String deploymentDir = getSystemPropertyOrEnvVar("deployment.dir");
 
+    private String registryType = getSystemPropertyOrEnvVar("kubernetes.registry.type", "static");
+    private String registryURL = getSystemPropertyOrEnvVar("kubernetes.registry.url", "ce-registry.usersys.redhat.com");
+    private String registryPort = getSystemPropertyOrEnvVar("kubernetes.registry.port");
     private String registryNamespace = getSystemPropertyOrEnvVar("kubernetes.registry.namespace", "default");
     private String registryServiceName = getSystemPropertyOrEnvVar("kubernetes.registry.service.name", "docker-registry");
 
@@ -126,6 +129,30 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setDeploymentDir(String deploymentDir) {
         this.deploymentDir = deploymentDir;
+    }
+
+    public String getRegistryType() {
+        return registryType;
+    }
+
+    public void setRegistryType(String registryType) {
+        this.registryType = registryType;
+    }
+
+    public String getRegistryURL() {
+        return registryURL;
+    }
+
+    public void setRegistryURL(String registryURL) {
+        this.registryURL = registryURL;
+    }
+
+    public String getRegistryPort() {
+        return registryPort;
+    }
+
+    public void setRegistryPort(String registryPort) {
+        this.registryPort = registryPort;
     }
 
     public String getRegistryNamespace() {
