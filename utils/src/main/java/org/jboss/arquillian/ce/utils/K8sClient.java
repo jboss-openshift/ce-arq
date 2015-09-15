@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.github.dockerjava.api.DockerClient;
@@ -275,10 +276,10 @@ public class K8sClient implements Closeable, RegistryLookup {
     public void cleanServices(String... ids) throws Exception {
         for (String id : ids) {
             try {
-                boolean exists = client.services().inNamespace(configuration.getNamespace()).withName(id).delete();
+                boolean exists = client.services().inNamespace(configuration.getNamespace()).withName(id).cascading(false).delete();
                 log.info(String.format("Service [%s] delete: %s.", id, exists));
             } catch (Exception e) {
-                log.info(String.format("Exception while deleting service [%s]: %s", id, e));
+                log.log(Level.WARNING, String.format("Exception while deleting service [%s]: %s", id, e), e);
             }
         }
     }
@@ -286,10 +287,10 @@ public class K8sClient implements Closeable, RegistryLookup {
     public void cleanReplicationControllers(String... ids) throws Exception {
         for (String id : ids) {
             try {
-                boolean exists = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(id).delete();
+                boolean exists = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(id).cascading(false).delete();
                 log.info(String.format("RC [%s] delete: %s.", id, exists));
             } catch (Exception e) {
-                log.info(String.format("Exception while deleting RC [%s]: %s", id, e));
+                log.log(Level.WARNING, String.format("Exception while deleting RC [%s]: %s", id, e), e);
             }
         }
     }
@@ -301,12 +302,12 @@ public class K8sClient implements Closeable, RegistryLookup {
                 for (Pod pod : pods.getItems()) {
                     String podId = KubernetesHelper.getName(pod);
                     if (podId.startsWith(name)) {
-                        boolean exists = client.pods().inNamespace(configuration.getNamespace()).withName(podId).delete();
+                        boolean exists = client.pods().inNamespace(configuration.getNamespace()).withName(podId).cascading(false).delete();
                         log.info(String.format("Pod [%s] delete: %s.", podId, exists));
                     }
                 }
             } catch (Exception e) {
-                log.info(String.format("Exception while deleting pod [%s]: %s", name, e));
+                log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", name, e), e);
             }
         }
     }
