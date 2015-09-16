@@ -66,7 +66,7 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     private String webContext = getSystemPropertyOrEnvVar("arquillian.server.context", "");
 
-    private long startupTimeout = Integer.parseInt(getSystemPropertyOrEnvVar("arquillian.startup.timeout", "60")); // 60sec
+    private long startupTimeout = Integer.parseInt(getSystemPropertyOrEnvVar("arquillian.startup.timeout", "300")); // 5min ...
 
     private boolean ignoreCleanup = Boolean.parseBoolean(getSystemPropertyOrEnvVar("kubernetes.ignore.cleanup"));
 
