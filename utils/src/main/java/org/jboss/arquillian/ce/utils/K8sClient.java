@@ -107,16 +107,26 @@ public class K8sClient implements Closeable, RegistryLookup {
 
         this.client = new DefaultKubernetesClient(config);
 
-        this.dir = new File(tmpDir, "ce_" + UUID.randomUUID().toString());
-        if (this.dir.mkdirs() == false) {
-            throw new IllegalStateException("Cannot create dir: " + dir);
-        }
-
         if ("static".equalsIgnoreCase(configuration.getRegistryType())) {
             lookup = new StaticRegistryLookup(configuration);
         } else {
             lookup = this;
         }
+    }
+
+    void prepare() {
+        this.dir = new File(tmpDir, "ce_" + UUID.randomUUID().toString());
+        if (this.dir.mkdirs() == false) {
+            throw new IllegalStateException("Cannot create dir: " + dir);
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    void reset() {
+        for (File file : dir.listFiles()) {
+            file.delete();
+        }
+        dir.delete();
     }
 
     public RegistryLookupEntry lookup() {
@@ -316,12 +326,10 @@ public class K8sClient implements Closeable, RegistryLookup {
         return client.replicationControllers().inNamespace(configuration.getNamespace()).create(rc).getMetadata().getName();
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public void close() throws IOException {
-        for (File file : dir.listFiles()) {
-            file.delete();
+        if (client != null) {
+            client.close();
         }
-        dir.delete();
     }
 
     static IntOrString toIntOrString(ContainerPort port) {

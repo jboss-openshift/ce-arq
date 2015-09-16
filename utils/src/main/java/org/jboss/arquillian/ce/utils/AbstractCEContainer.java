@@ -86,15 +86,26 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     public void setup(T configuration) {
         this.configuration = getConfigurationClass().cast(configuration);
         this.configurationInstanceProducer.set(configuration);
+    }
 
+    public void start() throws LifecycleException {
         this.client = new K8sClient(configuration);
         this.proxy = client.createProxy();
     }
 
-    public void start() throws LifecycleException {
+    public void stop() throws LifecycleException {
+        try {
+            client.close();
+        } catch (IOException e) {
+            throw new LifecycleException("Error closing Kubernetes client.", e);
+        }
     }
 
-    public void stop() throws LifecycleException {
+    protected abstract ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException;
+
+    public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
+        client.prepare();
+        return doDeploy(archive);
     }
 
     public ProtocolDescription getDefaultProtocol() {
@@ -249,10 +260,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             log.info("Ignore Kubernetes cleanup -- test config is still available.");
         }
 
-        try {
-            client.close();
-        } catch (IOException ignored) {
-        }
+        client.reset();
     }
 
     public void deploy(Descriptor descriptor) throws DeploymentException {

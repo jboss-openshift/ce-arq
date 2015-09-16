@@ -52,7 +52,7 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
         return new ProtocolDescription(CEServletProtocol.PROTOCOL_NAME);
     }
 
-    public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
+    public ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException {
         try {
             String imageName = buildImage(archive, "registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:3.0", "/opt/webserver/webapps/");
 

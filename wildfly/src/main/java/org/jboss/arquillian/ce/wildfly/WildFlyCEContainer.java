@@ -59,7 +59,7 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
         return new ProtocolDescription(CEServletProtocol.PROTOCOL_NAME);
     }
 
-    public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
+    public ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException {
         try {
             String imageName = buildImage(archive, "registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4", "/opt/eap/standalone/deployments/");
 
