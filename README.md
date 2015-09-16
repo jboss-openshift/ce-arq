@@ -32,6 +32,10 @@ Additional properties you **can** set / change.
 
 -Ddocker.test.image=[Docker test image name], default is "cetestimage"
 
+-Ddocker.test.tag=[Docker test image tag], default is ":latest"
+
+-Ddocker.test.pull.policy=[Docker test image pull policy], default is "Always"
+
 -Dkubernetes.namespace=[K8s/OpenShift namespace], default is "default"
 
 -Dkubernetes.registry.namespace=[K8s/OpenShift docker-registry namespace], default is "default"

@@ -138,7 +138,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             lifecycle.setPreStop(preStopHandler);
         }
         List<VolumeMount> volumes = Collections.emptyList();
-        Container container = client.createContainer(imageName, name + "-container", envVars, ports, volumes, lifecycle);
+        Container container = client.createContainer(imageName, name + "-container", envVars, ports, volumes, lifecycle, configuration.getImagePullPolicy());
 
         List<Container> containers = Collections.singletonList(container);
         Map<String, String> podLabels = Collections.singletonMap("name", name + "Pod");

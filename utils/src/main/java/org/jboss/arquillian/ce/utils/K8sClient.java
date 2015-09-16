@@ -181,9 +181,9 @@ public class K8sClient implements Closeable, RegistryLookup {
         // our Docker image name
         String imageName;
         if (port != null) {
-            imageName = String.format("%s:%s/%s/%s", rle.getIp(), rle.getPort(), configuration.getProject(), configuration.getImageName());
+            imageName = String.format("%s:%s/%s/%s%s", rle.getIp(), rle.getPort(), configuration.getProject(), configuration.getImageName(), configuration.getImageTag());
         } else {
-            imageName = String.format("%s/%s/%s", rle.getIp(), configuration.getProject(), configuration.getImageName());
+            imageName = String.format("%s/%s/%s%s", rle.getIp(), configuration.getProject(), configuration.getImageName(), configuration.getImageTag());
         }
         log.info(String.format("Docker image name: %s", imageName));
 
@@ -239,7 +239,7 @@ public class K8sClient implements Closeable, RegistryLookup {
         return client.services().inNamespace(namespace).withName(serviceName).get();
     }
 
-    public Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle) throws Exception {
+    public Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle, String imagePullPolicy) throws Exception {
         Container container = new Container();
         container.setImage(image);
         container.setName(name);
@@ -247,6 +247,7 @@ public class K8sClient implements Closeable, RegistryLookup {
         container.setPorts(ports);
         container.setVolumeMounts(volumes);
         container.setLifecycle(lifecycle);
+        container.setImagePullPolicy(imagePullPolicy);
         return container;
     }
 

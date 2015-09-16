@@ -58,6 +58,8 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     private String project = getSystemPropertyOrEnvVar("docker.test.namespace", "default");
     private String imageName = getSystemPropertyOrEnvVar("docker.test.image", "cetestimage");
+    private String imageTag = getSystemPropertyOrEnvVar("docker.test.tag", ":latest");
+    private String imagePullPolicy = getSystemPropertyOrEnvVar("docker.test.pull.policy", "Always");
 
     private String username = getSystemPropertyOrEnvVar("docker.username", "");
     private String password = getSystemPropertyOrEnvVar("docker.password", "");
@@ -209,6 +211,22 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setImageName(String imageName) {
         this.imageName = imageName;
+    }
+
+    public String getImageTag() {
+        return imageTag;
+    }
+
+    public void setImageTag(String imageTag) {
+        this.imageTag = imageTag;
+    }
+
+    public String getImagePullPolicy() {
+        return imagePullPolicy;
+    }
+
+    public void setImagePullPolicy(String imagePullPolicy) {
+        this.imagePullPolicy = imagePullPolicy;
     }
 
     public String getUsername() {
