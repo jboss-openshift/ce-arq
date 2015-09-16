@@ -58,7 +58,7 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     private String project = getSystemPropertyOrEnvVar("docker.test.namespace", "default");
     private String imageName = getSystemPropertyOrEnvVar("docker.test.image", "cetestimage");
-    private String imageTag = getSystemPropertyOrEnvVar("docker.test.tag", ":latest");
+    private String imageTag = getSystemPropertyOrEnvVar("docker.test.tag", "latest");
     private String imagePullPolicy = getSystemPropertyOrEnvVar("docker.test.pull.policy", "Always");
 
     private String username = getSystemPropertyOrEnvVar("docker.username", "");
@@ -182,7 +182,7 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     }
 
     public String getPreStopPath() {
-        return ("NONE".equals(preStopPath)) ? null : preStopPath;
+        return preStopPath;
     }
 
     public void setPreStopPath(String preStopPath) {

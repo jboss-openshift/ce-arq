@@ -181,9 +181,9 @@ public class K8sClient implements Closeable, RegistryLookup {
         // our Docker image name
         String imageName;
         if (port != null) {
-            imageName = String.format("%s:%s/%s/%s%s", rle.getIp(), rle.getPort(), configuration.getProject(), configuration.getImageName(), configuration.getImageTag());
+            imageName = String.format("%s:%s/%s/%s", rle.getIp(), rle.getPort(), configuration.getProject(), configuration.getImageName());
         } else {
-            imageName = String.format("%s/%s/%s%s", rle.getIp(), configuration.getProject(), configuration.getImageName(), configuration.getImageTag());
+            imageName = String.format("%s/%s/%s", rle.getIp(), configuration.getProject(), configuration.getImageName());
         }
         log.info(String.format("Docker image name: %s", imageName));
 
@@ -205,11 +205,20 @@ public class K8sClient implements Closeable, RegistryLookup {
 
         // Push image to Docker registry service
         try (PushImageCmd pushImageCmd = dockerClient.pushImageCmd(imageName)) {
+            String imageTag = configuration.getImageTag();
+            if (imageTag != null) {
+                pushImageCmd.withTag(imageTag);
+            }
             pushImageCmd.exec(new PushImageResultCallback()).awaitSuccess();
-            log.info(String.format("Pushed image %s.", imageName));
+            log.info(String.format("Pushed image %s with tag %s.", imageName, imageTag));
         }
 
-        return imageName;
+        StringBuilder fullImageName = new StringBuilder(imageName);
+        String imageTag = configuration.getImageTag();
+        if (imageTag != null) {
+            fullImageName.append(":").append(imageTag);
+        }
+        return fullImageName.toString();
     }
 
     public String deployService(String name, Service.ApiVersion apiVersion, String portName, int port, int containerPort, Map<String, String> selector) throws Exception {

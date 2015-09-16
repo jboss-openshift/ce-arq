@@ -36,18 +36,22 @@ import org.apache.commons.io.LineIterator;
 public class Strings {
     private static final int INDEX_NOT_FOUND = -1;
 
+    private static String checkForNone(String value) {
+        return "__none".equalsIgnoreCase(value) ? null : value;
+    }
+
     private static String getSystemPropertyOrEnvVar(String systemPropertyName, String envVarName, String defaultValue) {
         String answer = System.getProperty(systemPropertyName);
         if (answer != null) {
-            return answer;
+            return checkForNone(answer);
         }
 
         answer = System.getenv(envVarName);
         if (answer != null) {
-            return answer;
+            return checkForNone(answer);
         }
 
-        return defaultValue;
+        return checkForNone(defaultValue);
     }
 
     private static String convertSystemPropertyNameToEnvVar(String systemPropertyName) {

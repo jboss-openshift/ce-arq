@@ -32,7 +32,7 @@ Additional properties you **can** set / change.
 
 -Ddocker.test.image=[Docker test image name], default is "cetestimage"
 
--Ddocker.test.tag=[Docker test image tag], default is ":latest"
+-Ddocker.test.tag=[Docker test image tag], default is "latest"
 
 -Ddocker.test.pull.policy=[Docker test image pull policy], default is "Always"
 
