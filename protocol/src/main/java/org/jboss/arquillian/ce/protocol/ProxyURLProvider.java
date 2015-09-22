@@ -76,7 +76,13 @@ public class ProxyURLProvider implements ResourceProvider {
     public Object lookup(ArquillianResource arquillianResource, Annotation... annotations) {
         try {
             Configuration c = configurationInstance.get();
-            String spec = getProxy().url(c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), 0, getContext(), null);
+
+            String context = getContext();
+            if (context.endsWith("/") == false) {
+                context = context + "/";
+            }
+
+            String spec = getProxy().url(c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), 0, context, null);
             return new URL(spec);
         } catch (Exception e) {
             throw new IllegalStateException(e);
