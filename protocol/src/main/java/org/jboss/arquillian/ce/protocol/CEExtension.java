@@ -38,5 +38,16 @@ public class CEExtension implements LoadableExtension {
         // handle client
         builder.observer(ClientCreator.class);
         builder.service(ResourceProvider.class, ClientProvider.class);
+        // override url
+        Class<ResourceProvider> urpClass = (Class<ResourceProvider>) loadClass("org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider");
+        builder.override(ResourceProvider.class, urpClass, ProxyURLProvider.class);
+    }
+
+    private Class<?> loadClass(String className) {
+        try {
+            return getClass().getClassLoader().loadClass(className);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

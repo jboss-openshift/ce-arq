@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.net.ssl.SSLContext;
+
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
@@ -64,6 +66,10 @@ public class Proxy {
 
     private AsyncHttpClient getHttpClient() {
         return client.getHttpClient();
+    }
+
+    public void setDefaultSSLContext() {
+        SSLContext.setDefault(getHttpClient().getConfig().getSSLContext());
     }
 
     public String url(String host, String version, String namespace, String podName, String path, String parameters) {
