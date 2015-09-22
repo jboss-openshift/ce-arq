@@ -48,7 +48,7 @@ import io.fabric8.kubernetes.client.internal.com.ning.http.client.cookie.Cookie;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class Proxy {
-    private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s/proxy%s?port=8080%s";
+    private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s:8080/proxy%s";
 
     private final KubernetesClient client;
     private final Map<String, Cookie> cookieMap = new HashMap<>();
@@ -67,7 +67,8 @@ public class Proxy {
     }
 
     public String url(String host, String version, String namespace, String podName, String path, String parameters) {
-        return String.format(PROXY_URL, host, version, namespace, podName, path, parameters);
+        String url = String.format(PROXY_URL, host, version, namespace, podName, path);
+        return (parameters != null && parameters.length() > 0) ? url + "?" + parameters : url;
     }
 
     public String url(String host, String version, String namespace, int index, String path, String parameters) {
@@ -85,7 +86,7 @@ public class Proxy {
 
         List<String> urls = new ArrayList<>();
         for (Pod pod : items) {
-            urls.add(url(host, version, namespace, pod.getMetadata().getName(), path, ""));
+            urls.add(url(host, version, namespace, pod.getMetadata().getName(), path, null));
         }
         return urls;
     }
@@ -142,7 +143,7 @@ public class Proxy {
             configuration.getNamespace(),
             pod,
             path,
-            ""
+            null
         );
 
         AsyncHttpClient httpClient = getHttpClient();
