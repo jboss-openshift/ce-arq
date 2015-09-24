@@ -25,6 +25,7 @@ package org.jboss.arquillian.ce.protocol;
 
 import java.lang.annotation.Annotation;
 import java.net.URL;
+import java.util.Collection;
 
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Proxy;
@@ -36,6 +37,8 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
+import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -59,6 +62,15 @@ public class ProxyURLProvider implements ResourceProvider {
 
     private String getContext() {
         ProtocolMetaData pmd = protocolMetaDataInstance.get();
+
+        Collection<Archive> archives = pmd.getContexts(Archive.class);
+        if (archives.size() > 0) {
+            Archive top = archives.iterator().next();
+            if (top instanceof EnterpriseArchive) {
+                return "";
+            }
+        }
+
         for (HTTPContext httpContext : pmd.getContexts(HTTPContext.class)) {
             for (Servlet servlet : httpContext.getServlets()) {
                 if (ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME.equals(servlet.getName())) {
