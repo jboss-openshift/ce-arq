@@ -81,7 +81,19 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected K8sClient client;
     protected Proxy proxy;
 
-    protected abstract void cleanup() throws Exception;
+    protected String getName(String prefix, Archive<?> archive) {
+        String name = archive.getName();
+        int p = name.lastIndexOf(".");
+        return (prefix + name.substring(0, p)).toLowerCase();
+    }
+
+    protected abstract String getPrefix();
+
+    protected void cleanup(Archive<?> archive) throws Exception {
+        String name = getName(getPrefix(), archive) + "rc";
+        client.cleanReplicationControllers(name);
+        client.cleanPods(name);
+    }
 
     public void setup(T configuration) {
         this.configuration = getConfigurationClass().cast(configuration);
@@ -104,7 +116,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected abstract ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException;
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
-        client.prepare();
+        client.prepare(archive);
         return doDeploy(archive);
     }
 
@@ -127,7 +139,8 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return client.buildAndPushImage(this, dockerfileTemplate, archive, properties);
     }
 
-    protected String deployReplicationController(String imageName, List<ContainerPort> ports, String name, int replicas, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
+    protected String deployReplicationController(Archive<?> archive, String imageName, List<ContainerPort> ports, int replicas, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
+        String name = getName(getPrefix(), archive);
         String apiVersion = configuration.getApiVersion();
 
         List<EnvVar> envVars = Collections.emptyList();
@@ -254,14 +267,14 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         // do we keep test config around for some more?
         if (configuration.isIgnoreCleanup() == false) {
             try {
-                cleanup();
+                cleanup(archive);
             } catch (Exception ignored) {
             }
         } else {
             log.info("Ignore Kubernetes cleanup -- test config is still available.");
         }
 
-        client.reset();
+        client.reset(archive);
     }
 
     public void deploy(Descriptor descriptor) throws DeploymentException {

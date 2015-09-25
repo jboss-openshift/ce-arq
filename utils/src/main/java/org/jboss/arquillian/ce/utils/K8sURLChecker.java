@@ -40,7 +40,7 @@ public class K8sURLChecker implements URLChecker {
 
     public boolean check(URL url) {
         try {
-            int statusCode = proxy.status(url);
+            int statusCode = proxy.status(url.toExternalForm());
             log.info(String.format("URL [%s] returned status code %s", url, statusCode));
             // only 2xx should be OK?
             return inRange(statusCode, 200, 299);

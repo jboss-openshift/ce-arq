@@ -57,7 +57,7 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
             String imageName = buildImage(archive, "registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:3.0", "/opt/webserver/webapps/");
 
             // clean old k8s stuff
-            cleanup();
+            cleanup(archive);
 
             // add new k8s config
 
@@ -67,7 +67,7 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
             http.setContainerPort(8080);
             List<ContainerPort> ports = Collections.singletonList(http);
 
-            String rc = deployReplicationController(imageName, ports, "jws", 1, null, null, true);
+            String rc = deployReplicationController(archive, imageName, ports, 1, null, null, true);
             log.info("Deployed replication controller: " + rc);
 
             return getProtocolMetaData(archive, 1);
@@ -76,9 +76,8 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
         }
     }
 
-    protected void cleanup() throws Exception {
-        client.cleanReplicationControllers("jwsrc");
-        client.cleanPods("jwsrc");
+    protected String getPrefix() {
+        return "jws";
     }
 
 }

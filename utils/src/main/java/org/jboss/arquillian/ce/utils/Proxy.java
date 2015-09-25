@@ -28,7 +28,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -181,10 +181,34 @@ public class Proxy {
         return response.getResponseBodyAsStream();
     }
 
-    public int status(URL url) throws Exception {
-        AsyncHttpClient httpClient = getHttpClient();
-        AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url.toExternalForm());
-        Response response = builder.execute().get();
-        return response.getStatusCode();
+    public int status(String url) {
+        try {
+            AsyncHttpClient httpClient = getHttpClient();
+            AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
+            Response response = builder.execute().get();
+            return response.getStatusCode();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public Map.Entry<Integer, String> findPod(Configuration configuration, String path) {
+        String host = configuration.getKubernetesMaster();
+        String version = configuration.getApiVersion();
+        String namespace = configuration.getNamespace();
+        return findPod(host, version, namespace, path);
+    }
+
+    public Map.Entry<Integer, String> findPod(String host, String version, String namespace, String path) {
+        List<Pod> items = client.pods().inNamespace(namespace).list().getItems();
+        int i;
+        for (i = 0; i < items.size(); i++) {
+            String podName = items.get(i).getMetadata().getName();
+            String url = url(host, version, namespace, podName, path, null);
+            if (status(url) == 200) {
+                return new AbstractMap.SimpleEntry<>(i, podName);
+            }
+        }
+        throw new IllegalArgumentException(String.format("No matching pod: %s, path: %s", items, path));
     }
 }

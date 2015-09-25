@@ -64,7 +64,7 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
             String imageName = buildImage(archive, "registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4", "/opt/eap/standalone/deployments/");
 
             // clean old k8s stuff
-            cleanup();
+            cleanup(archive);
 
             // add new k8s config
 
@@ -92,7 +92,7 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
 
             int replicas = readReplicas();
 
-            String rc = deployReplicationController(imageName, ports, "eap", replicas, configuration.getPreStopHookType(), configuration.getPreStopPath(), configuration.isIgnorePreStop());
+            String rc = deployReplicationController(archive, imageName, ports, replicas, configuration.getPreStopHookType(), configuration.getPreStopPath(), configuration.isIgnorePreStop());
             log.info(String.format("Deployed replication controller [%s]: %s", replicas, rc));
 
             return getProtocolMetaData(archive, replicas);
@@ -126,9 +126,7 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
         }
     }
 
-    protected void cleanup() throws Exception {
-        client.cleanReplicationControllers("eaprc");
-        client.cleanPods("eaprc");
+    protected String getPrefix() {
+        return "eap";
     }
-
 }

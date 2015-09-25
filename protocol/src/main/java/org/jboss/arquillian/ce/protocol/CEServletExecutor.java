@@ -25,13 +25,16 @@ package org.jboss.arquillian.ce.protocol;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Timer;
+import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
+import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.container.test.spi.command.CommandCallback;
 import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
@@ -42,6 +45,8 @@ import org.jboss.arquillian.test.spi.TestResult;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class CEServletExecutor extends ServletMethodExecutor {
+    private static final Logger log = Logger.getLogger(CEServletExecutor.class.getName());
+
     private String contextRoot;
     private Proxy proxy;
 
@@ -109,7 +114,27 @@ public class CEServletExecutor extends ServletMethodExecutor {
             String value = tc.value();
             index = Strings.parseNumber(value);
         }
+
+        OperateOnDeployment ood = method.getAnnotation(OperateOnDeployment.class);
+        if (ood != null) {
+            return findDeploymentsPod();
+        }
+
         return index;
     }
-}
 
+    /**
+     * Poke all pods, and see which one responds with 200 ... any better way?
+     */
+    private int findDeploymentsPod() {
+        log.info(String.format("Searching for pod with context %s ...", contextRoot));
+        String host = config().getKubernetesMaster();
+        String version = config().getApiVersion();
+        String namespace = config().getNamespace();
+        Map.Entry<Integer, String> entry = proxy.findPod(host, version, namespace, contextRoot + "/_poke");
+        int index = entry.getKey();
+        log.info(String.format("Found '%s' context on #%s pod, pod: %s", contextRoot, index, entry.getValue()));
+        return index;
+    }
+
+}

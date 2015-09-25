@@ -34,6 +34,7 @@ import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -87,7 +88,7 @@ public class K8sClient implements Closeable, RegistryLookup {
 
     private final Configuration configuration;
     private final KubernetesClient client;
-    private File dir;
+    private Map<String, File> dirs = new HashMap<>();
     private RegistryLookup lookup;
 
     protected static File getTempRoot() {
@@ -114,15 +115,25 @@ public class K8sClient implements Closeable, RegistryLookup {
         }
     }
 
-    void prepare() {
-        this.dir = new File(tmpDir, "ce_" + UUID.randomUUID().toString());
-        if (this.dir.mkdirs() == false) {
+    private File getDir(Archive<?> archive) {
+        File dir = dirs.get(archive.getName());
+        if (dir == null) {
+            throw new IllegalArgumentException(String.format("Missing temp dir for archive %s", archive.getName()));
+        }
+        return dir;
+    }
+
+    void prepare(Archive<?> archive) {
+        File dir = new File(tmpDir, "ce_" + UUID.randomUUID().toString());
+        if (dir.mkdirs() == false) {
             throw new IllegalStateException("Cannot create dir: " + dir);
         }
+        dirs.put(archive.getName(), dir);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    void reset() {
+    void reset(Archive<?> archive) {
+        File dir = getDir(archive);
         for (File file : dir.listFiles()) {
             file.delete();
         }
@@ -160,6 +171,8 @@ public class K8sClient implements Closeable, RegistryLookup {
         if (dth != null) {
             dth.apply(baos);
         }
+
+        final File dir = getDir(deployment);
 
         final ValueExpressionResolver resolver = new CustomValueExpressionResolver(properties);
         ValueExpression expression = new ValueExpression(baos.toString());
