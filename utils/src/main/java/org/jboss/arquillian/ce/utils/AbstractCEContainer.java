@@ -84,7 +84,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected String getName(String prefix, Archive<?> archive) {
         String name = archive.getName();
         int p = name.lastIndexOf(".");
-        return (prefix + name.substring(0, p)).toLowerCase();
+        return (prefix + name.substring(0, p) + name.substring(p + 1)).toLowerCase();
     }
 
     protected abstract String getPrefix();
