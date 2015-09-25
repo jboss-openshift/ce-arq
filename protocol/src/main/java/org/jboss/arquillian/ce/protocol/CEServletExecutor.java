@@ -87,6 +87,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
         int index = locatePodIndex(testMethodExecutor);
 
         String url = proxy.url(host, version, namespace, index, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
+        log.info(String.format("Invoking test, url: %s", url));
         String eventUrl = proxy.url(host, version, namespace, index, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
 
         Timer eventTimer = null;

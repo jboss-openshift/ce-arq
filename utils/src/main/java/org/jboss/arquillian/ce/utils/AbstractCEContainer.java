@@ -186,9 +186,11 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final int replicas) throws Exception {
         log.info("Creating ProtocolMetaData ...");
 
+        final String prefix = getName(getPrefix(), archive);
+
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {
-                return (proxy.podsSize(configuration.getNamespace()) >= replicas);
+                return (proxy.podsSize(prefix, configuration.getNamespace()) >= replicas);
             }
 
             @Override
@@ -206,7 +208,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         log.info(String.format("Found servlets: %s", servlets));
         for (Servlet servlet : servlets) {
             if (ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME.equals(servlet.getName())) {
-                List<String> proxies = proxy.urls(configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), servlet.getContextRoot() + "/_poke");
+                List<String> proxies = proxy.urls(prefix, configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), servlet.getContextRoot() + "/_poke");
                 log.info(String.format("Waiting on proxies: %s", proxies));
                 for (String url : proxies) {
                     Containers.delayArchiveDeploy(url, configuration.getStartupTimeout(), 4000L, checker);

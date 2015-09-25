@@ -72,6 +72,10 @@ public class Proxy {
         SSLContext.setDefault(getHttpClient().getConfig().getSSLContext());
     }
 
+    protected boolean isMatch(String prefix, String podName) {
+        return podName.startsWith(prefix);
+    }
+
     public String url(String host, String version, String namespace, String podName, String path, String parameters) {
         String url = String.format(PROXY_URL, host, version, namespace, podName, path);
         return (parameters != null && parameters.length() > 0) ? url + "?" + parameters : url;
@@ -87,18 +91,29 @@ public class Proxy {
         return url(host, version, namespace, pod, path, parameters);
     }
 
-    public List<String> urls(String host, String namespace, String version, String path) {
+    public List<String> urls(String prefix, String host, String namespace, String version, String path) {
         List<Pod> items = client.pods().inNamespace(namespace).list().getItems();
 
         List<String> urls = new ArrayList<>();
         for (Pod pod : items) {
-            urls.add(url(host, version, namespace, pod.getMetadata().getName(), path, null));
+            String podName = pod.getMetadata().getName();
+            if (isMatch(prefix, podName)) {
+                urls.add(url(host, version, namespace, podName, path, null));
+            }
         }
         return urls;
     }
 
-    public int podsSize(String namespace) {
-        return client.pods().inNamespace(namespace).list().getItems().size();
+    public int podsSize(String prefix, String namespace) {
+        int counter = 0;
+        List<Pod> pods = client.pods().inNamespace(namespace).list().getItems();
+        for (Pod pod : pods) {
+            String podName = pod.getMetadata().getName();
+            if (isMatch(prefix, podName)) {
+                counter++;
+            }
+        }
+        return counter;
     }
 
     public <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception {
