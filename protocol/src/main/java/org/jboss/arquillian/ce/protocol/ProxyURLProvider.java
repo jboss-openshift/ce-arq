@@ -94,7 +94,9 @@ public class ProxyURLProvider implements ResourceProvider {
                 context = context + "/";
             }
 
-            String spec = getProxy().url(c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), 0, context, null);
+            int index = getProxy().findPod(c, context + "_poke").getKey();
+
+            String spec = getProxy().url(c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), index, context, null);
             return new URL(spec);
         } catch (Exception e) {
             throw new IllegalStateException(e);
