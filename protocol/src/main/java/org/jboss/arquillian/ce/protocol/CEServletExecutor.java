@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.logging.Logger;
 
+import org.jboss.arquillian.ce.utils.K8sClient;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
@@ -40,6 +41,7 @@ import org.jboss.arquillian.container.test.spi.command.CommandCallback;
 import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
 import org.jboss.arquillian.test.spi.TestMethodExecutor;
 import org.jboss.arquillian.test.spi.TestResult;
+import org.jboss.shrinkwrap.api.Archive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -48,6 +50,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
     private static final Logger log = Logger.getLogger(CEServletExecutor.class.getName());
 
     private String contextRoot;
+    private Archive<?> archive;
     private Proxy proxy;
 
     public CEServletExecutor(CEProtocolConfiguration configuration, ProtocolMetaData protocolMetaData, CommandCallback callback) {
@@ -55,6 +58,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
         this.callback = callback;
 
         this.contextRoot = readContextRoot(protocolMetaData);
+        this.archive = protocolMetaData.getContexts(Archive.class).iterator().next();
 
         this.proxy = new Proxy(configuration.getKubernetesMaster());
     }
@@ -81,14 +85,15 @@ public class CEServletExecutor extends ServletMethodExecutor {
 
         Class<?> testClass = testMethodExecutor.getInstance().getClass();
 
+        Map.Entry<String, String> label = K8sClient.getDeploymentLabel(archive);
         String host = config().getKubernetesMaster();
         String version = config().getApiVersion();
         String namespace = config().getNamespace();
         int index = locatePodIndex(testMethodExecutor);
 
-        String url = proxy.url(host, version, namespace, index, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
+        String url = proxy.url(label, host, version, namespace, index, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
         log.info(String.format("Invoking test, url: %s", url));
-        String eventUrl = proxy.url(host, version, namespace, index, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
+        String eventUrl = proxy.url(label, host, version, namespace, index, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
 
         Timer eventTimer = null;
         try {
@@ -129,10 +134,11 @@ public class CEServletExecutor extends ServletMethodExecutor {
      */
     private int findDeploymentsPod() {
         log.info(String.format("Searching for pod with context %s ...", contextRoot));
+        Map.Entry<String, String> label = K8sClient.getDeploymentLabel(archive);
         String host = config().getKubernetesMaster();
         String version = config().getApiVersion();
         String namespace = config().getNamespace();
-        Map.Entry<Integer, String> entry = proxy.findPod(host, version, namespace, contextRoot + "/_poke");
+        Map.Entry<Integer, String> entry = proxy.findPod(label, host, version, namespace, contextRoot + "/_poke");
         int index = entry.getKey();
         log.info(String.format("Found '%s' context on #%s pod, pod: %s", contextRoot, index, entry.getValue()));
         return index;

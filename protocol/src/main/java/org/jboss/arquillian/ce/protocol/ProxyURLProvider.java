@@ -26,8 +26,10 @@ package org.jboss.arquillian.ce.protocol;
 import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Map;
 
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.K8sClient;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -87,6 +89,9 @@ public class ProxyURLProvider implements ResourceProvider {
 
     public Object lookup(ArquillianResource arquillianResource, Annotation... annotations) {
         try {
+            Archive<?> archive = protocolMetaDataInstance.get().getContexts(Archive.class).iterator().next();
+            Map.Entry<String, String> label = K8sClient.getDeploymentLabel(archive);
+
             Configuration c = configurationInstance.get();
 
             String context = getContext();
@@ -94,9 +99,9 @@ public class ProxyURLProvider implements ResourceProvider {
                 context = context + "/";
             }
 
-            int index = getProxy().findPod(c, context + "_poke").getKey();
+            int index = getProxy().findPod(label, c, context + "_poke").getKey();
 
-            String spec = getProxy().url(c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), index, context, null);
+            String spec = getProxy().url(label, c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), index, context, null);
             return new URL(spec);
         } catch (Exception e) {
             throw new IllegalStateException(e);

@@ -24,15 +24,20 @@
 package org.jboss.arquillian.ce.protocol;
 
 import java.io.InputStream;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.Client;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.K8sClient;
 import org.jboss.arquillian.ce.utils.Proxy;
+import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
+import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
+import org.jboss.shrinkwrap.api.Archive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -44,18 +49,32 @@ public class ClientCreator {
     @ApplicationScoped
     InstanceProducer<Client> clientInstanceProducer;
 
+    @Inject
+    Instance<ProtocolMetaData> protocolMetaDataInstance;
+
     public synchronized void createClient(final @Observes Configuration configuration) {
         if (clientInstanceProducer.get() == null) {
-            final Proxy proxy = new Proxy(configuration.getKubernetesMaster());
-            Client client = new Client() {
-                @Override
-                public synchronized InputStream execute(int pod, String path) throws Exception {
-                    log.info(String.format("Invoking pod #%s for path '%s'", pod, path));
-                    return proxy.post(configuration, pod, path);
-                }
-            };
+            Client client = new ClientImpl(configuration);
             clientInstanceProducer.set(client);
         }
     }
 
+    private class ClientImpl implements Client {
+        private Configuration configuration;
+        private Proxy proxy;
+
+        public ClientImpl(Configuration configuration) {
+            this.configuration = configuration;
+            this.proxy = new Proxy(configuration.getKubernetesMaster());
+        }
+
+        public synchronized InputStream execute(int pod, String path) throws Exception {
+            log.info(String.format("Invoking pod #%s for path '%s'", pod, path));
+
+            Archive<?> archive = protocolMetaDataInstance.get().getContexts(Archive.class).iterator().next();
+            Map.Entry<String, String> label = K8sClient.getDeploymentLabel(archive);
+
+            return proxy.post(label, configuration, pod, path);
+        }
+    }
 }

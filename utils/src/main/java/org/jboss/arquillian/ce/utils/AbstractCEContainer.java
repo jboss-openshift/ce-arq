@@ -26,6 +26,7 @@ package org.jboss.arquillian.ce.utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -92,7 +93,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected void cleanup(Archive<?> archive) throws Exception {
         String name = getName(getPrefix(), archive) + "rc";
         client.cleanReplicationControllers(name);
-        client.cleanPods(name);
+        client.cleanPods(K8sClient.getDeploymentLabel(archive));
     }
 
     public void setup(T configuration) {
@@ -154,7 +155,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         Container container = client.createContainer(imageName, name + "-container", envVars, ports, volumes, lifecycle, configuration.getImagePullPolicy());
 
         List<Container> containers = Collections.singletonList(container);
-        Map<String, String> podLabels = Collections.singletonMap("name", name + "Pod");
+        Map<String, String> podLabels = new HashMap<>();
+        podLabels.put("name", name + "Pod");
+        Map.Entry<String, String> label = K8sClient.getDeploymentLabel(archive);
+        podLabels.put(label.getKey(), label.getValue());
         PodTemplateSpec podTemplate = client.createPodTemplateSpec(podLabels, containers);
 
         Map<String, String> selector = Collections.singletonMap("name", name + "Pod");
@@ -186,11 +190,11 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final int replicas) throws Exception {
         log.info("Creating ProtocolMetaData ...");
 
-        final String prefix = getName(getPrefix(), archive);
+        final Map.Entry<String, String> label = K8sClient.getDeploymentLabel(archive);
 
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {
-                return (proxy.podsSize(prefix, configuration.getNamespace()) >= replicas);
+                return (proxy.podsSize(label, configuration.getNamespace()) >= replicas);
             }
 
             @Override
@@ -208,7 +212,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         log.info(String.format("Found servlets: %s", servlets));
         for (Servlet servlet : servlets) {
             if (ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME.equals(servlet.getName())) {
-                List<String> proxies = proxy.urls(prefix, configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), servlet.getContextRoot() + "/_poke");
+                List<String> proxies = proxy.urls(label, configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), servlet.getContextRoot() + "/_poke");
                 log.info(String.format("Waiting on proxies: %s", proxies));
                 for (String url : proxies) {
                     Containers.delayArchiveDeploy(url, configuration.getStartupTimeout(), 4000L, checker);

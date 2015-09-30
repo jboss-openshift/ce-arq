@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -154,6 +155,10 @@ public class K8sClient implements Closeable, RegistryLookup {
 
     public Proxy createProxy() {
         return new Proxy(client);
+    }
+
+    public static Map.Entry<String, String> getDeploymentLabel(Archive<?> archive) {
+        return new AbstractMap.SimpleEntry<>("deployment", archive.getName());
     }
 
     public String buildAndPushImage(DockerFileTemplateHandler dth, InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
@@ -328,20 +333,16 @@ public class K8sClient implements Closeable, RegistryLookup {
         }
     }
 
-    public void cleanPods(String... names) throws Exception {
-        final PodList pods = client.pods().inNamespace(configuration.getNamespace()).list();
-        for (String name : names) {
-            try {
-                for (Pod pod : pods.getItems()) {
-                    String podId = KubernetesHelper.getName(pod);
-                    if (podId.startsWith(name)) {
-                        boolean exists = client.pods().inNamespace(configuration.getNamespace()).withName(podId).cascading(false).delete();
-                        log.info(String.format("Pod [%s] delete: %s.", podId, exists));
-                    }
-                }
-            } catch (Exception e) {
-                log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", name, e), e);
+    public void cleanPods(Map.Entry<String, String> label) throws Exception {
+        final PodList pods = client.pods().inNamespace(configuration.getNamespace()).withLabel(label.getKey(), label.getValue()).list();
+        try {
+            for (Pod pod : pods.getItems()) {
+                String podId = KubernetesHelper.getName(pod);
+                boolean exists = client.pods().inNamespace(configuration.getNamespace()).withName(podId).cascading(false).delete();
+                log.info(String.format("Pod [%s] delete: %s.", podId, exists));
             }
+        } catch (Exception e) {
+            log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", label.getValue(), e), e);
         }
     }
 
