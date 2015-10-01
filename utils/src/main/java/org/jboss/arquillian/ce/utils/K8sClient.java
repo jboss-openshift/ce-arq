@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -157,8 +156,8 @@ public class K8sClient implements Closeable, RegistryLookup {
         return new Proxy(client);
     }
 
-    public static Map.Entry<String, String> getDeploymentLabel(Archive<?> archive) {
-        return new AbstractMap.SimpleEntry<>("deployment", archive.getName());
+    public static Map<String, String> getDeploymentLabel(Archive<?> archive) {
+        return Collections.singletonMap("deployment", archive.getName());
     }
 
     public String buildAndPushImage(DockerFileTemplateHandler dth, InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
@@ -333,8 +332,8 @@ public class K8sClient implements Closeable, RegistryLookup {
         }
     }
 
-    public void cleanPods(Map.Entry<String, String> label) throws Exception {
-        final PodList pods = client.pods().inNamespace(configuration.getNamespace()).withLabel(label.getKey(), label.getValue()).list();
+    public void cleanPods(Map<String, String> labels) throws Exception {
+        final PodList pods = client.pods().inNamespace(configuration.getNamespace()).withLabels(labels).list();
         try {
             for (Pod pod : pods.getItems()) {
                 String podId = KubernetesHelper.getName(pod);
@@ -342,7 +341,7 @@ public class K8sClient implements Closeable, RegistryLookup {
                 log.info(String.format("Pod [%s] delete: %s.", podId, exists));
             }
         } catch (Exception e) {
-            log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", label.getValue(), e), e);
+            log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", labels, e), e);
         }
     }
 

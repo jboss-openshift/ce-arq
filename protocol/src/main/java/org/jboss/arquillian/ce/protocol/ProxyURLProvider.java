@@ -90,7 +90,7 @@ public class ProxyURLProvider implements ResourceProvider {
     public Object lookup(ArquillianResource arquillianResource, Annotation... annotations) {
         try {
             Archive<?> archive = protocolMetaDataInstance.get().getContexts(Archive.class).iterator().next();
-            Map.Entry<String, String> label = K8sClient.getDeploymentLabel(archive);
+            Map<String, String> labels = K8sClient.getDeploymentLabel(archive);
 
             Configuration c = configurationInstance.get();
 
@@ -99,9 +99,9 @@ public class ProxyURLProvider implements ResourceProvider {
                 context = context + "/";
             }
 
-            int index = getProxy().findPod(label, c, context + "_poke").getKey();
+            int index = getProxy().findPod(labels, c, context + "_poke").getKey();
 
-            String spec = getProxy().url(label, c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), index, context, null);
+            String spec = getProxy().url(labels, c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), index, context, null);
             return new URL(spec);
         } catch (Exception e) {
             throw new IllegalStateException(e);

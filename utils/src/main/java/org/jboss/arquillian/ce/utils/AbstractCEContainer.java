@@ -157,8 +157,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         List<Container> containers = Collections.singletonList(container);
         Map<String, String> podLabels = new HashMap<>();
         podLabels.put("name", name + "Pod");
-        Map.Entry<String, String> label = K8sClient.getDeploymentLabel(archive);
-        podLabels.put(label.getKey(), label.getValue());
+        podLabels.putAll(K8sClient.getDeploymentLabel(archive));
         PodTemplateSpec podTemplate = client.createPodTemplateSpec(podLabels, containers);
 
         Map<String, String> selector = Collections.singletonMap("name", name + "Pod");
@@ -190,11 +189,11 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final int replicas) throws Exception {
         log.info("Creating ProtocolMetaData ...");
 
-        final Map.Entry<String, String> label = K8sClient.getDeploymentLabel(archive);
+        final Map<String, String> labels = K8sClient.getDeploymentLabel(archive);
 
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {
-                return (proxy.podsSize(label, configuration.getNamespace()) >= replicas);
+                return (proxy.podsSize(labels, configuration.getNamespace()) >= replicas);
             }
 
             @Override
@@ -212,7 +211,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         log.info(String.format("Found servlets: %s", servlets));
         for (Servlet servlet : servlets) {
             if (ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME.equals(servlet.getName())) {
-                List<String> proxies = proxy.urls(label, configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), servlet.getContextRoot() + "/_poke");
+                List<String> proxies = proxy.urls(labels, configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), servlet.getContextRoot() + "/_poke");
                 log.info(String.format("Waiting on proxies: %s", proxies));
                 for (String url : proxies) {
                     Containers.delayArchiveDeploy(url, configuration.getStartupTimeout(), 4000L, checker);

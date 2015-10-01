@@ -72,9 +72,9 @@ public class ClientCreator {
             log.info(String.format("Invoking pod #%s for path '%s'", pod, path));
 
             Archive<?> archive = protocolMetaDataInstance.get().getContexts(Archive.class).iterator().next();
-            Map.Entry<String, String> label = K8sClient.getDeploymentLabel(archive);
+            Map<String, String> labels = K8sClient.getDeploymentLabel(archive);
 
-            return proxy.post(label, configuration, pod, path);
+            return proxy.post(labels, configuration, pod, path);
         }
     }
 }

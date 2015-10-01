@@ -36,15 +36,15 @@ import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.Response;
+import com.ning.http.client.cookie.Cookie;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.internal.com.ning.http.client.AsyncHttpClient;
-import io.fabric8.kubernetes.client.internal.com.ning.http.client.ListenableFuture;
-import io.fabric8.kubernetes.client.internal.com.ning.http.client.Response;
-import io.fabric8.kubernetes.client.internal.com.ning.http.client.cookie.Cookie;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -77,8 +77,8 @@ public class Proxy {
         return (parameters != null && parameters.length() > 0) ? url + "?" + parameters : url;
     }
 
-    public String url(Map.Entry<String, String> label, String host, String version, String namespace, int index, String path, String parameters) {
-        List<Pod> items = client.pods().inNamespace(namespace).withLabel(label.getKey(), label.getValue()).list().getItems();
+    public String url(Map<String, String> labels, String host, String version, String namespace, int index, String path, String parameters) {
+        List<Pod> items = client.pods().inNamespace(namespace).withLabels(labels).list().getItems();
         if (index >= items.size()) {
             throw new IllegalStateException(String.format("Not enough pods (%s) to invoke pod %s!", items.size(), index));
         }
@@ -87,8 +87,8 @@ public class Proxy {
         return url(host, version, namespace, pod, path, parameters);
     }
 
-    public List<String> urls(Map.Entry<String, String> label, String host, String namespace, String version, String path) {
-        List<Pod> items = client.pods().inNamespace(namespace).withLabel(label.getKey(), label.getValue()).list().getItems();
+    public List<String> urls(Map<String, String> labels, String host, String namespace, String version, String path) {
+        List<Pod> items = client.pods().inNamespace(namespace).withLabels(labels).list().getItems();
 
         List<String> urls = new ArrayList<>();
         for (Pod pod : items) {
@@ -98,8 +98,8 @@ public class Proxy {
         return urls;
     }
 
-    public int podsSize(Map.Entry<String, String> label, String namespace) {
-        return client.pods().inNamespace(namespace).withLabel(label.getKey(), label.getValue()).list().getItems().size();
+    public int podsSize(Map<String, String> labels, String namespace) {
+        return client.pods().inNamespace(namespace).withLabels(labels).list().getItems().size();
     }
 
     public <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception {
@@ -143,9 +143,9 @@ public class Proxy {
         return null; // TODO
     }
 
-    public synchronized InputStream post(Map.Entry<String, String> label, Configuration configuration, int pod, String path) throws Exception {
+    public synchronized InputStream post(Map<String, String> labels, Configuration configuration, int pod, String path) throws Exception {
         String url = url(
-            label,
+            labels,
             configuration.getKubernetesMaster(),
             configuration.getApiVersion(),
             configuration.getNamespace(),
@@ -194,15 +194,15 @@ public class Proxy {
         }
     }
 
-    public Map.Entry<Integer, String> findPod(Map.Entry<String, String> label, Configuration configuration, String path) {
+    public Map.Entry<Integer, String> findPod(Map<String, String> labels, Configuration configuration, String path) {
         String host = configuration.getKubernetesMaster();
         String version = configuration.getApiVersion();
         String namespace = configuration.getNamespace();
-        return findPod(label, host, version, namespace, path);
+        return findPod(labels, host, version, namespace, path);
     }
 
-    public Map.Entry<Integer, String> findPod(Map.Entry<String, String> label, String host, String version, String namespace, String path) {
-        List<Pod> items = client.pods().inNamespace(namespace).withLabel(label.getKey(), label.getValue()).list().getItems();
+    public Map.Entry<Integer, String> findPod(Map<String, String> labels, String host, String version, String namespace, String path) {
+        List<Pod> items = client.pods().inNamespace(namespace).withLabels(labels).list().getItems();
         int i;
         for (i = 0; i < items.size(); i++) {
             String podName = items.get(i).getMetadata().getName();
