@@ -24,7 +24,8 @@
         <version.arquillian>1.1.8.Final</version.arquillian>
         <version.dockerjava>2.1.0</version.dockerjava>
         <version.fabric8>2.2.38</version.fabric8>
-        <version.fabric8.client>1.3.45</version.fabric8.client>
+        <version.fabric8.client>1.3.48-SNAPSHOT</version.fabric8.client>
+        <version.jgit>4.1.0.201509280440-r</version.jgit>
         <version.jackson>2.6.1</version.jackson>
         <version.meta-inf>1.1</version.meta-inf>
         <version.servlet-api>2.5</version.servlet-api>
@@ -39,6 +40,7 @@
         <module>protocol</module>
         <module>web</module>
         <module>wildfly</module>
+        <module>template</module>
     </modules>
 
     <!-- Maven 2 Repositories -->
@@ -77,13 +79,13 @@
 
             <dependency>
                 <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-ce-utils</artifactId>
+                <artifactId>arquillian-ce-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-ce-api</artifactId>
+                <artifactId>arquillian-ce-utils</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -111,7 +113,7 @@
 
             <dependency>
                 <groupId>io.fabric8</groupId>
-                <artifactId>kubernetes-client</artifactId>
+                <artifactId>openshift-client</artifactId>
                 <version>${version.fabric8.client}</version>
             </dependency>
 
@@ -125,6 +127,12 @@
                         <artifactId>kubernetes-client</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.jgit</groupId>
+                <artifactId>org.eclipse.jgit</artifactId>
+                <version>${version.jgit}</version>
             </dependency>
 
             <dependency>

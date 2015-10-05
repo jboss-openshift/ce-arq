@@ -29,7 +29,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.jboss.arquillian.ce.utils.Configuration;
-import org.jboss.arquillian.ce.utils.K8sClient;
+import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -90,7 +90,7 @@ public class ProxyURLProvider implements ResourceProvider {
     public Object lookup(ArquillianResource arquillianResource, Annotation... annotations) {
         try {
             Archive<?> archive = protocolMetaDataInstance.get().getContexts(Archive.class).iterator().next();
-            Map<String, String> labels = K8sClient.getDeploymentLabel(archive);
+            Map<String, String> labels = OpenShiftAdapter.getDeploymentLabel(archive);
 
             Configuration c = configurationInstance.get();
 

@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.Client;
 import org.jboss.arquillian.ce.utils.Configuration;
-import org.jboss.arquillian.ce.utils.K8sClient;
+import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.core.api.Instance;
@@ -72,7 +72,7 @@ public class ClientCreator {
             log.info(String.format("Invoking pod #%s for path '%s'", pod, path));
 
             Archive<?> archive = protocolMetaDataInstance.get().getContexts(Archive.class).iterator().next();
-            Map<String, String> labels = K8sClient.getDeploymentLabel(archive);
+            Map<String, String> labels = OpenShiftAdapter.getDeploymentLabel(archive);
 
             return proxy.post(labels, configuration, pod, path);
         }

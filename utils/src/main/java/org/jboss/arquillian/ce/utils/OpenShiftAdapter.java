@@ -31,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
@@ -54,6 +55,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.KubernetesList;
 import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -66,10 +68,10 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.api.model.Template;
+import io.fabric8.openshift.client.DefaultOpenshiftClient;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.ParameterValue;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
 import org.jboss.shrinkwrap.api.Archive;
@@ -78,8 +80,8 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class K8sClient implements Closeable, RegistryLookup {
-    private final static Logger log = Logger.getLogger(K8sClient.class.getName());
+public class OpenShiftAdapter implements Closeable, RegistryLookup {
+    private final static Logger log = Logger.getLogger(OpenShiftAdapter.class.getName());
     private static final File tmpDir;
 
     static {
@@ -87,9 +89,10 @@ public class K8sClient implements Closeable, RegistryLookup {
     }
 
     private final Configuration configuration;
-    private final KubernetesClient client;
+    private final OpenShiftClient client;
     private Map<String, File> dirs = new HashMap<>();
     private RegistryLookup lookup;
+    private Map<String, KubernetesList> configs = new HashMap<>();
 
     protected static File getTempRoot() {
         return AccessController.doPrivileged(new PrivilegedAction<File>() {
@@ -101,12 +104,10 @@ public class K8sClient implements Closeable, RegistryLookup {
         });
     }
 
-    public K8sClient(Configuration configuration) {
+    public OpenShiftAdapter(Configuration configuration) {
         this.configuration = configuration;
 
-        Config config = new ConfigBuilder().withMasterUrl(configuration.getKubernetesMaster()).build();
-
-        this.client = new DefaultKubernetesClient(config);
+        this.client = new DefaultOpenshiftClient(configuration.getKubernetesMaster());
 
         if ("static".equalsIgnoreCase(configuration.getRegistryType())) {
             lookup = new StaticRegistryLookup(configuration);
@@ -115,7 +116,7 @@ public class K8sClient implements Closeable, RegistryLookup {
         }
     }
 
-    private File getDir(Archive<?> archive) {
+    public File getDir(Archive<?> archive) {
         File dir = dirs.get(archive.getName());
         if (dir == null) {
             throw new IllegalArgumentException(String.format("Missing temp dir for archive %s", archive.getName()));
@@ -131,13 +132,21 @@ public class K8sClient implements Closeable, RegistryLookup {
         dirs.put(archive.getName(), dir);
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     void reset(Archive<?> archive) {
         File dir = getDir(archive);
-        for (File file : dir.listFiles()) {
-            file.delete();
+        delete(dir);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private void delete(File target) {
+        for (File file : target.listFiles()) {
+            if (file.isDirectory()) {
+                delete(file);
+            } else {
+                file.delete();
+            }
         }
-        dir.delete();
+        target.delete();
     }
 
     public RegistryLookupEntry lookup() {
@@ -158,6 +167,17 @@ public class K8sClient implements Closeable, RegistryLookup {
 
     public static Map<String, String> getDeploymentLabel(Archive<?> archive) {
         return Collections.singletonMap("deployment", archive.getName());
+    }
+
+    public File exportAsZip(File dir, Archive<?> deployment) {
+        return exportAsZip(dir, deployment, deployment.getName());
+    }
+
+    public File exportAsZip(File dir, Archive<?> deployment, String name) {
+        ZipExporter exporter = deployment.as(ZipExporter.class);
+        File target = new File(dir, name);
+        exporter.exportTo(target);
+        return target;
     }
 
     public String buildAndPushImage(DockerFileTemplateHandler dth, InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
@@ -188,8 +208,7 @@ public class K8sClient implements Closeable, RegistryLookup {
         }
 
         // Export test deployment to Docker dir
-        ZipExporter exporter = deployment.as(ZipExporter.class);
-        exporter.exportTo(new File(dir, deployment.getName()));
+        exportAsZip(dir, deployment);
 
         // Grab Docker registry service
         RegistryLookupEntry rle = lookup.lookup();
@@ -236,6 +255,24 @@ public class K8sClient implements Closeable, RegistryLookup {
             fullImageName.append(":").append(imageTag);
         }
         return fullImageName.toString();
+    }
+
+    public KubernetesList deployTemplate(String name, String templateURL, String namespace, ParameterValue... values) throws Exception {
+        KubernetesList list;
+        try (InputStream stream = new URL(templateURL).openStream()) {
+            list = client.templates().inNamespace(namespace).load(stream).process(values);
+        }
+        KubernetesList result = client.lists().inNamespace(namespace).create(list);
+        configs.put(name, result);
+        return result;
+    }
+
+    public Object deleteTemplate(String name, String namespace) throws Exception {
+        KubernetesList config = configs.get(name);
+        if (config != null) {
+            // return client.lists().inNamespace(namespace); // TODO
+        }
+        return null;
     }
 
     public String deployService(String name, Service.ApiVersion apiVersion, String portName, int port, int containerPort, Map<String, String> selector) throws Exception {
@@ -350,6 +387,7 @@ public class K8sClient implements Closeable, RegistryLookup {
     }
 
     public void close() throws IOException {
+        configs.clear();
         if (client != null) {
             client.close();
         }

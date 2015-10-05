@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.logging.Logger;
 
-import org.jboss.arquillian.ce.utils.K8sClient;
+import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
@@ -85,7 +85,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
 
         Class<?> testClass = testMethodExecutor.getInstance().getClass();
 
-        Map<String, String> labels = K8sClient.getDeploymentLabel(archive);
+        Map<String, String> labels = OpenShiftAdapter.getDeploymentLabel(archive);
         String host = config().getKubernetesMaster();
         String version = config().getApiVersion();
         String namespace = config().getNamespace();
@@ -134,7 +134,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
      */
     private int findDeploymentsPod() {
         log.info(String.format("Searching for pod with context %s ...", contextRoot));
-        Map<String, String> labels = K8sClient.getDeploymentLabel(archive);
+        Map<String, String> labels = OpenShiftAdapter.getDeploymentLabel(archive);
         String host = config().getKubernetesMaster();
         String version = config().getApiVersion();
         String namespace = config().getNamespace();

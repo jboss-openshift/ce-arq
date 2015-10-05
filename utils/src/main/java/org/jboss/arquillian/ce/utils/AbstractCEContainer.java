@@ -25,6 +25,7 @@ package org.jboss.arquillian.ce.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +43,7 @@ import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import org.jboss.arquillian.ce.api.Replicas;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
@@ -49,6 +51,7 @@ import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
+import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
@@ -79,7 +82,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected Instance<TestClass> tc;
 
     protected T configuration;
-    protected K8sClient client;
+    protected OpenShiftAdapter client;
     protected Proxy proxy;
 
     protected String getName(String prefix, Archive<?> archive) {
@@ -93,7 +96,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected void cleanup(Archive<?> archive) throws Exception {
         String name = getName(getPrefix(), archive) + "rc";
         client.cleanReplicationControllers(name);
-        client.cleanPods(K8sClient.getDeploymentLabel(archive));
+        client.cleanPods(OpenShiftAdapter.getDeploymentLabel(archive));
     }
 
     public void setup(T configuration) {
@@ -102,7 +105,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     public void start() throws LifecycleException {
-        this.client = new K8sClient(configuration);
+        this.client = new OpenShiftAdapter(configuration);
         this.proxy = client.createProxy();
     }
 
@@ -123,6 +126,31 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     public ProtocolDescription getDefaultProtocol() {
         return new ProtocolDescription("Servlet 3.0");
+    }
+
+    protected int readReplicas() {
+        TestClass testClass = tc.get();
+        Replicas replicas = testClass.getAnnotation(Replicas.class);
+        int r = -1;
+        if (replicas != null) {
+            if (replicas.value() <= 0) {
+                throw new IllegalArgumentException("Non-positive replicas size: " + replicas.value());
+            }
+            r = replicas.value();
+        }
+        int max = 0;
+        for (Method c : testClass.getMethods(TargetsContainer.class)) {
+            int index = Strings.parseNumber(c.getAnnotation(TargetsContainer.class).value());
+            if (r > 0 && index >= r) {
+                throw new IllegalArgumentException(String.format("Node / pod index bigger then replicas; %s >= %s ! (%s)", index, r, c));
+            }
+            max = Math.max(max, index);
+        }
+        if (r < 0) {
+            return max + 1;
+        } else {
+            return r;
+        }
     }
 
     protected String buildImage(Archive<?> archive, String parent, String dir) throws IOException {
@@ -157,7 +185,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         List<Container> containers = Collections.singletonList(container);
         Map<String, String> podLabels = new HashMap<>();
         podLabels.put("name", name + "Pod");
-        podLabels.putAll(K8sClient.getDeploymentLabel(archive));
+        podLabels.putAll(OpenShiftAdapter.getDeploymentLabel(archive));
         PodTemplateSpec podTemplate = client.createPodTemplateSpec(podLabels, containers);
 
         Map<String, String> selector = Collections.singletonMap("name", name + "Pod");
@@ -173,7 +201,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             case HTTP_GET:
                 HTTPGetAction httpGet = new HTTPGetAction();
                 httpGet.setPath(preStopPath);
-                httpGet.setPort(K8sClient.findHttpContainerPort(ports));
+                httpGet.setPort(OpenShiftAdapter.findHttpContainerPort(ports));
                 preStopHandler.setHttpGet(httpGet);
                 break;
             case EXEC:
@@ -189,7 +217,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final int replicas) throws Exception {
         log.info("Creating ProtocolMetaData ...");
 
-        final Map<String, String> labels = K8sClient.getDeploymentLabel(archive);
+        final Map<String, String> labels = OpenShiftAdapter.getDeploymentLabel(archive);
 
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {

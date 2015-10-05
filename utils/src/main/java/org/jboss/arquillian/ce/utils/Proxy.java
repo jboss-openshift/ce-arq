@@ -41,10 +41,8 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.client.DefaultOpenshiftClient;
+import io.fabric8.openshift.client.OpenShiftClient;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -52,15 +50,14 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 public class Proxy {
     private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s:8080/proxy%s";
 
-    private final KubernetesClient client;
+    private final OpenShiftClient client;
     private final Map<String, Cookie> cookieMap = new HashMap<>();
 
     public Proxy(String kubernetesMaster) {
-        Config config = new ConfigBuilder().withMasterUrl(kubernetesMaster).build();
-        this.client = new DefaultKubernetesClient(config);
+        this.client = new DefaultOpenshiftClient(kubernetesMaster);
     }
 
-    public Proxy(KubernetesClient client) {
+    public Proxy(OpenShiftClient client) {
         this.client = client;
     }
 
