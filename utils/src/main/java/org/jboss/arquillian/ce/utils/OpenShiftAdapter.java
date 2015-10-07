@@ -68,7 +68,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.openshift.api.model.Template;
+import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
 import io.fabric8.openshift.client.DefaultOpenshiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.ParameterValue;
@@ -267,10 +267,14 @@ public class OpenShiftAdapter implements Closeable, RegistryLookup {
         return result;
     }
 
+    public Object triggerBuild(String namespace, String buildName, String secret, String type) throws Exception {
+        return client.buildConfigs().inNamespace(namespace).withName(buildName).withSecret(secret).withType(type).trigger(new WebHookTriggerBuilder().withSecret(secret).build());
+    }
+
     public Object deleteTemplate(String name, String namespace) throws Exception {
         KubernetesList config = configs.get(name);
         if (config != null) {
-            // return client.lists().inNamespace(namespace); // TODO
+            return client.lists().inNamespace(namespace).delete(config);
         }
         return null;
     }

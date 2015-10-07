@@ -86,10 +86,12 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             addParameterValues(values, System.getProperties());
             values.add(new ParameterValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository()));
             values.add(new ParameterValue("REPLICAS", String.valueOf(replicas))); // not yet supported
-            values.add(new ParameterValue("DEPLOYMENT_NAME", labels.values().iterator().next()));
+            values.add(new ParameterValue("DEPLOYMENT_NAME", labels.get("deployment")));
 
             log.info(String.format("Applying OpenShift template: %s", configuration.getTemplateURL()));
             client.deployTemplate(archive.getName(), configuration.getTemplateURL(), configuration.getNamespace(), values.toArray(new ParameterValue[values.size()]));
+            log.info(String.format("Triggering build: %s", configuration.getBuildName()));
+            client.triggerBuild(configuration.getNamespace(), configuration.getBuildName(), configuration.getBuildSecret(), configuration.getBuildType());
 
             return getProtocolMetaData(archive, replicas);
         } catch (Throwable t) {

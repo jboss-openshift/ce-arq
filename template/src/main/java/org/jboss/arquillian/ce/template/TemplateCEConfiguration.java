@@ -36,6 +36,9 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
     private static final long serialVersionUID = 1L;
 
     private String templateURL = Strings.getSystemPropertyOrEnvVar("openshift.template.url");
+    private String buildName = Strings.getSystemPropertyOrEnvVar("openshift.build.name", "eap-app");
+    private String buildSecret = Strings.getSystemPropertyOrEnvVar("openshift.build.secret");
+    private String buildType = Strings.getSystemPropertyOrEnvVar("openshift.build.type", "github");
 
     private String gitRepository = Strings.getSystemPropertyOrEnvVar("git.repository");
     private String gitCredentials = Strings.getSystemPropertyOrEnvVar("git.credentials");
@@ -48,6 +51,9 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
 
         if (templateURL == null) {
             throw new IllegalArgumentException("Missing template URL!");
+        }
+        if (buildSecret == null) {
+            throw new IllegalArgumentException("Missing build secret!");
         }
         if (gitRepository == null) {
             throw new IllegalArgumentException("Missing git repository!");
@@ -72,6 +78,30 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
 
     public void setTemplateURL(String templateURL) {
         this.templateURL = templateURL;
+    }
+
+    public String getBuildName() {
+        return buildName;
+    }
+
+    public void setBuildName(String buildName) {
+        this.buildName = buildName;
+    }
+
+    public String getBuildSecret() {
+        return buildSecret;
+    }
+
+    public void setBuildSecret(String buildSecret) {
+        this.buildSecret = buildSecret;
+    }
+
+    public String getBuildType() {
+        return buildType;
+    }
+
+    public void setBuildType(String buildType) {
+        this.buildType = buildType;
     }
 
     public String getGitRepository() {
