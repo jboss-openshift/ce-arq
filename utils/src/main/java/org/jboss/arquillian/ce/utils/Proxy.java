@@ -41,7 +41,7 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.openshift.client.DefaultOpenshiftClient;
+import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 
 /**
@@ -54,7 +54,7 @@ public class Proxy {
     private final Map<String, Cookie> cookieMap = new HashMap<>();
 
     public Proxy(String kubernetesMaster) {
-        this.client = new DefaultOpenshiftClient(kubernetesMaster);
+        this.client = new DefaultOpenShiftClient(kubernetesMaster);
     }
 
     public Proxy(OpenShiftClient client) {

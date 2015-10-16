@@ -69,7 +69,7 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
-import io.fabric8.openshift.client.DefaultOpenshiftClient;
+import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.ParameterValue;
 import org.jboss.dmr.ValueExpression;
@@ -107,7 +107,7 @@ public class OpenShiftAdapter implements Closeable, RegistryLookup {
     public OpenShiftAdapter(Configuration configuration) {
         this.configuration = configuration;
 
-        this.client = new DefaultOpenshiftClient(configuration.getKubernetesMaster());
+        this.client = new DefaultOpenShiftClient(configuration.getKubernetesMaster());
 
         if ("static".equalsIgnoreCase(configuration.getRegistryType())) {
             lookup = new StaticRegistryLookup(configuration);
