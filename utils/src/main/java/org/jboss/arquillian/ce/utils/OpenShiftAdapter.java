@@ -48,7 +48,10 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.openshift.api.model.EditableNamedRole;
+import io.fabric8.openshift.api.model.NamedRole;
 import io.fabric8.openshift.api.model.Project;
+import io.fabric8.openshift.api.model.Role;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -247,7 +250,12 @@ public class OpenShiftAdapter implements Closeable, RegistryLookup {
     }
 
     public Project createProject(String namespace) {
-        return client.projects().createNew().withNewMetadata().withName(namespace).endMetadata().done();
+        Project project = client.projects().createNew().withNewMetadata().withName(namespace).endMetadata().done();
+        // oc policy add-role-to-user admin admin -n cetesting
+        // TODO
+        // client.policyBindings().inNamespace(namespace).createNew();
+        // client.policyBindings().inNamespace(namespace).withName("default").edit();
+        return project;
     }
 
     public boolean deleteProject(String namespace) {
