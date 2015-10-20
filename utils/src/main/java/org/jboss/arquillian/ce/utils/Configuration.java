@@ -58,7 +58,6 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private String preStopPath = getSystemPropertyOrEnvVar("kubernetes.container.pre-stop", "/pre-stop/_hook");
     private boolean ignorePreStop = Boolean.parseBoolean(getSystemPropertyOrEnvVar("kubernetes.container.pre-stop-ignore"));
 
-    private String project = getSystemPropertyOrEnvVar("docker.test.namespace", "default");
     private String imageName = getSystemPropertyOrEnvVar("docker.test.image", "cetestimage");
     private String imageTag = getSystemPropertyOrEnvVar("docker.test.tag", "latest");
     private String imagePullPolicy = getSystemPropertyOrEnvVar("docker.test.pull.policy", "Always");
@@ -219,14 +218,6 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setIgnorePreStop(boolean ignorePreStop) {
         this.ignorePreStop = ignorePreStop;
-    }
-
-    public String getProject() {
-        return project;
-    }
-
-    public void setProject(String project) {
-        this.project = project;
     }
 
     public String getImageName() {

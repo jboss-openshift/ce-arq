@@ -28,8 +28,6 @@ Additional properties you **can** set / change.
 
 -Dcontainer.mgmt.port=[EAP container management port], default is 9990
 
--Ddocker.test.namespace=[Docker namespace], default is "default"
-
 -Ddocker.test.image=[Docker test image name], default is "cetestimage"
 
 -Ddocker.test.tag=[Docker test image tag], default is "latest"

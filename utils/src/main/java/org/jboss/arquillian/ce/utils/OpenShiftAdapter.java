@@ -218,9 +218,9 @@ public class OpenShiftAdapter implements Closeable, RegistryLookup {
         // our Docker image name
         String imageName;
         if (port != null) {
-            imageName = String.format("%s:%s/%s/%s", rle.getIp(), rle.getPort(), configuration.getProject(), configuration.getImageName());
+            imageName = String.format("%s:%s/%s/%s", rle.getIp(), rle.getPort(), configuration.getNamespace(), configuration.getImageName());
         } else {
-            imageName = String.format("%s/%s/%s", rle.getIp(), configuration.getProject(), configuration.getImageName());
+            imageName = String.format("%s/%s/%s", rle.getIp(), configuration.getNamespace(), configuration.getImageName());
         }
         log.info(String.format("Docker image name: %s", imageName));
 
