@@ -27,6 +27,7 @@ import static org.jboss.arquillian.ce.utils.Strings.getSystemPropertyOrEnvVar;
 
 import java.io.Serializable;
 import java.util.Properties;
+import java.util.Random;
 
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
@@ -41,7 +42,8 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private String dockerUrl = getSystemPropertyOrEnvVar("docker.url");
 
     private String apiVersion = getSystemPropertyOrEnvVar("kubernetes.api.version", "v1");
-    private String namespace = getSystemPropertyOrEnvVar("kubernetes.namespace", "default");
+    private String namespace = getSystemPropertyOrEnvVar("kubernetes.namespace");
+    private boolean generatedNS;
 
     private String fromParent = getSystemPropertyOrEnvVar("from.parent");
     private String deploymentDir = getSystemPropertyOrEnvVar("deployment.dir");
@@ -71,6 +73,20 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private long startupTimeout = Integer.parseInt(getSystemPropertyOrEnvVar("arquillian.startup.timeout", "600")); // 10min ...
 
     private boolean ignoreCleanup = Boolean.parseBoolean(getSystemPropertyOrEnvVar("kubernetes.ignore.cleanup"));
+
+    protected String generateNS() {
+        StringBuilder builder = new StringBuilder();
+        Random random = new Random();
+        int N = 8;
+        while (N > 0) {
+            int i = Math.abs(random.nextInt('z' - 'a' + 1));
+            char ch = (char) ('a' + i);
+            builder.append(ch);
+            N--;
+        }
+        builder.append(Math.abs(random.nextInt(1000)));
+        return builder.toString();
+    }
 
     public void apply(Properties properties) {
         properties.put("namespace", getNamespace());
@@ -110,11 +126,19 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     }
 
     public String getNamespace() {
+        if (namespace == null) {
+            namespace = generateNS();
+            generatedNS = true;
+        }
         return namespace;
     }
 
     public void setNamespace(String namespace) {
         this.namespace = namespace;
+    }
+
+    public boolean isGeneratedNS() {
+        return generatedNS;
     }
 
     public String getFromParent() {

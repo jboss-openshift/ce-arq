@@ -68,6 +68,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -255,6 +256,14 @@ public class OpenShiftAdapter implements Closeable, RegistryLookup {
             fullImageName.append(":").append(imageTag);
         }
         return fullImageName.toString();
+    }
+
+    public Project createProject(String namespace) {
+        return client.projects().createNew().withNewMetadata().withName(namespace).endMetadata().done();
+    }
+
+    public boolean deleteProject(String namespace) {
+        return client.projects().withName(namespace).delete();
     }
 
     public KubernetesList deployTemplate(String name, String templateURL, String namespace, ParameterValue... values) throws Exception {

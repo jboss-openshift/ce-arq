@@ -107,13 +107,27 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     public void start() throws LifecycleException {
         this.client = new OpenShiftAdapter(configuration);
         this.proxy = client.createProxy();
+
+        String namespace = configuration.getNamespace();
+        log.info("Using Kubernetes namespace / project: " + namespace);
+
+        if (configuration.isGeneratedNS()) {
+            client.createProject(namespace);
+        }
     }
 
     public void stop() throws LifecycleException {
         try {
-            client.close();
-        } catch (IOException e) {
-            throw new LifecycleException("Error closing Kubernetes client.", e);
+            if (configuration.isGeneratedNS()) {
+                client.deleteProject(configuration.getNamespace());
+            }
+        } finally {
+            try {
+                client.close();
+            } catch (IOException e) {
+                //noinspection ThrowFromFinallyBlock
+                throw new LifecycleException("Error closing Kubernetes client.", e);
+            }
         }
     }
 
