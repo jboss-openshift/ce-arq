@@ -23,26 +23,6 @@
 
 package org.jboss.arquillian.ce.utils;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
@@ -77,6 +57,14 @@ import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+
+import java.io.*;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -266,14 +254,21 @@ public class OpenShiftAdapter implements Closeable, RegistryLookup {
         return client.projects().withName(namespace).delete();
     }
 
-    public KubernetesList deployTemplate(String name, String templateURL, String namespace, ParameterValue... values) throws Exception {
-        KubernetesList list;
-        try (InputStream stream = new URL(templateURL).openStream()) {
-            list = client.templates().inNamespace(namespace).load(stream).process(values);
-        }
-        KubernetesList result = client.lists().inNamespace(namespace).create(list);
+    public KubernetesList processTemplateAndCreateResources(String name, String templateURL, String namespace, ParameterValue... values) throws Exception {
+        KubernetesList list = processTemplate(templateURL, namespace, values);
+        KubernetesList result = createResources(namespace, list);
         configs.put(name, result);
         return result;
+    }
+
+    private KubernetesList processTemplate(String templateURL, String namespace, ParameterValue... values) throws IOException {
+        try (InputStream stream = new URL(templateURL).openStream()) {
+            return client.templates().inNamespace(namespace).load(stream).process(values);
+        }
+    }
+
+    private KubernetesList createResources(String namespace, KubernetesList list) {
+        return client.lists().inNamespace(namespace).create(list);
     }
 
     public Object triggerBuild(String namespace, String buildName, String secret, String type) throws Exception {

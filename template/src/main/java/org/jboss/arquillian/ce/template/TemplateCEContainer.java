@@ -23,14 +23,6 @@
 
 package org.jboss.arquillian.ce.template;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import io.fabric8.openshift.client.ParameterValue;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
@@ -43,6 +35,14 @@ import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -89,7 +89,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             values.add(new ParameterValue("DEPLOYMENT_NAME", labels.get("deployment")));
 
             log.info(String.format("Applying OpenShift template: %s", configuration.getTemplateURL()));
-            client.deployTemplate(archive.getName(), configuration.getTemplateURL(), configuration.getNamespace(), values.toArray(new ParameterValue[values.size()]));
+            client.processTemplateAndCreateResources(archive.getName(), configuration.getTemplateURL(), configuration.getNamespace(), values.toArray(new ParameterValue[values.size()]));
 //            log.info(String.format("Triggering build: %s", configuration.getBuildName()));
 //            client.triggerBuild(configuration.getNamespace(), configuration.getBuildName(), configuration.getBuildSecret(), configuration.getBuildType());
 
