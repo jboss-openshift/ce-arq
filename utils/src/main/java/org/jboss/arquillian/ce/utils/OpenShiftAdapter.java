@@ -23,6 +23,26 @@
 
 package org.jboss.arquillian.ce.utils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
@@ -48,10 +68,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.openshift.api.model.EditableNamedRole;
-import io.fabric8.openshift.api.model.NamedRole;
 import io.fabric8.openshift.api.model.Project;
-import io.fabric8.openshift.api.model.Role;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -61,20 +78,14 @@ import org.jboss.dmr.ValueExpressionResolver;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 
-import java.io.*;
-import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class OpenShiftAdapter implements Closeable, RegistryLookup {
     private final static Logger log = Logger.getLogger(OpenShiftAdapter.class.getName());
     private static final File tmpDir;
+
+    public static final String DEPLOYMENT_ARCHIVE_NAME_KEY = "deploymentArchiveName";
 
     static {
         tmpDir = getTempRoot();
@@ -158,7 +169,7 @@ public class OpenShiftAdapter implements Closeable, RegistryLookup {
     }
 
     public static Map<String, String> getDeploymentLabel(Archive<?> archive) {
-        return Collections.singletonMap("deploymentArchiveName", archive.getName());
+        return Collections.singletonMap(DEPLOYMENT_ARCHIVE_NAME_KEY, archive.getName());
     }
 
     public File exportAsZip(File dir, Archive<?> deployment) {

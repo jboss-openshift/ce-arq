@@ -23,6 +23,14 @@
 
 package org.jboss.arquillian.ce.template;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import io.fabric8.openshift.client.ParameterValue;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
@@ -35,14 +43,6 @@ import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -86,7 +86,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             addParameterValues(values, System.getProperties());
             values.add(new ParameterValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository()));
             values.add(new ParameterValue("REPLICAS", String.valueOf(replicas))); // not yet supported
-            values.add(new ParameterValue("DEPLOYMENT_NAME", labels.get("deployment")));
+            values.add(new ParameterValue("DEPLOYMENT_NAME", labels.get(OpenShiftAdapter.DEPLOYMENT_ARCHIVE_NAME_KEY)));
 
             log.info(String.format("Applying OpenShift template: %s", configuration.getTemplateURL()));
             client.processTemplateAndCreateResources(archive.getName(), configuration.getTemplateURL(), configuration.getNamespace(), values.toArray(new ParameterValue[values.size()]));
