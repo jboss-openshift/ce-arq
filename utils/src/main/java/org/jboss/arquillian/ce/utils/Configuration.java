@@ -23,14 +23,14 @@
 
 package org.jboss.arquillian.ce.utils;
 
-import static org.jboss.arquillian.ce.utils.Strings.getSystemPropertyOrEnvVar;
+import org.jboss.arquillian.container.spi.ConfigurationException;
+import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 
 import java.io.Serializable;
 import java.util.Properties;
 import java.util.Random;
 
-import org.jboss.arquillian.container.spi.ConfigurationException;
-import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
+import static org.jboss.arquillian.ce.utils.Strings.getSystemPropertyOrEnvVar;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -95,9 +95,9 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
         if (kubernetesMaster == null) {
             throw new ConfigurationException("Null Kubernetes master!");
         }
-        if (dockerUrl == null) {
-            throw new ConfigurationException("Null Docker url!");
-        }
+//        if (dockerUrl == null) {
+//            throw new ConfigurationException("Null Docker url!");
+//        }
     }
 
     public String getKubernetesMaster() {
