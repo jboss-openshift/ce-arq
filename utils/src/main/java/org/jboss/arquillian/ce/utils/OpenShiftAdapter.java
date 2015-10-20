@@ -155,7 +155,7 @@ public class OpenShiftAdapter implements Closeable, RegistryLookup {
     }
 
     public static Map<String, String> getDeploymentLabel(Archive<?> archive) {
-        return Collections.singletonMap("deployment", archive.getName());
+        return Collections.singletonMap("deploymentArchiveName", archive.getName());
     }
 
     public File exportAsZip(File dir, Archive<?> deployment) {
