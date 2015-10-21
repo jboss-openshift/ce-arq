@@ -49,9 +49,6 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
     public void validate() throws ConfigurationException {
         super.validate();
 
-        if (templateURL == null) {
-            throw new IllegalArgumentException("Missing template URL!");
-        }
         if (buildSecret == null) {
             throw new IllegalArgumentException("Missing build secret!");
         }

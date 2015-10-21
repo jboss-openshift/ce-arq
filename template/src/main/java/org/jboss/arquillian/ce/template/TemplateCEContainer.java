@@ -41,6 +41,7 @@ import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
+import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
@@ -74,6 +75,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     }
 
     public ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException {
+        String templateURL = readTemplateUrl();
         try {
             log.info(String.format("Using Git repository: %s", configuration.getGitRepository()));
             commitDeployment(archive);
@@ -88,15 +90,29 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             values.add(new ParameterValue("REPLICAS", String.valueOf(replicas))); // not yet supported
             values.add(new ParameterValue("DEPLOYMENT_NAME", labels.get(OpenShiftAdapter.DEPLOYMENT_ARCHIVE_NAME_KEY)));
 
-            log.info(String.format("Applying OpenShift template: %s", configuration.getTemplateURL()));
-            client.processTemplateAndCreateResources(archive.getName(), configuration.getTemplateURL(), configuration.getNamespace(), values.toArray(new ParameterValue[values.size()]));
+            log.info(String.format("Applying OpenShift template: %s", templateURL));
+            client.processTemplateAndCreateResources(archive.getName(), templateURL, configuration.getNamespace(), values.toArray(new ParameterValue[values.size()]));
 //            log.info(String.format("Triggering build: %s", configuration.getBuildName()));
 //            client.triggerBuild(configuration.getNamespace(), configuration.getBuildName(), configuration.getBuildSecret(), configuration.getBuildType());
 
             return getProtocolMetaData(archive, replicas);
         } catch (Throwable t) {
-            throw new DeploymentException("Cannot deploy template: " + configuration.getTemplateURL(), t);
+            throw new DeploymentException("Cannot deploy template: " + templateURL, t);
         }
+    }
+
+    protected String readTemplateUrl() {
+        TestClass testClass = tc.get();
+        Template template = testClass.getAnnotation(Template.class);
+        String templateUrl = template == null ? null : template.url();
+        if (templateUrl == null) {
+            templateUrl = configuration.getTemplateURL();
+        }
+
+        if (templateUrl == null) {
+            throw new IllegalArgumentException("Missing template URL! Either add @Template to your test or add -Dopenshift.template.url=<url>");
+        }
+        return templateUrl;
     }
 
     @Override
