@@ -23,14 +23,14 @@
 
 package org.jboss.arquillian.ce.utils;
 
-import org.jboss.arquillian.container.spi.ConfigurationException;
-import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
+import static org.jboss.arquillian.ce.utils.Strings.getSystemPropertyOrEnvVar;
 
 import java.io.Serializable;
 import java.util.Properties;
 import java.util.Random;
 
-import static org.jboss.arquillian.ce.utils.Strings.getSystemPropertyOrEnvVar;
+import org.jboss.arquillian.container.spi.ConfigurationException;
+import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -44,6 +44,11 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private String apiVersion = getSystemPropertyOrEnvVar("kubernetes.api.version", "v1");
     private String namespace = getSystemPropertyOrEnvVar("kubernetes.namespace");
     private boolean generatedNS;
+    private String policyBinding = getSystemPropertyOrEnvVar("kubernetes.policybinding", ":default");
+    private String roleName = getSystemPropertyOrEnvVar("kubernetes.rolename", "admins");
+    private String user = getSystemPropertyOrEnvVar("kubernetes.user", "admin");
+    private String group = getSystemPropertyOrEnvVar("kubernetes.group", "admin");
+    private String roleRef = getSystemPropertyOrEnvVar("kubernetes.roleref", "admin");
 
     private String fromParent = getSystemPropertyOrEnvVar("from.parent");
     private String deploymentDir = getSystemPropertyOrEnvVar("deployment.dir");
@@ -138,6 +143,46 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public boolean isGeneratedNS() {
         return generatedNS;
+    }
+
+    public String getPolicyBinding() {
+        return policyBinding;
+    }
+
+    public void setPolicyBinding(String policyBinding) {
+        this.policyBinding = policyBinding;
+    }
+
+    public String getRoleName() {
+        return roleName;
+    }
+
+    public void setRoleName(String roleName) {
+        this.roleName = roleName;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    public String getRoleRef() {
+        return roleRef;
+    }
+
+    public void setRoleRef(String roleRef) {
+        this.roleRef = roleRef;
     }
 
     public String getFromParent() {

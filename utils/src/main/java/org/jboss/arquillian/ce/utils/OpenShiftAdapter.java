@@ -58,6 +58,7 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.KubernetesList;
 import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.PodSpec;
@@ -69,6 +70,8 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.openshift.api.model.Project;
+import io.fabric8.openshift.api.model.RoleBinding;
+import io.fabric8.openshift.api.model.RoleBindingBuilder;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -261,11 +264,20 @@ public class OpenShiftAdapter implements Closeable, RegistryLookup {
     }
 
     public Project createProject(String namespace) {
+        // oc new-project <namespace>
         Project project = client.projects().createNew().withNewMetadata().withName(namespace).endMetadata().done();
-        // oc policy add-role-to-user admin admin -n cetesting
-        // TODO
-        // client.policyBindings().inNamespace(namespace).createNew();
-        // client.policyBindings().inNamespace(namespace).withName("default").edit();
+        // client.inNamespace(namespace).policyBindings().createNew().withNewMetadata().withName(configuration.getPolicyBinding()).endMetadata().done();
+
+        // oc policy add-role-to-user admin admin -n <namespace>
+        RoleBinding rb = new RoleBindingBuilder()
+            .withNewMetadata().withName(configuration.getRoleName()).endMetadata()
+            .withUserNames(configuration.getUser())
+            .withGroupNames(configuration.getGroup())
+            .withSubjects(new ObjectReferenceBuilder().withKind("User").withName(configuration.getUser()).build())
+            .withNewRoleRef().withName(configuration.getRoleRef()).endRoleRef()
+            .build();
+        client.inNamespace(namespace).roleBindings().create(rb);
+
         return project;
     }
 
