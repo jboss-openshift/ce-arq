@@ -27,9 +27,9 @@ import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
 
-import io.fabric8.kubernetes.api.model.ContainerPort;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
+import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -62,10 +62,10 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
             // add new k8s config
 
             // http
-            ContainerPort http = new ContainerPort();
+            Port http = new Port();
             http.setName("http");
             http.setContainerPort(8080);
-            List<ContainerPort> ports = Collections.singletonList(http);
+            List<Port> ports = Collections.singletonList(http);
 
             String rc = deployReplicationController(archive, imageName, ports, 1, null, null, true);
             log.info("Deployed replication controller: " + rc);

@@ -29,8 +29,9 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.logging.Logger;
 
-import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
+import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Proxy;
+import org.jboss.arquillian.ce.utils.ProxyFactory;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -60,7 +61,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
         this.contextRoot = readContextRoot(protocolMetaData);
         this.archive = protocolMetaData.getContexts(Archive.class).iterator().next();
 
-        this.proxy = new Proxy(configuration.getKubernetesMaster());
+        this.proxy = ProxyFactory.getProxy(configuration.getKubernetesMaster());
     }
 
     private String readContextRoot(ProtocolMetaData protocolMetaData) {
@@ -85,7 +86,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
 
         Class<?> testClass = testMethodExecutor.getInstance().getClass();
 
-        Map<String, String> labels = OpenShiftAdapter.getDeploymentLabel(archive);
+        Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
         String host = config().getKubernetesMaster();
         String version = config().getApiVersion();
         String namespace = config().getNamespace();
@@ -134,7 +135,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
      */
     private int findDeploymentsPod() {
         log.info(String.format("Searching for pod with context %s ...", contextRoot));
-        Map<String, String> labels = OpenShiftAdapter.getDeploymentLabel(archive);
+        Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
         String host = config().getKubernetesMaster();
         String version = config().getApiVersion();
         String namespace = config().getNamespace();

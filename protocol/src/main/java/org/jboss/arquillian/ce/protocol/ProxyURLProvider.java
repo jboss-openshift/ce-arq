@@ -28,9 +28,10 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
 
+import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Configuration;
-import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Proxy;
+import org.jboss.arquillian.ce.utils.ProxyFactory;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
@@ -56,7 +57,7 @@ public class ProxyURLProvider implements ResourceProvider {
 
     private synchronized Proxy getProxy() {
         if (proxy == null) {
-            proxy = new Proxy(configurationInstance.get().getKubernetesMaster());
+            proxy = ProxyFactory.getProxy(configurationInstance.get().getKubernetesMaster());
             proxy.setDefaultSSLContext();
         }
         return proxy;
@@ -90,7 +91,7 @@ public class ProxyURLProvider implements ResourceProvider {
     public Object lookup(ArquillianResource arquillianResource, Annotation... annotations) {
         try {
             Archive<?> archive = protocolMetaDataInstance.get().getContexts(Archive.class).iterator().next();
-            Map<String, String> labels = OpenShiftAdapter.getDeploymentLabel(archive);
+            Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
 
             Configuration c = configurationInstance.get();
 

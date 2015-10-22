@@ -31,13 +31,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.fabric8.openshift.client.ParameterValue;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
+import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
+import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -62,13 +63,13 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     }
 
     @SuppressWarnings("unchecked")
-    private void addParameterValues(List<ParameterValue> values, Map map) {
+    private void addParameterValues(List<ParamValue> values, Map map) {
         Set<Map.Entry> entries = map.entrySet();
         for (Map.Entry env : entries) {
             if (env.getKey() instanceof String && env.getValue() instanceof String) {
                 String key = (String) env.getKey();
                 if (key.startsWith("ARQ_")) {
-                    values.add(new ParameterValue(key.substring("ARQ_".length()), (String) env.getValue()));
+                    values.add(new ParamValue(key.substring("ARQ_".length()), (String) env.getValue()));
                 }
             }
         }
@@ -81,17 +82,17 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             commitDeployment(archive);
 
             int replicas = readReplicas();
-            Map<String, String> labels = OpenShiftAdapter.getDeploymentLabel(archive);
+            Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
 
-            List<ParameterValue> values = new ArrayList<>();
+            List<ParamValue> values = new ArrayList<>();
             addParameterValues(values, System.getenv());
             addParameterValues(values, System.getProperties());
-            values.add(new ParameterValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository()));
-            values.add(new ParameterValue("REPLICAS", String.valueOf(replicas))); // not yet supported
-            values.add(new ParameterValue("DEPLOYMENT_NAME", labels.get(OpenShiftAdapter.DEPLOYMENT_ARCHIVE_NAME_KEY)));
+            values.add(new ParamValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository()));
+            values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
+            values.add(new ParamValue("DEPLOYMENT_NAME", labels.get(OpenShiftAdapter.DEPLOYMENT_ARCHIVE_NAME_KEY)));
 
-            log.info(String.format("Applying OpenShift template: %s", templateURL));
-            client.processTemplateAndCreateResources(archive.getName(), templateURL, configuration.getNamespace(), values.toArray(new ParameterValue[values.size()]));
+            log.info(String.format("Applying OpenShift template: %s", configuration.getTemplateURL()));
+            client.processTemplateAndCreateResources(archive.getName(), configuration.getTemplateURL(), configuration.getNamespace(), values);
 //            log.info(String.format("Triggering build: %s", configuration.getBuildName()));
 //            client.triggerBuild(configuration.getNamespace(), configuration.getBuildName(), configuration.getBuildSecret(), configuration.getBuildType());
 

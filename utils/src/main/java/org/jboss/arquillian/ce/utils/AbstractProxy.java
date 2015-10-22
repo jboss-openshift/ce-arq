@@ -23,33 +23,31 @@
 
 package org.jboss.arquillian.ce.utils;
 
-import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface Proxy {
-    String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s:8080/proxy%s";
+public abstract class AbstractProxy implements Proxy {
 
-    void setDefaultSSLContext();
+    protected abstract SSLContext getSSLContext();
 
-    String url(String host, String version, String namespace, String podName, String path, String parameters);
+    public void setDefaultSSLContext() {
+        SSLContext.setDefault(getSSLContext());
+    }
 
-    String url(Map<String, String> labels, String host, String version, String namespace, int index, String path, String parameters);
+    public String url(String host, String version, String namespace, String podName, String path, String parameters) {
+        String url = String.format(PROXY_URL, host, version, namespace, podName, path);
+        return (parameters != null && parameters.length() > 0) ? url + "?" + parameters : url;
+    }
 
-    List<String> urls(Map<String, String> labels, String host, String namespace, String version, String path);
+    public Map.Entry<Integer, String> findPod(Map<String, String> labels, Configuration configuration, String path) {
+        String host = configuration.getKubernetesMaster();
+        String version = configuration.getApiVersion();
+        String namespace = configuration.getNamespace();
+        return findPod(labels, host, version, namespace, path);
+    }
 
-    int podsSize(Map<String, String> labels, String namespace);
-
-    <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
-
-    InputStream post(Map<String, String> labels, Configuration configuration, int pod, String path) throws Exception;
-
-    int status(String url);
-
-    Map.Entry<Integer, String> findPod(Map<String, String> labels, Configuration configuration, String path);
-
-    Map.Entry<Integer, String> findPod(Map<String, String> labels, String host, String version, String namespace, String path);
 }

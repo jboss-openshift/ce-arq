@@ -28,9 +28,10 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.Client;
+import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Configuration;
-import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Proxy;
+import org.jboss.arquillian.ce.utils.ProxyFactory;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
@@ -65,14 +66,14 @@ public class ClientCreator {
 
         public ClientImpl(Configuration configuration) {
             this.configuration = configuration;
-            this.proxy = new Proxy(configuration.getKubernetesMaster());
+            this.proxy = ProxyFactory.getProxy(configuration.getKubernetesMaster());
         }
 
         public synchronized InputStream execute(int pod, String path) throws Exception {
             log.info(String.format("Invoking pod #%s for path '%s'", pod, path));
 
             Archive<?> archive = protocolMetaDataInstance.get().getContexts(Archive.class).iterator().next();
-            Map<String, String> labels = OpenShiftAdapter.getDeploymentLabel(archive);
+            Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
 
             return proxy.post(labels, configuration, pod, path);
         }

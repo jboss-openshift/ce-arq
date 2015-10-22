@@ -23,33 +23,23 @@
 
 package org.jboss.arquillian.ce.utils;
 
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface Proxy {
-    String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s:8080/proxy%s";
+public class ParamValue {
+    private String name;
+    private String value;
 
-    void setDefaultSSLContext();
+    public ParamValue(String name, String value) {
+        this.name = name;
+        this.value = value;
+    }
 
-    String url(String host, String version, String namespace, String podName, String path, String parameters);
+    public String getName() {
+        return name;
+    }
 
-    String url(Map<String, String> labels, String host, String version, String namespace, int index, String path, String parameters);
-
-    List<String> urls(Map<String, String> labels, String host, String namespace, String version, String path);
-
-    int podsSize(Map<String, String> labels, String namespace);
-
-    <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
-
-    InputStream post(Map<String, String> labels, Configuration configuration, int pod, String path) throws Exception;
-
-    int status(String url);
-
-    Map.Entry<Integer, String> findPod(Map<String, String> labels, Configuration configuration, String path);
-
-    Map.Entry<Integer, String> findPod(Map<String, String> labels, String host, String version, String namespace, String path);
+    public String getValue() {
+        return value;
+    }
 }

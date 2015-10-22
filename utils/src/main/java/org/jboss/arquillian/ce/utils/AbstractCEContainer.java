@@ -26,23 +26,11 @@ package org.jboss.arquillian.ce.utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerPort;
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.ExecAction;
-import io.fabric8.kubernetes.api.model.HTTPGetAction;
-import io.fabric8.kubernetes.api.model.Handler;
-import io.fabric8.kubernetes.api.model.Lifecycle;
-import io.fabric8.kubernetes.api.model.PodTemplateSpec;
-import io.fabric8.kubernetes.api.model.ReplicationController;
-import io.fabric8.kubernetes.api.model.VolumeMount;
 import org.jboss.arquillian.ce.api.Replicas;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -96,7 +84,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected void cleanup(Archive<?> archive) throws Exception {
         String name = getName(getPrefix(), archive) + "rc";
         client.cleanReplicationControllers(name);
-        client.cleanPods(OpenShiftAdapter.getDeploymentLabel(archive));
+        client.cleanPods(AbstractOpenShiftAdapter.getDeploymentLabels(archive));
     }
 
     public void setup(T configuration) {
@@ -105,7 +93,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     public void start() throws LifecycleException {
-        this.client = new OpenShiftAdapter(configuration);
+        this.client = OpenShiftAdapterFactory.getOpenShiftAdapter(configuration);
         this.proxy = client.createProxy();
 
         String namespace = configuration.getNamespace();
@@ -182,56 +170,15 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return client.buildAndPushImage(this, dockerfileTemplate, archive, properties);
     }
 
-    protected String deployReplicationController(Archive<?> archive, String imageName, List<ContainerPort> ports, int replicas, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
+    protected String deployReplicationController(Archive<?> archive, String imageName, List<Port> ports, int replicas, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
         String name = getName(getPrefix(), archive);
-        String apiVersion = configuration.getApiVersion();
-
-        List<EnvVar> envVars = Collections.emptyList();
-        Lifecycle lifecycle = null;
-        if (!ignorePreStop && hookType != null && preStopPath != null) {
-            lifecycle = new Lifecycle();
-            Handler preStopHandler = createHandler(hookType, preStopPath, ports);
-            lifecycle.setPreStop(preStopHandler);
-        }
-        List<VolumeMount> volumes = Collections.emptyList();
-        Container container = client.createContainer(imageName, name + "-container", envVars, ports, volumes, lifecycle, configuration.getImagePullPolicy());
-
-        List<Container> containers = Collections.singletonList(container);
-        Map<String, String> podLabels = new HashMap<>();
-        podLabels.put("name", name + "Pod");
-        podLabels.putAll(OpenShiftAdapter.getDeploymentLabel(archive));
-        PodTemplateSpec podTemplate = client.createPodTemplateSpec(podLabels, containers);
-
-        Map<String, String> selector = Collections.singletonMap("name", name + "Pod");
-        Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
-        ReplicationController rc = client.createReplicationController(name + "rc", ReplicationController.ApiVersion.fromValue(apiVersion), labels, replicas, selector, podTemplate);
-
-        return client.deployReplicationController(rc);
-    }
-
-    private Handler createHandler(HookType hookType, String preStopPath, List<ContainerPort> ports) {
-        Handler preStopHandler = new Handler();
-        switch (hookType) {
-            case HTTP_GET:
-                HTTPGetAction httpGet = new HTTPGetAction();
-                httpGet.setPath(preStopPath);
-                httpGet.setPort(OpenShiftAdapter.findHttpContainerPort(ports));
-                preStopHandler.setHttpGet(httpGet);
-                break;
-            case EXEC:
-                ExecAction exec = new ExecAction(Collections.singletonList(preStopPath));
-                preStopHandler.setExec(exec);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported hook type: " + hookType);
-        }
-        return preStopHandler;
+        return client.deployReplicationController(name, AbstractOpenShiftAdapter.getDeploymentLabels(archive), imageName, ports, replicas, hookType, preStopPath, ignorePreStop);
     }
 
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final int replicas) throws Exception {
         log.info("Creating ProtocolMetaData ...");
 
-        final Map<String, String> labels = OpenShiftAdapter.getDeploymentLabel(archive);
+        final Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
 
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {

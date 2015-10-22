@@ -25,20 +25,15 @@ package org.jboss.arquillian.ce.wildfly;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.fabric8.kubernetes.api.model.ContainerPort;
-import org.jboss.arquillian.ce.api.Replicas;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
-import org.jboss.arquillian.ce.utils.Strings;
+import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
 
 /**
@@ -68,24 +63,24 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
 
             // add new k8s config
 
-            List<ContainerPort> ports = new ArrayList<>();
+            List<Port> ports = new ArrayList<>();
             // http
-            ContainerPort http = new ContainerPort();
+            Port http = new Port();
             http.setName("http");
             http.setContainerPort(8080);
             ports.add(http);
             // https / ssl
-            ContainerPort https = new ContainerPort();
+            Port https = new Port();
             https.setName("https");
             https.setContainerPort(8443);
             ports.add(https);
             // DMR / management
-            ContainerPort mgmt = new ContainerPort();
+            Port mgmt = new Port();
             mgmt.setName("mgmt");
             mgmt.setContainerPort(configuration.getMgmtPort());
             ports.add(mgmt);
             // jgroups / ping
-            ContainerPort ping = new ContainerPort();
+            Port ping = new Port();
             ping.setName("ping");
             ping.setContainerPort(8888);
             ports.add(ping);
