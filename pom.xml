@@ -23,6 +23,8 @@
     <properties>
         <version.arquillian>1.1.8.Final</version.arquillian>
         <version.dockerjava>2.1.0</version.dockerjava>
+        <version.async-client>1.9.30</version.async-client>
+        <version.openshift.client>3.0.1.Final</version.openshift.client>
         <version.fabric8>2.2.38</version.fabric8>
         <version.fabric8.client>1.3.54</version.fabric8.client>
         <version.jgit>4.1.0.201509280440-r</version.jgit>
@@ -37,6 +39,7 @@
     <modules>
         <module>api</module>
         <module>utils</module>
+        <module>openshift</module>
         <module>fabric8</module>
         <module>protocol</module>
         <module>web</module>
@@ -110,6 +113,18 @@
                         <artifactId>jackson-jaxrs-json-provider</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.ning</groupId>
+                <artifactId>async-http-client</artifactId>
+                <version>${version.async-client}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.openshift</groupId>
+                <artifactId>openshift-restclient-java</artifactId>
+                <version>${version.openshift.client}</version>
             </dependency>
 
             <dependency>

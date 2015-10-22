@@ -31,8 +31,6 @@ import java.util.Map;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public interface Proxy {
-    String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s:8080/proxy%s";
-
     void setDefaultSSLContext();
 
     String url(String host, String version, String namespace, String podName, String path, String parameters);

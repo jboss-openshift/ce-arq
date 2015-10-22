@@ -21,47 +21,28 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.fabric8;
+package org.jboss.arquillian.ce.utils;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Properties;
 
-import javax.net.ssl.SSLContext;
-
-import com.ning.http.client.AsyncHttpClient;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.fabric8.openshift.client.OpenShiftClient;
-import org.jboss.arquillian.ce.utils.AbstractProxy;
+import org.jboss.dmr.ValueExpressionResolver;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class F8Proxy extends AbstractProxy<Pod> {
-    private final OpenShiftClient client;
+public class CustomValueExpressionResolver extends ValueExpressionResolver {
+    private final Properties properties;
 
-    public F8Proxy(String kubernetesMaster) {
-        this.client = new DefaultOpenShiftClient(kubernetesMaster);
+    public CustomValueExpressionResolver(Properties properties) {
+        this.properties = properties;
     }
 
-    public F8Proxy(OpenShiftClient client) {
-        this.client = client;
+    @Override
+    protected String resolvePart(String name) {
+        String value = (String) properties.get(name);
+        if (value != null) {
+            return value;
+        }
+        return super.resolvePart(name);
     }
-
-    protected AsyncHttpClient getHttpClient() {
-        return client.getHttpClient();
-    }
-
-    protected SSLContext getSSLContext() {
-        return getHttpClient().getConfig().getSSLContext();
-    }
-
-    protected List<Pod> getPods(String namespace, Map<String, String> labels) {
-        return client.pods().inNamespace(namespace).withLabels(labels).list().getItems();
-    }
-
-    protected String getName(Pod pod) {
-        return pod.getMetadata().getName();
-    }
-
 }

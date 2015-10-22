@@ -21,47 +21,45 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.fabric8;
+package org.jboss.arquillian.ce.openshift;
 
 import java.util.List;
 import java.util.Map;
 
-import javax.net.ssl.SSLContext;
-
 import com.ning.http.client.AsyncHttpClient;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.fabric8.openshift.client.OpenShiftClient;
+import com.openshift.internal.restclient.model.Pod;
+import com.openshift.restclient.ClientFactory;
+import com.openshift.restclient.IClient;
+import com.openshift.restclient.NoopSSLCertificateCallback;
+import com.openshift.restclient.ResourceKind;
+import com.openshift.restclient.model.IPod;
 import org.jboss.arquillian.ce.utils.AbstractProxy;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class F8Proxy extends AbstractProxy<Pod> {
-    private final OpenShiftClient client;
+public class NativeProxy extends AbstractProxy<IPod> {
+    private final IClient client;
+    private final AsyncHttpClient httpClient;
 
-    public F8Proxy(String kubernetesMaster) {
-        this.client = new DefaultOpenShiftClient(kubernetesMaster);
+    public NativeProxy(String kubernetesMaster) {
+        this.client = new ClientFactory().create(kubernetesMaster, new NoopSSLCertificateCallback());
+        this.httpClient = createHttpClient();
     }
 
-    public F8Proxy(OpenShiftClient client) {
-        this.client = client;
+    protected AsyncHttpClient createHttpClient() {
+        return null; // TODO
     }
 
     protected AsyncHttpClient getHttpClient() {
-        return client.getHttpClient();
+        return httpClient;
     }
 
-    protected SSLContext getSSLContext() {
-        return getHttpClient().getConfig().getSSLContext();
+    protected List<IPod> getPods(String namespace, Map<String, String> labels) {
+        return client.list(ResourceKind.POD, namespace, labels);
     }
 
-    protected List<Pod> getPods(String namespace, Map<String, String> labels) {
-        return client.pods().inNamespace(namespace).withLabels(labels).list().getItems();
+    protected String getName(IPod pod) {
+        return pod.getName();
     }
-
-    protected String getName(Pod pod) {
-        return pod.getMetadata().getName();
-    }
-
 }
