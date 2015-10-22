@@ -30,7 +30,7 @@ import org.kohsuke.MetaInfServices;
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-@MetaInfServices(Proxy.class)
+@MetaInfServices(ProxyProvider.class)
 public class F8ProxyProvider implements ProxyProvider {
     public Proxy create(String masterURL) {
         return new F8Proxy(masterURL);

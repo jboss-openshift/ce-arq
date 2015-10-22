@@ -34,6 +34,6 @@ import org.kohsuke.MetaInfServices;
 @MetaInfServices(OpenShiftAdapterProvider.class)
 public class NativeOpenShiftAdapterProvider implements OpenShiftAdapterProvider {
     public OpenShiftAdapter create(Configuration configuration) {
-        return null;
+        return new NativeOpenShiftAdapter(configuration);
     }
 }

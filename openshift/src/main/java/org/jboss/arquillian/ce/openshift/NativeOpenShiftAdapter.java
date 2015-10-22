@@ -26,30 +26,25 @@ package org.jboss.arquillian.ce.openshift;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.openshift.internal.restclient.ResourceFactory;
-import com.openshift.internal.restclient.http.ParameterValue;
-import com.openshift.internal.restclient.http.StringParameter;
-import com.openshift.internal.restclient.model.KubernetesResource;
-import com.openshift.internal.restclient.model.ReplicationController;
-import com.openshift.internal.restclient.model.Service;
 import com.openshift.internal.restclient.model.template.Parameter;
 import com.openshift.restclient.ClientFactory;
 import com.openshift.restclient.IClient;
 import com.openshift.restclient.NoopSSLCertificateCallback;
 import com.openshift.restclient.ResourceKind;
+import com.openshift.restclient.capability.resources.IProjectTemplateProcessing;
 import com.openshift.restclient.model.IPod;
-import com.openshift.restclient.model.IPort;
+import com.openshift.restclient.model.IProject;
 import com.openshift.restclient.model.IReplicationController;
 import com.openshift.restclient.model.IResource;
 import com.openshift.restclient.model.IService;
@@ -74,8 +69,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     private final IClient client;
 
-    private Map<String, Object> configs = new HashMap<>();
-    private IProjectRequest projectRequest;
+    private Map<String, Collection<IResource>> templates = new HashMap<>();
 
     public NativeOpenShiftAdapter(Configuration configuration) {
         super(configuration);
@@ -87,7 +81,8 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         this.client = new ClientFactory().create(configuration.getKubernetesMaster(), new NoopSSLCertificateCallback());
     }
 
-    <T extends IResource> T createResource(String template, Properties properties) {
+    <T extends IResource> T createResource(String json, Properties properties) {
+        String template = Templates.readJson(configuration.getApiVersion(), json);
         final ValueExpressionResolver resolver = new CustomValueExpressionResolver(properties);
         ValueExpression expression = new ValueExpression(template);
         String config = expression.resolveString(resolver);
@@ -112,26 +107,75 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     public IProjectRequest createProject(String namespace) {
         // oc new-project <namespace>
-        projectRequest = client.create(ResourceKind.PROJECT_REQUEST, "default", configuration.getNamespace(), null, null);
-        // client.inNamespace(namespace).policyBindings().createNew().withNewMetadata().withName(configuration.getPolicyBinding()).endMetadata().done();
-
-        // oc policy add-role-to-user admin admin -n <namespace>
-        // TODO
-
-        return null;
+        return client.create(ResourceKind.PROJECT_REQUEST, "", configuration.getNamespace(), null, null);
     }
 
     public boolean deleteProject(String namespace) {
-        client.delete(projectRequest);
+        IProject project = client.get(ResourceKind.PROJECT, namespace, "");
+        client.delete(project);
         return true;
     }
 
-    public String deployReplicationController(String name, Map<String, String> deploymentLabels, String imageName, List<Port> ports, int replicas, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
-        return null;
+    public String deployReplicationController(String name, Map<String, String> deploymentLabels, String imageName, List<Port> ports, int replicas, String env, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
+        Properties properties = new Properties();
+        properties.put("NAMESPACE", configuration.getNamespace());
+        properties.put("NAME", name);
+        Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
+        properties.put("TOP_LABELS", toLabels(labels));
+        Map<String, String> podLabels = new HashMap<>(deploymentLabels);
+        podLabels.put("name", name + "Pod");
+        properties.put("POD_LABELS", toLabels(podLabels));
+        properties.put("REPLICAS", String.valueOf(replicas));
+        properties.put("POD_NAME", name + "Pod");
+        properties.put("CONTAINER_NAME", name + "-container");
+        properties.put("IMAGE_NAME", imageName);
+        properties.put("IMAGE_PULL", configuration.getImagePullPolicy());
+        properties.put("LIFECYCLE", createLifecycle(env, hookType, preStopPath, ignorePreStop));
+        properties.put("PORTS", toPorts(ports));
+        IReplicationController rc = createResource(Templates.REPLICATION_CONTROLLER, properties);
+
+        return client.create(rc, configuration.getNamespace()).getName();
+    }
+
+    private String createLifecycle(String env, HookType hookType, String preStopPath, boolean ignorePreStop) {
+        if (!ignorePreStop && hookType != null && preStopPath != null) {
+            return Templates.readJson(configuration.getApiVersion(), Templates.LIFECYCLE, env);
+        } else {
+            return "";
+        }
+    }
+
+    private String toLabels(Map<String, String> labels) {
+        StringBuilder builder = new StringBuilder();
+        Iterator<Map.Entry<String, String>> iterator = labels.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, String> entry = iterator.next();
+            builder.append(String.format("\"%s\" : \"%s\"", entry.getKey(), entry.getValue()));
+            if (iterator.hasNext()) {
+                builder.append(",");
+            }
+            builder.append("\n");
+        }
+        return builder.toString();
+    }
+
+    private String toPorts(List<Port> ports) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < ports.size(); i++) {
+            Port port = ports.get(i);
+            builder.append(String.format("{\"name\" : \"%s\", \"containerPort\" : %s}", port.getName(), port.getContainerPort()));
+            if (i < ports.size() - 1) {
+                builder.append(",");
+            }
+            builder.append("\n");
+        }
+        return builder.toString();
     }
 
     public Object processTemplateAndCreateResources(String name, String templateURL, String namespace, List<ParamValue> values) throws Exception {
-        ITemplate template;
+        final IProject project = client.get(ResourceKind.PROJECT, configuration.getNamespace(), "");
+
+        final ITemplate template;
         try (InputStream stream = new URL(templateURL).openStream()) {
             template = client.getResourceFactory().create(stream);
         }
@@ -142,10 +186,20 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
         template.updateParameterValues(parameters);
 
-        return null;
+        final IProjectTemplateProcessing capability = project.getCapability(IProjectTemplateProcessing.class);
+        ITemplate processed = capability.process(template);
+        Collection<IResource> resources = capability.apply(processed);
+        templates.put(name, resources);
+        return resources;
     }
 
     public Object deleteTemplate(String name, String namespace) throws Exception {
+        Collection<IResource> resources = templates.get(name);
+        if (resources != null) {
+            for (IResource resource : resources) {
+                client.delete(resource);
+            }
+        }
         return null;
     }
 
@@ -177,10 +231,8 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
     }
 
-    private String deployReplicationController(IReplicationController rc) throws Exception {
-        return client.create(rc, configuration.getNamespace()).getName();
+    public void close() throws IOException {
+        templates.clear();
     }
 
-    public void close() throws IOException {
-    }
 }

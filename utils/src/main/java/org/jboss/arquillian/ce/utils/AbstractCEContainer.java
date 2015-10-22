@@ -172,7 +172,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected String deployReplicationController(Archive<?> archive, String imageName, List<Port> ports, int replicas, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
         String name = getName(getPrefix(), archive);
-        return client.deployReplicationController(name, AbstractOpenShiftAdapter.getDeploymentLabels(archive), imageName, ports, replicas, hookType, preStopPath, ignorePreStop);
+        return client.deployReplicationController(name, AbstractOpenShiftAdapter.getDeploymentLabels(archive), imageName, ports, replicas, getPrefix(), hookType, preStopPath, ignorePreStop);
     }
 
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final int replicas) throws Exception {

@@ -23,19 +23,40 @@
 
 package org.jboss.arquillian.ce.openshift;
 
-import java.util.List;
-import java.util.Map;
-
-import com.ning.http.client.AsyncHttpClient;
-import com.openshift.restclient.ClientFactory;
-import com.openshift.restclient.IClient;
-import com.openshift.restclient.NoopSSLCertificateCallback;
-import com.openshift.restclient.ResourceKind;
-import com.openshift.restclient.model.IPod;
-import org.jboss.arquillian.ce.utils.AbstractProxy;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 final class Templates {
+
+    static final String REPLICATION_CONTROLLER = "replication_controller";
+    static final String LIFECYCLE = "lifecycle";
+
+    static String readJson(String apiVersion, String json) {
+        return readJson(apiVersion, json, null);
+    }
+
+    static String readJson(String apiVersion, String json, String env) {
+        try {
+            StringBuilder builder = new StringBuilder();
+            String path = String.format("%s_%s%s.json", apiVersion, json, env != null && env.length() > 0 ? "_" + env : "");
+            InputStream stream = Templates.class.getClassLoader().getResourceAsStream(path);
+            if (stream == null) {
+                throw new IllegalArgumentException("No such template: " + path);
+            }
+            try {
+                int ch;
+                while ((ch = stream.read()) != -1) {
+                    builder.append((char) ch);
+                }
+            } finally {
+                stream.close();
+            }
+            return builder.toString();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 }

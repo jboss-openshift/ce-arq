@@ -76,7 +76,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     private final static Logger log = Logger.getLogger(F8OpenShiftAdapter.class.getName());
 
     private final OpenShiftClient client;
-    private Map<String, KubernetesList> configs = new HashMap<>();
+    private Map<String, KubernetesList> templates = new HashMap<>();
 
     public F8OpenShiftAdapter(Configuration configuration) {
         super(configuration);
@@ -118,7 +118,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.projects().withName(namespace).delete();
     }
 
-    public String deployReplicationController(String name, Map<String, String> deploymentLabels, String imageName, List<Port> ports, int replicas, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
+    public String deployReplicationController(String name, Map<String, String> deploymentLabels, String imageName, List<Port> ports, int replicas, String env, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
         String apiVersion = configuration.getApiVersion();
 
         List<ContainerPort> cps = new ArrayList<>();
@@ -178,7 +178,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
         KubernetesList list = processTemplate(templateURL, namespace, pvs);
         KubernetesList result = createResources(namespace, list);
-        configs.put(name, result);
+        templates.put(name, result);
         return result;
     }
 
@@ -197,7 +197,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     public Object deleteTemplate(String name, String namespace) throws Exception {
-        KubernetesList config = configs.get(name);
+        KubernetesList config = templates.get(name);
         if (config != null) {
             return client.lists().inNamespace(namespace).delete(config);
         }
@@ -316,7 +316,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     public void close() throws IOException {
-        configs.clear();
+        templates.clear();
         if (client != null) {
             client.close();
         }
