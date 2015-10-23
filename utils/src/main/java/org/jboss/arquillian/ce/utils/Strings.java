@@ -86,6 +86,14 @@ public class Strings {
         return getSystemPropertyOrEnvVar(key, convertSystemPropertyNameToEnvVar(key), defaultValue);
     }
 
+    public static boolean isNullOrEmpty(String str) {
+        return str == null || str.isEmpty();
+    }
+
+    public static boolean isNotNullOrEmpty(String str) {
+        return isNullOrEmpty(str) == false;
+    }
+
     // ---
 
     static String toString(InputStream stream) {

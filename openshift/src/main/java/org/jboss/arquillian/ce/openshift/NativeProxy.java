@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.ning.http.client.AsyncHttpClient;
-import com.openshift.internal.restclient.model.Pod;
 import com.openshift.restclient.ClientFactory;
 import com.openshift.restclient.IClient;
 import com.openshift.restclient.NoopSSLCertificateCallback;
@@ -44,11 +43,11 @@ public class NativeProxy extends AbstractProxy<IPod> {
 
     public NativeProxy(String kubernetesMaster) {
         this.client = new ClientFactory().create(kubernetesMaster, new NoopSSLCertificateCallback());
-        this.httpClient = createHttpClient();
+        this.httpClient = createHttpClient(kubernetesMaster);
     }
 
-    protected AsyncHttpClient createHttpClient() {
-        return null; // TODO
+    protected AsyncHttpClient createHttpClient(String masterURL) {
+        return AsyncHttpClientCreator.createHttpClient(masterURL);
     }
 
     protected AsyncHttpClient getHttpClient() {
