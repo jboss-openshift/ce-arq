@@ -147,6 +147,9 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     }
 
     public String getToken() {
+        if (token == null) {
+            throw new IllegalStateException("Missing kubernetes.auth.token!");
+        }
         return token;
     }
 

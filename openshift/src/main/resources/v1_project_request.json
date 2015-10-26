@@ -1,0 +1,8 @@
+{
+  "kind": "ProjectRequest",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "${PROJECT_NAME}",
+    "creationTimestamp": null
+  }
+}

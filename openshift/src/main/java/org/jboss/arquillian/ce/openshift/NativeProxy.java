@@ -31,6 +31,7 @@ import com.openshift.restclient.ClientFactory;
 import com.openshift.restclient.IClient;
 import com.openshift.restclient.NoopSSLCertificateCallback;
 import com.openshift.restclient.ResourceKind;
+import com.openshift.restclient.authorization.TokenAuthorizationStrategy;
 import com.openshift.restclient.model.IPod;
 import org.jboss.arquillian.ce.utils.AbstractProxy;
 import org.jboss.arquillian.ce.utils.Configuration;
@@ -44,6 +45,7 @@ public class NativeProxy extends AbstractProxy<IPod> {
 
     public NativeProxy(Configuration configuration) {
         this.client = new ClientFactory().create(configuration.getKubernetesMaster(), new NoopSSLCertificateCallback());
+        this.client.setAuthorizationStrategy(new TokenAuthorizationStrategy(configuration.getToken()));
         this.httpClient = createHttpClient(configuration);
     }
 
