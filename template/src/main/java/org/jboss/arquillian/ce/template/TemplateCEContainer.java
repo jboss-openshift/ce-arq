@@ -80,6 +80,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     }
 
     public ProtocolMetaData doDeploy(final Archive<?> archive) throws DeploymentException {
+        final String templateURL = readTemplateUrl();
         try {
             log.info(String.format("Using Git repository: %s", configuration.getGitRepository()));
             final String newArchiveName = commitDeployment(archive);
@@ -105,7 +106,6 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
             values.add(new ParamValue("DEPLOYMENT_NAME", labels.get(OpenShiftAdapter.DEPLOYMENT_ARCHIVE_NAME_KEY)));
 
-            String templateURL = readTemplateUrl();
             log.info(String.format("Applying OpenShift template: %s", templateURL));
             // use old archive name as templateKey
             client.processTemplateAndCreateResources(archive.getName(), templateURL, configuration.getNamespace(), values);
