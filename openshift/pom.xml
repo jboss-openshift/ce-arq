@@ -19,12 +19,6 @@
     <dependencies>
 
         <dependency>
-            <groupId>net.oauth.core</groupId>
-            <artifactId>oauth</artifactId>
-            <version>${version.pem}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-ce-utils</artifactId>
         </dependency>
