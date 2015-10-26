@@ -44,7 +44,7 @@ class AsyncHttpClientCreator {
             clientConfigBuilder.setFollowRedirect(true);
 
             // Should we disable all server certificate checks?
-            clientConfigBuilder.setAcceptAnyCertificate(true);
+            clientConfigBuilder.setAcceptAnyCertificate(configuration.isTrustCerts());
 
             // auth
             clientConfigBuilder.addRequestFilter(new RequestFilter() {

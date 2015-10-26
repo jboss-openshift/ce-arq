@@ -26,11 +26,8 @@ package org.jboss.arquillian.ce.fabric8;
 import java.util.List;
 import java.util.Map;
 
-import javax.net.ssl.SSLContext;
-
 import com.ning.http.client.AsyncHttpClient;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.jboss.arquillian.ce.utils.AbstractProxy;
 import org.jboss.arquillian.ce.utils.Configuration;
@@ -42,7 +39,7 @@ public class F8Proxy extends AbstractProxy<Pod> {
     private final OpenShiftClient client;
 
     public F8Proxy(Configuration configuration) {
-        this.client = new DefaultOpenShiftClient(configuration.getKubernetesMaster());
+        this(F8OpenShiftAdapter.create(configuration));
     }
 
     public F8Proxy(OpenShiftClient client) {
@@ -51,10 +48,6 @@ public class F8Proxy extends AbstractProxy<Pod> {
 
     protected AsyncHttpClient getHttpClient() {
         return client.getHttpClient();
-    }
-
-    protected SSLContext getSSLContext() {
-        return getHttpClient().getConfig().getSSLContext();
     }
 
     protected List<Pod> getPods(String namespace, Map<String, String> labels) {

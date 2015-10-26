@@ -62,6 +62,8 @@ import io.fabric8.openshift.api.model.RoleBindingBuilder;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.OpenShiftConfig;
+import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
 import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Configuration;
@@ -78,10 +80,18 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     private final OpenShiftClient client;
     private Map<String, KubernetesList> templates = new HashMap<>();
 
+    static OpenShiftClient create(Configuration configuration) {
+        OpenShiftConfig config = new OpenShiftConfigBuilder()
+            .withMasterUrl(configuration.getKubernetesMaster())
+            .withTrustCerts(configuration.isTrustCerts())
+            .build();
+
+        return new DefaultOpenShiftClient(config);
+    }
+
     public F8OpenShiftAdapter(Configuration configuration) {
         super(configuration);
-
-        this.client = new DefaultOpenShiftClient(configuration.getKubernetesMaster());
+        this.client = create(configuration);
     }
 
     public RegistryLookupEntry lookup() {

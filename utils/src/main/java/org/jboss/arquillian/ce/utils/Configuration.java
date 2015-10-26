@@ -44,6 +44,7 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private String apiVersion = getSystemPropertyOrEnvVar("kubernetes.api.version", "v1");
     private String namespace = getSystemPropertyOrEnvVar("kubernetes.namespace");
     private String token = getSystemPropertyOrEnvVar("kubernetes.auth.token");
+    private boolean trustCerts = Boolean.valueOf(getSystemPropertyOrEnvVar("kubernetes.trust.certs", "true"));
     private boolean generatedNS;
     private String policyBinding = getSystemPropertyOrEnvVar("kubernetes.policybinding", ":default");
     private String roleName = getSystemPropertyOrEnvVar("kubernetes.rolename", "admins");
@@ -155,6 +156,14 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public boolean isTrustCerts() {
+        return trustCerts;
+    }
+
+    public void setTrustCerts(boolean trustCerts) {
+        this.trustCerts = trustCerts;
     }
 
     public String getPolicyBinding() {
