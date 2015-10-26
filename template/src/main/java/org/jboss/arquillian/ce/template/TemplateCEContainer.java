@@ -26,17 +26,20 @@ package org.jboss.arquillian.ce.template;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javassist.util.proxy.MethodHandler;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.utils.BytecodeUtils;
 import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -44,6 +47,7 @@ import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
@@ -75,14 +79,24 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         }
     }
 
-    public ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException {
-        String templateURL = readTemplateUrl();
+    public ProtocolMetaData doDeploy(final Archive<?> archive) throws DeploymentException {
         try {
             log.info(String.format("Using Git repository: %s", configuration.getGitRepository()));
-            commitDeployment(archive);
+            final String newArchiveName = commitDeployment(archive);
+
+            Class<? extends Archive> expected = (archive instanceof EnterpriseArchive) ? EnterpriseArchive.class : WebArchive.class;
+            Archive<?> proxy = BytecodeUtils.proxy(expected, new MethodHandler() {
+                public Object invoke(Object self, Method method, Method proceed, Object[] args) throws Throwable {
+                    if ("getName".equals(method.getName())) {
+                        return newArchiveName;
+                    } else {
+                        return method.invoke(archive, args);
+                    }
+                }
+            });
 
             int replicas = readReplicas();
-            Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
+            Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(proxy);
 
             List<ParamValue> values = new ArrayList<>();
             addParameterValues(values, System.getenv());
@@ -91,10 +105,12 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
             values.add(new ParamValue("DEPLOYMENT_NAME", labels.get(OpenShiftAdapter.DEPLOYMENT_ARCHIVE_NAME_KEY)));
 
-            log.info(String.format("Applying OpenShift template: %s", configuration.getTemplateURL()));
-            client.processTemplateAndCreateResources(archive.getName(), configuration.getTemplateURL(), configuration.getNamespace(), values);
+            String templateURL = readTemplateUrl();
+            log.info(String.format("Applying OpenShift template: %s", templateURL));
+            // use old archive name as templateKey
+            client.processTemplateAndCreateResources(archive.getName(), templateURL, configuration.getNamespace(), values);
 
-            return getProtocolMetaData(archive, replicas);
+            return getProtocolMetaData(proxy, replicas);
         } catch (Throwable t) {
             throw new DeploymentException("Cannot deploy template: " + templateURL, t);
         }
@@ -111,6 +127,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         if (templateUrl == null) {
             throw new IllegalArgumentException("Missing template URL! Either add @Template to your test or add -Dopenshift.template.url=<url>");
         }
+
         return templateUrl;
     }
 
@@ -119,7 +136,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         client.deleteTemplate(archive.getName(), configuration.getNamespace());
     }
 
-    protected void commitDeployment(Archive<?> archive) throws Exception {
+    protected String commitDeployment(Archive<?> archive) throws Exception {
         if (archive instanceof WebArchive == false) {
             throw new IllegalArgumentException("Cannot deploy non .war deployments!");
         }
@@ -143,6 +160,8 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
                 .commit()
                 .push();
         }
+
+        return name;
     }
 
     protected String getPrefix() {

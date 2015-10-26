@@ -59,9 +59,9 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup {
 
     String deployReplicationController(String name, Map<String, String> labels, String imageName, List<Port> ports, int replicas, String env, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception;
 
-    Object processTemplateAndCreateResources(String name, String templateURL, String namespace, List<ParamValue> values) throws Exception;
+    Object processTemplateAndCreateResources(String templateKey, String templateURL, String namespace, List<ParamValue> values) throws Exception;
 
-    Object deleteTemplate(String name, String namespace) throws Exception;
+    Object deleteTemplate(String templateKey, String namespace) throws Exception;
 
     Object getService(String namespace, String serviceName);
 

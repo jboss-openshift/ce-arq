@@ -171,14 +171,14 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return preStopHandler;
     }
 
-    public KubernetesList processTemplateAndCreateResources(String name, String templateURL, String namespace, List<ParamValue> values) throws Exception {
+    public KubernetesList processTemplateAndCreateResources(String templateKey, String templateURL, String namespace, List<ParamValue> values) throws Exception {
         List<ParameterValue> pvs = new ArrayList<>();
         for (ParamValue value : values) {
             pvs.add(new ParameterValue(value.getName(), value.getValue()));
         }
         KubernetesList list = processTemplate(templateURL, namespace, pvs);
         KubernetesList result = createResources(namespace, list);
-        templates.put(name, result);
+        templates.put(templateKey, result);
         return result;
     }
 
@@ -196,8 +196,8 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.buildConfigs().inNamespace(namespace).withName(buildName).withSecret(secret).withType(type).trigger(new WebHookTriggerBuilder().withSecret(secret).build());
     }
 
-    public Object deleteTemplate(String name, String namespace) throws Exception {
-        KubernetesList config = templates.get(name);
+    public Object deleteTemplate(String templateKey, String namespace) throws Exception {
+        KubernetesList config = templates.get(templateKey);
         if (config != null) {
             return client.lists().inNamespace(namespace).delete(config);
         }

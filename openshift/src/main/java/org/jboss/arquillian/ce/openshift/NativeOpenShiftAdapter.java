@@ -177,7 +177,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return builder.toString();
     }
 
-    public Object processTemplateAndCreateResources(String name, String templateURL, String namespace, List<ParamValue> values) throws Exception {
+    public Object processTemplateAndCreateResources(String templateKey, String templateURL, String namespace, List<ParamValue> values) throws Exception {
         final IProject project = client.get(ResourceKind.PROJECT, configuration.getNamespace(), "");
 
         final ITemplate template;
@@ -194,12 +194,12 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         final IProjectTemplateProcessing capability = project.getCapability(IProjectTemplateProcessing.class);
         ITemplate processed = capability.process(template);
         Collection<IResource> resources = capability.apply(processed);
-        templates.put(name, resources);
+        templates.put(templateKey, resources);
         return resources;
     }
 
-    public Object deleteTemplate(String name, String namespace) throws Exception {
-        Collection<IResource> resources = templates.get(name);
+    public Object deleteTemplate(String templateKey, String namespace) throws Exception {
+        Collection<IResource> resources = templates.get(templateKey);
         if (resources != null) {
             for (IResource resource : resources) {
                 client.delete(resource);
