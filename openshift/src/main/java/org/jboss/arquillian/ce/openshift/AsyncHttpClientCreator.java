@@ -44,7 +44,7 @@ class AsyncHttpClientCreator {
             clientConfigBuilder.setFollowRedirect(true);
 
             // Should we disable all server certificate checks?
-            clientConfigBuilder.setAcceptAnyCertificate(false);
+            clientConfigBuilder.setAcceptAnyCertificate(true);
 
             // auth
             clientConfigBuilder.addRequestFilter(new RequestFilter() {
@@ -54,6 +54,8 @@ class AsyncHttpClientCreator {
                     return ctx;
                 }
             });
+
+            clientConfigBuilder.setRequestTimeout(10 * 1000);
 
             NettyAsyncHttpProviderConfig nettyConfig = new NettyAsyncHttpProviderConfig();
             nettyConfig.setWebSocketMaxFrameSize(65536);

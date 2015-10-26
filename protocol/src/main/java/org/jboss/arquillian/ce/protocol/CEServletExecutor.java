@@ -30,6 +30,7 @@ import java.util.Timer;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.ProxyFactory;
 import org.jboss.arquillian.ce.utils.Strings;
@@ -61,7 +62,10 @@ public class CEServletExecutor extends ServletMethodExecutor {
         this.contextRoot = readContextRoot(protocolMetaData);
         this.archive = protocolMetaData.getContexts(Archive.class).iterator().next();
 
-        this.proxy = ProxyFactory.getProxy(new ProtocolConfiguration());
+        Configuration original = protocolMetaData.getContexts(Configuration.class).iterator().next();
+        config().setConfiguration(original);
+
+        this.proxy = ProxyFactory.getProxy(original);
     }
 
     private String readContextRoot(ProtocolMetaData protocolMetaData) {

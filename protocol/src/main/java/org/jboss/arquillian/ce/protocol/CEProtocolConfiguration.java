@@ -23,17 +23,22 @@
 
 package org.jboss.arquillian.ce.protocol;
 
+import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.protocol.servlet.ServletProtocolConfiguration;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class CEProtocolConfiguration extends ServletProtocolConfiguration {
-    private ProtocolConfiguration configuration = new ProtocolConfiguration();
+    private Configuration configuration = new ProtocolConfiguration();
 
     private String kubernetesMaster;
     private String apiVersion;
     private String namespace;
+
+    public void setConfiguration(Configuration configuration) {
+        this.configuration = configuration;
+    }
 
     public String getKubernetesMaster() {
         if (kubernetesMaster != null) {

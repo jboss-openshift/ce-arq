@@ -72,7 +72,7 @@ public abstract class AbstractProxy<P> implements Proxy {
     public String url(Map<String, String> labels, String host, String version, String namespace, int index, String path, String parameters) {
         List<P> items = getPods(namespace, labels);
         if (index >= items.size()) {
-            throw new IllegalStateException(String.format("Not enough pods (%s) to invoke pod %s!", items.size(), index));
+            throw new IllegalStateException(String.format("Not enough pods (%s) to invoke pod index %s!", items.size(), index));
         }
         String pod = getName(items.get(index));
 
