@@ -98,8 +98,8 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     public Project createProject(String namespace) {
         // oc new-project <namespace>
+        // TODO -- FIXME; should use ProjectRequest!!
         Project project = client.projects().createNew().withNewMetadata().withName(namespace).endMetadata().done();
-        // client.inNamespace(namespace).policyBindings().createNew().withNewMetadata().withName(configuration.getPolicyBinding()).endMetadata().done();
 
         // oc policy add-role-to-user admin admin -n <namespace>
         RoleBinding rb = new RoleBindingBuilder()

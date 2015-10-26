@@ -93,8 +93,6 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
 
             log.info(String.format("Applying OpenShift template: %s", configuration.getTemplateURL()));
             client.processTemplateAndCreateResources(archive.getName(), configuration.getTemplateURL(), configuration.getNamespace(), values);
-//            log.info(String.format("Triggering build: %s", configuration.getBuildName()));
-//            client.triggerBuild(configuration.getNamespace(), configuration.getBuildName(), configuration.getBuildSecret(), configuration.getBuildType());
 
             return getProtocolMetaData(archive, replicas);
         } catch (Throwable t) {
