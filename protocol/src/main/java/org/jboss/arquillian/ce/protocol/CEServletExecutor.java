@@ -61,7 +61,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
         this.contextRoot = readContextRoot(protocolMetaData);
         this.archive = protocolMetaData.getContexts(Archive.class).iterator().next();
 
-        this.proxy = ProxyFactory.getProxy(configuration.getKubernetesMaster());
+        this.proxy = ProxyFactory.getProxy(new ProtocolConfiguration());
     }
 
     private String readContextRoot(ProtocolMetaData protocolMetaData) {

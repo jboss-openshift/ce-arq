@@ -121,7 +121,7 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
     }
 
     public Proxy createProxy() {
-        return ProxyFactory.getProxy(configuration.getKubernetesMaster());
+        return ProxyFactory.getProxy(configuration);
     }
 
     public static Map<String, String> getDeploymentLabels(Archive<?> archive) {

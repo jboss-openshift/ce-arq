@@ -33,6 +33,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.jboss.arquillian.ce.utils.AbstractProxy;
+import org.jboss.arquillian.ce.utils.Configuration;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -40,8 +41,8 @@ import org.jboss.arquillian.ce.utils.AbstractProxy;
 public class F8Proxy extends AbstractProxy<Pod> {
     private final OpenShiftClient client;
 
-    public F8Proxy(String kubernetesMaster) {
-        this.client = new DefaultOpenShiftClient(kubernetesMaster);
+    public F8Proxy(Configuration configuration) {
+        this.client = new DefaultOpenShiftClient(configuration.getKubernetesMaster());
     }
 
     public F8Proxy(OpenShiftClient client) {

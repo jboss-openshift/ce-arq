@@ -42,6 +42,7 @@ import com.openshift.restclient.ClientFactory;
 import com.openshift.restclient.IClient;
 import com.openshift.restclient.NoopSSLCertificateCallback;
 import com.openshift.restclient.ResourceKind;
+import com.openshift.restclient.authorization.TokenAuthorizationStrategy;
 import com.openshift.restclient.capability.resources.IProjectTemplateProcessing;
 import com.openshift.restclient.model.IPod;
 import com.openshift.restclient.model.IProject;
@@ -79,6 +80,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         System.getProperty("osjc.openshift.apiversion", configuration.getApiVersion());
 
         this.client = new ClientFactory().create(configuration.getKubernetesMaster(), new NoopSSLCertificateCallback());
+        this.client.setAuthorizationStrategy(new TokenAuthorizationStrategy(configuration.getToken()));
     }
 
     <T extends IResource> T createResource(String json, Properties properties) {

@@ -43,6 +43,7 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     private String apiVersion = getSystemPropertyOrEnvVar("kubernetes.api.version", "v1");
     private String namespace = getSystemPropertyOrEnvVar("kubernetes.namespace");
+    private String token = getSystemPropertyOrEnvVar("kubernetes.auth.token");
     private boolean generatedNS;
     private String policyBinding = getSystemPropertyOrEnvVar("kubernetes.policybinding", ":default");
     private String roleName = getSystemPropertyOrEnvVar("kubernetes.rolename", "admins");
@@ -143,6 +144,14 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public boolean isGeneratedNS() {
         return generatedNS;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public String getPolicyBinding() {

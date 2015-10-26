@@ -57,7 +57,7 @@ public class ProxyURLProvider implements ResourceProvider {
 
     private synchronized Proxy getProxy() {
         if (proxy == null) {
-            proxy = ProxyFactory.getProxy(configurationInstance.get().getKubernetesMaster());
+            proxy = ProxyFactory.getProxy(configurationInstance.get());
             proxy.setDefaultSSLContext();
         }
         return proxy;

@@ -29,11 +29,11 @@ import java.util.ServiceLoader;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class ProxyFactory {
-    public static Proxy getProxy(String masterURL) {
+    public static Proxy getProxy(Configuration configuration) {
         ServiceLoader<ProxyProvider> proxies = ServiceLoader.load(ProxyProvider.class, ProxyFactory.class.getClassLoader());
         //noinspection LoopStatementThatDoesntLoop
         for (ProxyProvider pp : proxies) {
-            return pp.create(masterURL);
+            return pp.create(configuration);
         }
         throw new IllegalStateException("No ProxyProvider found!");
     }

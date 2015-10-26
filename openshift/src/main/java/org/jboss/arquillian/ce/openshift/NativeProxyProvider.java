@@ -23,6 +23,7 @@
 
 package org.jboss.arquillian.ce.openshift;
 
+import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.ProxyProvider;
 import org.kohsuke.MetaInfServices;
@@ -32,7 +33,7 @@ import org.kohsuke.MetaInfServices;
  */
 @MetaInfServices(ProxyProvider.class)
 public class NativeProxyProvider implements ProxyProvider {
-    public Proxy create(String masterURL) {
-        return new NativeProxy(masterURL);
+    public Proxy create(Configuration configuration) {
+        return new NativeProxy(configuration);
     }
 }

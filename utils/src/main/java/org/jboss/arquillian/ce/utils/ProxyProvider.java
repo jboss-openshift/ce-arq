@@ -27,5 +27,5 @@ package org.jboss.arquillian.ce.utils;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public interface ProxyProvider {
-    Proxy create(String masterURL);
+    Proxy create(Configuration configuration);
 }

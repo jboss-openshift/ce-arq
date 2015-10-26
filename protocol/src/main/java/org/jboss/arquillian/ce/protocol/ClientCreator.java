@@ -66,7 +66,7 @@ public class ClientCreator {
 
         public ClientImpl(Configuration configuration) {
             this.configuration = configuration;
-            this.proxy = ProxyFactory.getProxy(configuration.getKubernetesMaster());
+            this.proxy = ProxyFactory.getProxy(configuration);
         }
 
         public synchronized InputStream execute(int pod, String path) throws Exception {
