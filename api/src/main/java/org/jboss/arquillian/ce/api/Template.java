@@ -21,7 +21,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.template;
+package org.jboss.arquillian.ce.api;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

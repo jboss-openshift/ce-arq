@@ -36,6 +36,7 @@ import javassist.util.proxy.MethodHandler;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
