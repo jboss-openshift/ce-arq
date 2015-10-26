@@ -3,48 +3,41 @@
   "kind": "ReplicationController",
   "metadata": {
     "labels": {
-      ${
-  TOP_LABELS
-}
-},
-"name": "${NAME}",
-"namespace": "${NAMESPACE}",
-},
-"spec": {
-"replicas": ${
-REPLICAS
-},
-"selector": {
-"name": "${POD_NAME}"
-},
-"template": {
-"metadata": {
-"labels": {
-${POD_LABELS
-}
-}
-},
-"spec": {
-"containers": [
-{
-"args": [],
-"command": [],
-"env": [],
-"image": "${IMAGE_NAME}",
-"imagePullPolicy": "${IMAGE_PULL}",
-${
-LIFECYCLE
-}
-"name": "${CONTAINER_NAME}",
-"ports": [
-${PORTS}
-],
-"volumeMounts": []
-}
-],
-"imagePullSecrets": [],
-"volumes": []
-}
-}
-}
+      ${TOP_LABELS}
+    },
+    "name": "${NAME}",
+    "namespace": "${NAMESPACE}",
+  },
+  "spec": {
+    "replicas": ${REPLICAS},
+    "selector": {
+      "name": "${POD_NAME}"
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          ${POD_LABELS}
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [],
+            "command": [],
+            "env": [],
+            "image": "${IMAGE_NAME}",
+            "imagePullPolicy": "${IMAGE_PULL}",
+            ${LIFECYCLE}
+            "name": "${CONTAINER_NAME}",
+            "ports": [
+              ${PORTS}
+            ],
+            "volumeMounts": []
+          }
+        ],
+        "imagePullSecrets": [],
+        "volumes": []
+      }
+    }
+  }
 }

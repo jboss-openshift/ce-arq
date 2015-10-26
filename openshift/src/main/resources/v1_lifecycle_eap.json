@@ -1,8 +1,8 @@
 "lifecycle": {
-"preStop": {
-"httpGet": {
-"path": "/pre-stop/_hook",
-"port": 8080
-}
-}
+  "preStop": {
+    "httpGet": {
+      "path": "/pre-stop/_hook",
+      "port": 8080
+    }
+  }
 },
