@@ -213,26 +213,30 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     public void cleanReplicationControllers(String... ids) throws Exception {
-        for (String id : ids) {
-            try {
-                IReplicationController rc = client.get(ResourceKind.REPLICATION_CONTROLLER, id, configuration.getNamespace());
-                client.delete(rc);
-                log.info(String.format("RC [%s] delete.", id));
-            } catch (Exception e) {
-                log.log(Level.WARNING, String.format("Exception while deleting RC [%s]: %s", id, e), e);
+        List<IReplicationController> rcs = client.list(ResourceKind.REPLICATION_CONTROLLER, configuration.getNamespace());
+        for (IReplicationController rc : rcs) {
+            for (String id : ids) {
+                if (rc.getName().equals(id)) {
+                    try {
+                        client.delete(rc);
+                        log.info(String.format("RC [%s] delete.", id));
+                    } catch (Exception e) {
+                        log.log(Level.WARNING, String.format("Exception while deleting RC [%s]: %s", id, e), e);
+                    }
+                }
             }
         }
     }
 
     public void cleanPods(Map<String, String> labels) throws Exception {
         final List<IPod> pods = client.list(ResourceKind.POD, configuration.getNamespace(), labels);
-        try {
-            for (IPod pod : pods) {
+        for (IPod pod : pods) {
+            try {
                 client.delete(pod);
                 log.info(String.format("Pod [%s] delete.", pod.getName()));
+            } catch (Exception e) {
+                log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", pod, e), e);
             }
-        } catch (Exception e) {
-            log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", labels, e), e);
         }
     }
 
