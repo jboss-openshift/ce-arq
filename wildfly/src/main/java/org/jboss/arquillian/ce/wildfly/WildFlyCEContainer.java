@@ -56,7 +56,7 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
 
     public ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException {
         try {
-            String imageName = buildImage(archive, "registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4", "/opt/eap/standalone/deployments/");
+            String imageName = buildImage(archive, "ce-registry.usersys.redhat.com/jboss-eap-6/eap64-openshift:1.2", "/opt/eap/standalone/deployments/");
 
             // clean old k8s stuff
             cleanup(archive);

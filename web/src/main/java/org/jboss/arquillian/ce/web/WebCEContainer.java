@@ -54,7 +54,7 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
 
     public ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException {
         try {
-            String imageName = buildImage(archive, "registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:3.0", "/opt/webserver/webapps/");
+            String imageName = buildImage(archive, "ce-registry.usersys.redhat.com/jboss-webserver-3/webserver30-tomcat8-openshift:1.2", "/opt/webserver/webapps/");
 
             // clean old k8s stuff
             cleanup(archive);
