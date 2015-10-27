@@ -46,11 +46,6 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private String token = getSystemPropertyOrEnvVar("kubernetes.auth.token");
     private boolean trustCerts = Boolean.valueOf(getSystemPropertyOrEnvVar("kubernetes.trust.certs", "true"));
     private boolean generatedNS;
-    private String policyBinding = getSystemPropertyOrEnvVar("kubernetes.policybinding", ":default");
-    private String roleName = getSystemPropertyOrEnvVar("kubernetes.rolename", "admins");
-    private String user = getSystemPropertyOrEnvVar("kubernetes.user", "admin");
-    private String group = getSystemPropertyOrEnvVar("kubernetes.group", "admin");
-    private String roleRef = getSystemPropertyOrEnvVar("kubernetes.roleref", "admin");
 
     private String fromParent = getSystemPropertyOrEnvVar("from.parent");
     private String deploymentDir = getSystemPropertyOrEnvVar("deployment.dir");
@@ -164,46 +159,6 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setTrustCerts(boolean trustCerts) {
         this.trustCerts = trustCerts;
-    }
-
-    public String getPolicyBinding() {
-        return policyBinding;
-    }
-
-    public void setPolicyBinding(String policyBinding) {
-        this.policyBinding = policyBinding;
-    }
-
-    public String getRoleName() {
-        return roleName;
-    }
-
-    public void setRoleName(String roleName) {
-        this.roleName = roleName;
-    }
-
-    public String getUser() {
-        return user;
-    }
-
-    public void setUser(String user) {
-        this.user = user;
-    }
-
-    public String getGroup() {
-        return group;
-    }
-
-    public void setGroup(String group) {
-        this.group = group;
-    }
-
-    public String getRoleRef() {
-        return roleRef;
-    }
-
-    public void setRoleRef(String roleRef) {
-        this.roleRef = roleRef;
     }
 
     public String getFromParent() {

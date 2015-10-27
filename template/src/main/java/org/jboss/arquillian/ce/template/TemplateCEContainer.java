@@ -91,7 +91,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
                 log.info("Ignoring Arquillian deployment ...");
                 newArchiveName = newName(archive);
             } else {
-                log.info("Commiting Arquillian deployment ...");
+                log.info("Committing Arquillian deployment ...");
                 newArchiveName = commitDeployment(archive);
             }
 

@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.template;
 
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
+import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.kohsuke.MetaInfServices;
 
@@ -34,5 +35,6 @@ import org.kohsuke.MetaInfServices;
 public class TemplateCEExtension implements LoadableExtension {
     public void register(ExtensionBuilder builder) {
         builder.service(DeployableContainer.class, TemplateCEContainer.class);
+        builder.service(DeploymentScenarioGenerator.class, TemplateDeploymentScenarioGenerator.class);
     }
 }
