@@ -40,6 +40,14 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 public class TemplateDeploymentScenarioGenerator implements DeploymentScenarioGenerator {
     private final static String DELEGATE_CLASS = "org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator";
 
+    private final static String WEB_XML =
+        "<web-app version=\"3.0\"\n" +
+            "         xmlns=\"http://java.sun.com/xml/ns/javaee\"\n" +
+            "         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+            "         xsi:schemaLocation=\"http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd\"\n" +
+            "         metadata-complete=\"false\">\n" +
+            "</web-app>";
+
     public List<DeploymentDescription> generate(TestClass testClass) {
         if (testClass.isAnnotationPresent(GitDeployment.class)) {
             return Collections.singletonList(generateDummyDeployment());
@@ -55,7 +63,7 @@ public class TemplateDeploymentScenarioGenerator implements DeploymentScenarioGe
 
     private DeploymentDescription generateDummyDeployment() {
         WebArchive archive = ShrinkWrap.create(WebArchive.class, "ROOT.war");
-        archive.setWebXML(new StringAsset("<web/>"));
+        archive.setWebXML(new StringAsset(WEB_XML));
         return new DeploymentDescription("_DEFAULT_", archive);
     }
 }
