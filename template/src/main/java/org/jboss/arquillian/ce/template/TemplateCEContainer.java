@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +36,7 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.jboss.arquillian.ce.api.Template;
+import org.jboss.arquillian.ce.api.TemplateParameter;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.Archives;
@@ -159,10 +161,12 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     private Map<String, String> readParameters() {
         Template template = readTemplate();
         if (template != null) {
-            String string = template.parameters();
-            if (string != null && string.length() > 0) {
-                return Strings.splitKeyValueList(string);
+            TemplateParameter[] parameters = template.parameters();
+            Map<String, String> map = new HashMap<>();
+            for (TemplateParameter parameter : parameters) {
+                map.put(parameter.name(), parameter.value());
             }
+            return map;
         }
         return configuration.getTemplateParameters();
     }
@@ -177,7 +181,8 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             throw new IllegalArgumentException("Cannot deploy non .war deployments!");
         }
 
-        return "ROOT.war"; // TODO -- handle .ear?
+        return archive.getName();
+//        return "ROOT.war"; // TODO -- handle .ear?
     }
 
     protected String commitDeployment(Archive<?> archive) throws Exception {

@@ -33,15 +33,7 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface Template {
-    String url() default "";
-
-    String labels() default "";
-
-    TemplateParameter[] parameters() default {};
-
-    /**
-     * Do we invoke K8s process template?
-     */
-    boolean process() default true;
+public @interface TemplateParameter {
+    String name();
+    String value();
 }

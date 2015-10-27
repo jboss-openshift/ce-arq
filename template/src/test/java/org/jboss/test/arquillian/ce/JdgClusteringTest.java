@@ -25,29 +25,41 @@ package org.jboss.test.arquillian.ce;
 
 import java.util.logging.Logger;
 
-import org.jboss.arquillian.ce.api.ExternalDeployment;
-import org.jboss.arquillian.ce.api.RunInPod;
 import org.jboss.arquillian.ce.api.Template;
-import org.jboss.arquillian.ce.api.TemplateParameter;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.jboss.test.arquillian.ce.deployment.RESTCache;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 @RunWith(Arquillian.class)
-@RunInPod
-@ExternalDeployment
-@Template(labels = "deploymentArchiveName=ROOT.war",
-        parameters = {
-                @TemplateParameter(name="DEPLOYMENT_NAME", value="ROOT.war")})
-public class RunInPodTest {
-    private static Logger log = Logger.getLogger(RunInPodTest.class.getName());
+@Template(url = "https://raw.githubusercontent.com/luksa/application-templates/JDG/datagrid/datagrid65-basic-s2i.json")
+public class JdgClusteringTest {
+    private static Logger log = Logger.getLogger(JdgClusteringTest.class.getName());
+    public static final String NAMESPACE = "mluksa";
+    public static final String JDG_HOST = "jdg-app-" + NAMESPACE + ".router.default.svc.cluster.local";
+    public static final int JDG_PORT = 80;
+    public static final String CONTEXT_PATH = "/rest";
+
+    @Deployment
+    public static WebArchive getDeployment() throws Exception {
+        return ShrinkWrap.create(WebArchive.class, "test.war");
+    }
 
     @Test
-    public void testBasic() throws Exception {
-        log.info("BANG!!");
+    @RunAsClient
+    public void testRest() throws Exception {
+        RESTCache<String, Object> cache = new RESTCache<String, Object>("default", "http://" + JDG_HOST + ":" + JDG_PORT + CONTEXT_PATH + "/");
+        cache.put("foo1", "bar1");
+        assertEquals("bar1", cache.get("foo1"));
     }
 
 }
