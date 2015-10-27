@@ -50,6 +50,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
+import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.ReplicationControllerSpec;
 import io.fabric8.kubernetes.api.model.Service;
@@ -70,6 +71,7 @@ import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.Port;
+import org.jboss.arquillian.ce.utils.RCContext;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -128,26 +130,34 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.projects().withName(namespace).delete();
     }
 
-    public String deployReplicationController(String name, Map<String, String> deploymentLabels, String imageName, List<Port> ports, int replicas, String env, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
+    public String deployReplicationController(String name, Map<String, String> deploymentLabels, String env, RCContext context) throws Exception {
         String apiVersion = configuration.getApiVersion();
 
+        List<EnvVar> envVars = Collections.emptyList();
+
         List<ContainerPort> cps = new ArrayList<>();
-        for (Port port : ports) {
+        for (Port port : context.getPorts()) {
             ContainerPort cp = new ContainerPort();
             cp.setName(port.getName());
             cp.setContainerPort(port.getContainerPort());
             cps.add(cp);
         }
 
-        List<EnvVar> envVars = Collections.emptyList();
+        List<VolumeMount> volumes = Collections.emptyList();
+
         Lifecycle lifecycle = null;
-        if (!ignorePreStop && hookType != null && preStopPath != null) {
+        if (!context.isIgnorePreStop() && context.getLifecycleHook() != null && context.getPreStopPath() != null) {
             lifecycle = new Lifecycle();
-            Handler preStopHandler = createHandler(hookType, preStopPath, cps);
+            Handler preStopHandler = createHandler(context.getLifecycleHook(), context.getPreStopPath(), cps);
             lifecycle.setPreStop(preStopHandler);
         }
-        List<VolumeMount> volumes = Collections.emptyList();
-        Container container = createContainer(imageName, name + "-container", envVars, cps, volumes, lifecycle, configuration.getImagePullPolicy());
+
+        Probe probe = null;
+        if (context.getProbeCommands() != null && context.getProbeCommands().size() > 0 && context.getProbeHook() != null) {
+            handleProbe(probe, context.getProbeHook(), context.getProbeCommands(), cps);
+        }
+
+        Container container = createContainer(context.getImageName(), name + "-container", envVars, cps, volumes, lifecycle, probe, configuration.getImagePullPolicy());
 
         List<Container> containers = Collections.singletonList(container);
         Map<String, String> podLabels = new HashMap<>();
@@ -157,7 +167,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
         Map<String, String> selector = Collections.singletonMap("name", name + "Pod");
         Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
-        ReplicationController rc = createReplicationController(name + "rc", apiVersion, labels, replicas, selector, podTemplate);
+        ReplicationController rc = createReplicationController(name + "rc", apiVersion, labels, context.getReplicas(), selector, podTemplate);
 
         return deployReplicationController(rc);
     }
@@ -179,6 +189,23 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
                 throw new IllegalArgumentException("Unsupported hook type: " + hookType);
         }
         return preStopHandler;
+    }
+
+    private void handleProbe(Probe probe, HookType hookType, List<String> probeCommands, List<ContainerPort> ports) {
+        switch (hookType) {
+            case HTTP_GET:
+                HTTPGetAction httpGet = new HTTPGetAction();
+                httpGet.setPath(probeCommands.get(0));
+                httpGet.setPort(findHttpContainerPort(ports));
+                probe.setHttpGet(httpGet);
+                break;
+            case EXEC:
+                ExecAction exec = new ExecAction(probeCommands);
+                probe.setExec(exec);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported hook type: " + hookType);
+        }
     }
 
     public KubernetesList processTemplateAndCreateResources(String templateKey, String templateURL, String namespace, List<ParamValue> values) throws Exception {
@@ -241,7 +268,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.services().inNamespace(namespace).withName(serviceName).get();
     }
 
-    private Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle, String imagePullPolicy) throws Exception {
+    private Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle, Probe probe, String imagePullPolicy) throws Exception {
         Container container = new Container();
         container.setImage(image);
         container.setName(name);
@@ -249,6 +276,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         container.setPorts(ports);
         container.setVolumeMounts(volumes);
         container.setLifecycle(lifecycle);
+        container.setReadinessProbe(probe);
         container.setImagePullPolicy(imagePullPolicy);
         return container;
     }

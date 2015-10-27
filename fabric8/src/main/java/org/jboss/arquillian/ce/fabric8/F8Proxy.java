@@ -28,6 +28,8 @@ import java.util.Map;
 
 import com.ning.http.client.AsyncHttpClient;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodCondition;
+import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.jboss.arquillian.ce.utils.AbstractProxy;
 import org.jboss.arquillian.ce.utils.Configuration;
@@ -58,4 +60,18 @@ public class F8Proxy extends AbstractProxy<Pod> {
         return pod.getMetadata().getName();
     }
 
+    protected boolean isReady(Pod pod) {
+        PodStatus status = pod.getStatus();
+        if ("Running".equalsIgnoreCase(status.getPhase())) {
+            List<PodCondition> conditions = status.getConditions();
+            if (conditions != null) {
+                for (PodCondition condition : conditions) {
+                    if ("Ready".equalsIgnoreCase(condition.getType())) {
+                        return "True".equalsIgnoreCase(condition.getStatus());
+                    }
+                }
+            }
+        }
+        return false;
+    }
 }

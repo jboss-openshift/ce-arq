@@ -30,6 +30,7 @@ import java.util.List;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.Port;
+import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -67,7 +68,8 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
             http.setContainerPort(8080);
             List<Port> ports = Collections.singletonList(http);
 
-            String rc = deployReplicationController(archive, imageName, ports, 1, null, null, true);
+            RCContext context = new RCContext(archive, imageName, ports, 1);
+            String rc = deployReplicationController(context);
             log.info("Deployed replication controller: " + rc);
 
             return getProtocolMetaData(archive, 1);

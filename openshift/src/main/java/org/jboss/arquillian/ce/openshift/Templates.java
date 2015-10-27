@@ -33,6 +33,7 @@ final class Templates {
 
     static final String PROJECT_REQUEST = "project_request";
     static final String REPLICATION_CONTROLLER = "replication_controller";
+    static final String READINESS_PROBE = "readiness_probe";
     static final String LIFECYCLE = "lifecycle";
 
     static String readJson(String apiVersion, String json) {

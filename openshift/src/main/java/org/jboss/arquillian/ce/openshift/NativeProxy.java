@@ -35,6 +35,7 @@ import com.openshift.restclient.authorization.TokenAuthorizationStrategy;
 import com.openshift.restclient.model.IPod;
 import org.jboss.arquillian.ce.utils.AbstractProxy;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.dmr.ModelNode;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -63,5 +64,28 @@ public class NativeProxy extends AbstractProxy<IPod> {
 
     protected String getName(IPod pod) {
         return pod.getName();
+    }
+
+    protected boolean isReady(IPod pod) {
+        ModelNode root = ModelNode.fromJSONString(pod.toJson());
+        ModelNode statusNode = root.get("status");
+        ModelNode phaseNode = statusNode.get("phase");
+        if (!phaseNode.isDefined() || !"Running".equalsIgnoreCase(phaseNode.asString())) {
+            return false;
+        }
+        ModelNode conditionsNode = statusNode.get("conditions");
+        if (!conditionsNode.isDefined()) {
+            return false;
+        }
+        List<ModelNode> conditions = conditionsNode.asList();
+        for (ModelNode condition : conditions) {
+            ModelNode conditionTypeNode = condition.get("type");
+            ModelNode conditionStatusNode = condition.get("status");
+            if (conditionTypeNode.isDefined() && "Ready".equalsIgnoreCase(conditionTypeNode.asString()) &&
+                conditionStatusNode.isDefined() && "True".equalsIgnoreCase(conditionStatusNode.asString())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

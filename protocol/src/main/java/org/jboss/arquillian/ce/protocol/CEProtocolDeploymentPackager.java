@@ -93,12 +93,6 @@ public class CEProtocolDeploymentPackager implements DeploymentPackager {
             war.merge(protocol);
         }
 
-        // add poke servlet
-        WebAppDescriptor applicationWebXml = Descriptors.importAs(WebAppDescriptor.class).fromStream(war.get(WEB_XML_PATH).getAsset().openStream());
-        war.delete(WEB_XML_PATH);
-        war.setWebXML(new StringAsset(mergeWithPokeDescriptor(applicationWebXml).exportAsString()));
-        war.addClass(PokeServlet.class);
-
         processor.process(war);
 
         return war;
@@ -110,16 +104,6 @@ public class CEProtocolDeploymentPackager implements DeploymentPackager {
             ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME,
             "org.jboss.arquillian.protocol.servlet.runner.ServletTestRunner",
             new String[]{ServletMethodExecutor.ARQUILLIAN_SERVLET_MAPPING});
-
-        return descriptor;
-    }
-
-    static WebAppDescriptor mergeWithPokeDescriptor(WebAppDescriptor descriptor) {
-        // use String v. of desc.servlet(..) so we don't force Servlet API on classpath
-        descriptor.servlet(
-            PokeServlet.SERVLET_NAME,
-            PokeServlet.class.getName(),
-            new String[]{PokeServlet.SERVLET_MAPPING});
 
         return descriptor;
     }

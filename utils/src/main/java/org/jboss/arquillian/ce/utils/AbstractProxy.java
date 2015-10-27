@@ -69,6 +69,8 @@ public abstract class AbstractProxy<P> implements Proxy {
 
     protected abstract String getName(P pod);
 
+    protected abstract boolean isReady(P pod);
+
     public String url(Map<String, String> labels, String host, String version, String namespace, int index, String path, String parameters) {
         List<P> items = getPods(namespace, labels);
         if (index >= items.size()) {
@@ -90,8 +92,15 @@ public abstract class AbstractProxy<P> implements Proxy {
         return urls;
     }
 
-    public int podsSize(Map<String, String> labels, String namespace) {
-        return getPods(namespace, labels).size();
+    public int getReadyPodsSize(Map<String, String> labels, String namespace) {
+        int count = 0;
+        List<P> pods = getPods(namespace, labels);
+        for (P pod : pods) {
+            if (isReady(pod)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     public Map.Entry<Integer, String> findPod(Map<String, String> labels, String host, String version, String namespace, String path) {

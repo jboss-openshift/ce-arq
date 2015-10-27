@@ -26,11 +26,14 @@ package org.jboss.arquillian.ce.wildfly;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
+import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.Port;
+import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -87,7 +90,16 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
 
             int replicas = readReplicas();
 
-            String rc = deployReplicationController(archive, imageName, ports, replicas, configuration.getPreStopHookType(), configuration.getPreStopPath(), configuration.isIgnorePreStop());
+            RCContext context = new RCContext(archive, imageName, ports, replicas);
+
+            context.setLifecycleHook(configuration.getPreStopHookType());
+            context.setPreStopPath(configuration.getPreStopPath());
+            context.setIgnorePreStop(configuration.isIgnorePreStop());
+
+            context.setProbeHook(HookType.EXEC);
+            context.setProbeCommands(Arrays.asList("/bin/bash", "-c", "/opt/eap/bin/readinessProbe.sh"));
+
+            String rc = deployReplicationController(context);
             log.info(String.format("Deployed replication controller [%s]: %s", replicas, rc));
 
             return getProtocolMetaData(archive, replicas);

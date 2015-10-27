@@ -27,6 +27,7 @@
             "env": [],
             "image": "${IMAGE_NAME}",
             "imagePullPolicy": "${IMAGE_PULL}",
+            ${PROBE}
             ${LIFECYCLE}
             "name": "${CONTAINER_NAME}",
             "ports": [

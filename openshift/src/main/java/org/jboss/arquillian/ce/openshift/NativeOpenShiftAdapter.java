@@ -58,6 +58,7 @@ import org.jboss.arquillian.ce.utils.CustomValueExpressionResolver;
 import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.Port;
+import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
@@ -121,7 +122,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return true;
     }
 
-    public String deployReplicationController(String name, Map<String, String> deploymentLabels, String imageName, List<Port> ports, int replicas, String env, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
+    public String deployReplicationController(String name, Map<String, String> deploymentLabels, String env, RCContext context) throws Exception {
         Properties properties = new Properties();
         properties.put("NAMESPACE", configuration.getNamespace());
         properties.put("NAME", name);
@@ -130,16 +131,25 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         Map<String, String> podLabels = new HashMap<>(deploymentLabels);
         podLabels.put("name", name + "Pod");
         properties.put("POD_LABELS", toLabels(podLabels));
-        properties.put("REPLICAS", String.valueOf(replicas));
+        properties.put("REPLICAS", String.valueOf(context.getReplicas()));
         properties.put("POD_NAME", name + "Pod");
         properties.put("CONTAINER_NAME", name + "-container");
-        properties.put("IMAGE_NAME", imageName);
+        properties.put("IMAGE_NAME", context.getImageName());
         properties.put("IMAGE_PULL", configuration.getImagePullPolicy());
-        properties.put("LIFECYCLE", createLifecycle(env, hookType, preStopPath, ignorePreStop));
-        properties.put("PORTS", toPorts(ports));
+        properties.put("PROBE", createProbe(env, context.getProbeHook(), context.getProbeCommands()));
+        properties.put("LIFECYCLE", createLifecycle(env, context.getLifecycleHook(), context.getPreStopPath(), context.isIgnorePreStop()));
+        properties.put("PORTS", toPorts(context.getPorts()));
         IReplicationController rc = createResource(Templates.REPLICATION_CONTROLLER, properties);
 
         return client.create(rc, configuration.getNamespace()).getName();
+    }
+
+    private String createProbe(String env, HookType probeHook, List<String> probeCommands) {
+        if (probeCommands != null && probeCommands.size() > 0 && probeHook != null) {
+            return Templates.readJson(configuration.getApiVersion(), Templates.READINESS_PROBE, env);
+        } else {
+            return "";
+        }
     }
 
     private String createLifecycle(String env, HookType hookType, String preStopPath, boolean ignorePreStop) {

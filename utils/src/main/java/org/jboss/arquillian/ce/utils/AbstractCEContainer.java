@@ -170,9 +170,9 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return client.buildAndPushImage(this, dockerfileTemplate, archive, properties);
     }
 
-    protected String deployReplicationController(Archive<?> archive, String imageName, List<Port> ports, int replicas, HookType hookType, String preStopPath, boolean ignorePreStop) throws Exception {
-        String name = getName(getPrefix(), archive);
-        return client.deployReplicationController(name, AbstractOpenShiftAdapter.getDeploymentLabels(archive), imageName, ports, replicas, getPrefix(), hookType, preStopPath, ignorePreStop);
+    protected String deployReplicationController(RCContext context) throws Exception {
+        String name = getName(getPrefix(), context.getArchive());
+        return client.deployReplicationController(name, AbstractOpenShiftAdapter.getDeploymentLabels(context.getArchive()), getPrefix(), context);
     }
 
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final int replicas) throws Exception {
@@ -182,7 +182,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {
-                return (proxy.podsSize(labels, configuration.getNamespace()) >= replicas);
+                return (proxy.getReadyPodsSize(labels, configuration.getNamespace()) >= replicas);
             }
 
             @Override
@@ -193,20 +193,6 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         HTTPContext context = new HTTPContext("<DUMMY>", 80); // we don't use the host, as we use proxy
         addServlets(context, archive);
-
-        URLChecker checker = new K8sURLChecker(proxy);
-
-        List<Servlet> servlets = context.getServlets();
-        log.info(String.format("Found servlets: %s", servlets));
-        for (Servlet servlet : servlets) {
-            if (ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME.equals(servlet.getName())) {
-                List<String> proxies = proxy.urls(labels, configuration.getKubernetesMaster(), configuration.getNamespace(), configuration.getApiVersion(), servlet.getContextRoot() + "/_poke");
-                log.info(String.format("Waiting on proxies: %s", proxies));
-                for (String url : proxies) {
-                    Containers.delayArchiveDeploy(url, configuration.getStartupTimeout(), 4000L, checker);
-                }
-            }
-        }
 
         ProtocolMetaData pmd = new ProtocolMetaData();
         pmd.addContext(configuration); // we need original instance; due to generated values

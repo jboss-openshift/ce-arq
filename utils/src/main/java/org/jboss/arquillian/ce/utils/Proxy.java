@@ -39,7 +39,7 @@ public interface Proxy {
 
     List<String> urls(Map<String, String> labels, String host, String namespace, String version, String path);
 
-    int podsSize(Map<String, String> labels, String namespace);
+    int getReadyPodsSize(Map<String, String> labels, String namespace);
 
     <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
 
