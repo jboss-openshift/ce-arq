@@ -36,6 +36,7 @@ import javassist.util.proxy.MethodHandler;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.jboss.arquillian.ce.api.GitDeployment;
 import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
@@ -84,7 +85,15 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         final String templateURL = readTemplateUrl();
         try {
             log.info(String.format("Using Git repository: %s", configuration.getGitRepository()));
-            final String newArchiveName = commitDeployment(archive);
+
+            final String newArchiveName;
+            if (isGitDeployment()) {
+                log.info("Ignoring Arquillian deployment ...");
+                newArchiveName = newName(archive);
+            } else {
+                log.info("Commiting Arquillian deployment ...");
+                newArchiveName = commitDeployment(archive);
+            }
 
             Class<? extends Archive> expected = (archive instanceof EnterpriseArchive) ? EnterpriseArchive.class : WebArchive.class;
             Archive<?> proxy = BytecodeUtils.proxy(expected, new MethodHandler() {
@@ -117,6 +126,11 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         }
     }
 
+    protected boolean isGitDeployment() {
+        TestClass testClass = tc.get();
+        return testClass.isAnnotationPresent(GitDeployment.class);
+    }
+
     protected String readTemplateUrl() {
         TestClass testClass = tc.get();
         Template template = testClass.getAnnotation(Template.class);
@@ -137,12 +151,16 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         client.deleteTemplate(archive.getName(), configuration.getNamespace());
     }
 
-    protected String commitDeployment(Archive<?> archive) throws Exception {
+    protected String newName(Archive<?> archive) {
         if (archive instanceof WebArchive == false) {
             throw new IllegalArgumentException("Cannot deploy non .war deployments!");
         }
 
-        String name = "ROOT.war"; // TODO -- handle .ear?
+        return "ROOT.war"; // TODO -- handle .ear?
+    }
+
+    protected String commitDeployment(Archive<?> archive) throws Exception {
+        String name = newName(archive);
 
         File dir = client.getDir(archive);
         try (GitAdapter git = GitAdapter.cloneRepository(dir, configuration.getGitRepository()).prepare("deployments/" + name)) {
