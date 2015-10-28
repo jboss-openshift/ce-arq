@@ -21,17 +21,28 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.api;
+package org.jboss.test.arquillian.ce;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.logging.Logger;
+
+import org.jboss.arquillian.ce.api.RunInPod;
+import org.jboss.arquillian.ce.api.TemplateDeployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface GitDeployment {
+@RunWith(Arquillian.class)
+@RunInPod
+@TemplateDeployment
+public class RunInPodTest {
+    private static Logger log = Logger.getLogger(RunInPodTest.class.getName());
+
+    @Test
+    public void testBasic() throws Exception {
+        log.info("BANG!!");
+    }
+
 }

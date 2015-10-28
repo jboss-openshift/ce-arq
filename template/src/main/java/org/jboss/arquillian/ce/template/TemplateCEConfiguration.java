@@ -27,7 +27,6 @@ import java.io.Serializable;
 
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Strings;
-import org.jboss.arquillian.container.spi.ConfigurationException;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -42,25 +41,8 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
     private String gitUsername = Strings.getSystemPropertyOrEnvVar("git.username");
     private String gitPassword = Strings.getSystemPropertyOrEnvVar("git.password");
 
-    @Override
-    public void validate() throws ConfigurationException {
-        super.validate();
-
-        if (gitRepository == null) {
-            throw new IllegalArgumentException("Missing git repository!");
-        }
-        if (isNetRC() == false) {
-            if (gitUsername == null) {
-                throw new IllegalArgumentException("Missing git username!");
-            }
-            if (gitPassword == null) {
-                throw new IllegalArgumentException("Missing git password!");
-            }
-        }
-    }
-
     public boolean isNetRC() {
-        return "netrc".equalsIgnoreCase(gitCredentials);
+        return "netrc".equalsIgnoreCase(getGitCredentials());
     }
 
     public String getTemplateURL() {
@@ -72,6 +54,9 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
     }
 
     public String getGitRepository() {
+        if (gitRepository == null) {
+            throw new IllegalArgumentException("Missing git repository!");
+        }
         return gitRepository;
     }
 
@@ -88,6 +73,9 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
     }
 
     public String getGitUsername() {
+        if (gitUsername == null) {
+            throw new IllegalArgumentException("Missing git username!");
+        }
         return gitUsername;
     }
 
@@ -96,6 +84,9 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
     }
 
     public String getGitPassword() {
+        if (gitPassword == null) {
+            throw new IllegalArgumentException("Missing git password!");
+        }
         return gitPassword;
     }
 

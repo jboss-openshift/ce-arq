@@ -36,8 +36,8 @@ import javassist.util.proxy.MethodHandler;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import org.jboss.arquillian.ce.api.GitDeployment;
 import org.jboss.arquillian.ce.api.Template;
+import org.jboss.arquillian.ce.api.TemplateDeployment;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
 import org.jboss.arquillian.ce.runinpod.RunInPodUtils;
@@ -94,7 +94,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             log.info(String.format("Using Git repository: %s", configuration.getGitRepository()));
 
             final String newArchiveName;
-            if (isGitDeployment()) {
+            if (isTemplateDeployment()) {
                 log.info("Ignoring Arquillian deployment ...");
                 newArchiveName = newName(archive);
             } else {
@@ -133,9 +133,9 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         }
     }
 
-    protected boolean isGitDeployment() {
+    protected boolean isTemplateDeployment() {
         TestClass testClass = tc.get();
-        return testClass.isAnnotationPresent(GitDeployment.class);
+        return testClass.isAnnotationPresent(TemplateDeployment.class);
     }
 
     protected String readTemplateUrl() {

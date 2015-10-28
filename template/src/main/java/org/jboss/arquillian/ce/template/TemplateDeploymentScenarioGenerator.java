@@ -26,7 +26,7 @@ package org.jboss.arquillian.ce.template;
 import java.util.Collections;
 import java.util.List;
 
-import org.jboss.arquillian.ce.api.GitDeployment;
+import org.jboss.arquillian.ce.api.TemplateDeployment;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
 import org.jboss.arquillian.test.spi.TestClass;
@@ -49,7 +49,7 @@ public class TemplateDeploymentScenarioGenerator implements DeploymentScenarioGe
             "</web-app>";
 
     public List<DeploymentDescription> generate(TestClass testClass) {
-        if (testClass.isAnnotationPresent(GitDeployment.class)) {
+        if (testClass.isAnnotationPresent(TemplateDeployment.class)) {
             return Collections.singletonList(generateDummyDeployment());
         } else {
             try {
