@@ -26,6 +26,9 @@ package org.jboss.arquillian.ce.runinpod;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import org.jboss.arquillian.ce.api.RunInPod;
 import org.jboss.arquillian.ce.api.RunInPodDeployment;
@@ -33,17 +36,47 @@ import org.jboss.arquillian.ce.spi.WebSPIConfiguration;
 import org.jboss.arquillian.ce.spi.WebSPIContainer;
 import org.jboss.arquillian.ce.spi.WildFlySPIConfiguration;
 import org.jboss.arquillian.ce.spi.WildFlySPIContainer;
+import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
+import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
+import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.container.test.impl.domain.ProtocolDefinition;
+import org.jboss.arquillian.container.test.impl.domain.ProtocolRegistry;
+import org.jboss.arquillian.container.test.spi.TestDeployment;
+import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
+import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
+import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveProcessor;
+import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentPackager;
+import org.jboss.arquillian.container.test.spi.client.deployment.ProtocolArchiveProcessor;
+import org.jboss.arquillian.container.test.spi.client.protocol.Protocol;
+import org.jboss.arquillian.core.spi.ServiceLoader;
+import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.container.ClassContainer;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class RunInPodUtils {
     private static final String DEFAULT_ENV = Strings.getSystemPropertyOrEnvVar("runinpod.default.env", "eap");
+    private static final String DEFAULT_NAME = Strings.getSystemPropertyOrEnvVar("runinpod.default.name", "runinpod.war");
+
+    private final DeployableContainer<?> container;
+    private final ServiceLoader serviceLoader;
+    private final ProtocolRegistry protocolRegistry;
+    private final TestClass testClass;
+
+    public RunInPodUtils(DeployableContainer<?> container, ServiceLoader serviceLoader, ProtocolRegistry protocolRegistry, TestClass testClass) {
+        this.container = container;
+        this.serviceLoader = serviceLoader;
+        this.protocolRegistry = protocolRegistry;
+        this.testClass = testClass;
+    }
+
+    //---
 
     public static boolean hasRunInPod(Class<?> clazz) {
         if (clazz == Object.class) {
@@ -61,17 +94,13 @@ public class RunInPodUtils {
     }
 
     public static boolean isRunInPod(Class<?> clazz, Method method) {
-        if (clazz.isAnnotationPresent(RunInPod.class)) {
-            return true;
-        }
-        if (method.isAnnotationPresent(RunInPod.class)) {
-            return true;
-        }
-        return false;
+        return clazz.isAnnotationPresent(RunInPod.class) || method.isAnnotationPresent(RunInPod.class);
     }
 
-    public static <T extends Configuration> RunInPodContainer createContainer(Class<?> clazz, Configuration orignal) {
-        Method method = findRunInContainerDeploymentMethod(clazz);
+    //---
+
+    public RunInPodContainer createContainer(Configuration orignal) {
+        Method method = findRunInContainerDeploymentMethod(testClass.getJavaClass());
         RunInPodDeployment runInPodDeployment = method.getAnnotation(RunInPodDeployment.class);
         String env = (runInPodDeployment != null) ? runInPodDeployment.env() : DEFAULT_ENV;
 
@@ -95,25 +124,95 @@ public class RunInPodUtils {
                 throw new IllegalArgumentException(String.format("No such env '%s' -- cannot create RunInPod container!", env));
         }
 
-        return new RunInPodContainer(container, getRunInPodArchive(method));
+        return new NewRunInPodContainer(container, getRunInPodArchive(method));
     }
 
-    public static <T extends Configuration> RunInPodContainer createContainer(DeployableContainer<T> container, Class<?> clazz) {
-        return new RunInPodContainer(container, getRunInPodArchive(clazz));
+    public <T extends Configuration> RunInPodContainer createContainer(DeployableContainer<T> container) {
+        return new RunningRunInPodContainer(container, getRunInPodArchive(testClass.getJavaClass()));
+    }
+
+    private Archive<?> applyProcessors(Archive<?> applicationArchive) {
+        List<Archive<?>> auxiliaryArchives = loadAuxiliaryArchives();
+
+        ProtocolDescription protocolDescription = container.getDefaultProtocol();
+        ProtocolDefinition protocolDefinition = protocolRegistry.getProtocol(protocolDescription);
+        Protocol<?> protocol = protocolDefinition.getProtocol();
+        DeploymentPackager packager = protocol.getPackager();
+
+        applyApplicationProcessors(applicationArchive);
+        applyAuxiliaryProcessors(auxiliaryArchives);
+
+        try {
+            // this should be made more reliable, does not work with e.g. a EnterpriseArchive
+            if (ClassContainer.class.isInstance(applicationArchive)) {
+                ClassContainer<?> classContainer = ClassContainer.class.cast(applicationArchive);
+                classContainer.addClass(testClass.getJavaClass());
+            }
+        } catch (UnsupportedOperationException e) {
+            /*
+             * Quick Fix: https://jira.jboss.org/jira/browse/ARQ-118
+             * Keep in mind when rewriting for https://jira.jboss.org/jira/browse/ARQ-94
+             * that a ShrinkWrap archive might not support a Container if even tho the
+             * ContianerBase implements it. Check the Archive Interface..
+             */
+        }
+
+        DeploymentDescription description = new DeploymentDescription("_DEFAULT_", applicationArchive);
+        description.setProtocol(protocolDescription);
+
+        packager.generateDeployment(
+            new TestDeployment(description, applicationArchive, auxiliaryArchives),
+            serviceLoader.all(ProtocolArchiveProcessor.class)
+        );
+
+        return applicationArchive;
+    }
+
+    private List<Archive<?>> loadAuxiliaryArchives() {
+        List<Archive<?>> archives = new ArrayList<>();
+
+        // load based on the Containers ClassLoader
+        Collection<AuxiliaryArchiveAppender> archiveAppenders = serviceLoader.all(AuxiliaryArchiveAppender.class);
+
+        for (AuxiliaryArchiveAppender archiveAppender : archiveAppenders) {
+            Archive<?> auxiliaryArchive = archiveAppender.createAuxiliaryArchive();
+            if (auxiliaryArchive != null) {
+                archives.add(auxiliaryArchive);
+            }
+        }
+        return archives;
+    }
+
+    private void applyApplicationProcessors(Archive<?> applicationArchive) {
+        Collection<ApplicationArchiveProcessor> processors = serviceLoader.all(ApplicationArchiveProcessor.class);
+        for (ApplicationArchiveProcessor processor : processors) {
+            processor.process(applicationArchive, testClass);
+        }
+    }
+
+    private void applyAuxiliaryProcessors(List<Archive<?>> auxiliaryArchives) {
+        Collection<AuxiliaryArchiveProcessor> processors = serviceLoader.all(AuxiliaryArchiveProcessor.class);
+        for (AuxiliaryArchiveProcessor processor : processors) {
+            for (Archive<?> auxiliaryArchive : auxiliaryArchives) {
+                processor.process(auxiliaryArchive);
+            }
+        }
     }
 
     private static void merge(Configuration configuration, Configuration original) {
         configuration.setNamespace(original.getNamespace());
     }
 
-    private static Archive<?> getRunInPodArchive(Class<?> clazz) {
+    private Archive<?> getRunInPodArchive(Class<?> clazz) {
         Method m = findRunInContainerDeploymentMethod(clazz);
         return getRunInPodArchive(m);
     }
 
-    private static Archive<?> getRunInPodArchive(Method m) {
+    private Archive<?> getRunInPodArchive(Method m) {
         try {
-            return (Archive<?>) m.invoke(null);
+            Archive<?> archive = (Archive<?>) m.invoke(null);
+            applyProcessors(archive);
+            return Archives.toProxy(archive, DEFAULT_NAME);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -140,7 +239,7 @@ public class RunInPodUtils {
 
         Method[] methods = clazz.getMethods();
         for (Method m : methods) {
-            if (Modifier.isStatic(m.getModifiers()) && m.isAnnotationPresent(annotationClass)) {
+            if (Modifier.isStatic(m.getModifiers()) && m.isAnnotationPresent(annotationClass) && m.getParameterCount() == 0) {
                 return m;
             }
         }

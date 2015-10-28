@@ -53,8 +53,8 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
         this.templateURL = templateURL;
     }
 
-    public String getGitRepository() {
-        if (gitRepository == null) {
+    public String getGitRepository(boolean fail) {
+        if (gitRepository == null && fail) {
             throw new IllegalArgumentException("Missing git repository!");
         }
         return gitRepository;

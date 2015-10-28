@@ -21,39 +21,26 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.test.arquillian.ce;
+package org.jboss.arquillian.ce.runinpod;
 
-import java.util.logging.Logger;
-
-import org.jboss.arquillian.ce.api.RunInPod;
-import org.jboss.arquillian.ce.api.RunInPodDeployment;
-import org.jboss.arquillian.ce.api.TemplateDeployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
+import org.jboss.arquillian.container.spi.client.container.LifecycleException;
+import org.jboss.shrinkwrap.api.Archive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-@RunWith(Arquillian.class)
-@RunInPod
-@TemplateDeployment
-public class RunInPodTest {
-    private static Logger log = Logger.getLogger(RunInPodTest.class.getName());
-
-    @RunInPodDeployment
-    public static WebArchive getDeployment() {
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "run-in-pod.war");
-        war.setWebXML(new StringAsset("<web-app/>"));
-        return war;
+public class NewRunInPodContainer extends RunInPodContainer {
+    public NewRunInPodContainer(DeployableContainer<? extends Configuration> delegate, Archive<?> archive) {
+        super(delegate, archive);
     }
 
-    @Test
-    public void testBasic() throws Exception {
-        log.info("BANG!!");
+    public void start() throws LifecycleException {
+        delegate.start();
     }
 
+    public void stop() throws LifecycleException {
+        delegate.stop();
+    }
 }

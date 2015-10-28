@@ -21,39 +21,29 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.test.arquillian.ce;
+package org.jboss.arquillian.ce.utils;
 
-import java.util.logging.Logger;
+import java.lang.reflect.Method;
 
-import org.jboss.arquillian.ce.api.RunInPod;
-import org.jboss.arquillian.ce.api.RunInPodDeployment;
-import org.jboss.arquillian.ce.api.TemplateDeployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
+import javassist.util.proxy.MethodHandler;
+import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-@RunWith(Arquillian.class)
-@RunInPod
-@TemplateDeployment
-public class RunInPodTest {
-    private static Logger log = Logger.getLogger(RunInPodTest.class.getName());
-
-    @RunInPodDeployment
-    public static WebArchive getDeployment() {
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "run-in-pod.war");
-        war.setWebXML(new StringAsset("<web-app/>"));
-        return war;
+public class Archives {
+    public static Archive<?> toProxy(final Archive<?> archive, final String newArchiveName) {
+        Class<? extends Archive> expected = (archive instanceof EnterpriseArchive) ? EnterpriseArchive.class : WebArchive.class;
+        return BytecodeUtils.proxy(expected, new MethodHandler() {
+            public Object invoke(Object self, Method method, Method proceed, Object[] args) throws Throwable {
+                if ("getName".equals(method.getName())) {
+                    return newArchiveName;
+                } else {
+                    return method.invoke(archive, args);
+                }
+            }
+        });
     }
-
-    @Test
-    public void testBasic() throws Exception {
-        log.info("BANG!!");
-    }
-
 }

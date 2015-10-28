@@ -26,13 +26,11 @@ package org.jboss.arquillian.ce.template;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javassist.util.proxy.MethodHandler;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
@@ -40,10 +38,9 @@ import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.ce.api.TemplateDeployment;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
-import org.jboss.arquillian.ce.runinpod.RunInPodUtils;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
-import org.jboss.arquillian.ce.utils.BytecodeUtils;
+import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -51,7 +48,6 @@ import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
@@ -60,7 +56,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfiguration> {
     @Override
     protected RunInPodContainer create() {
-        return RunInPodUtils.createContainer(tc.get().getJavaClass(), configuration);
+        return runInPodUtils.createContainer(configuration);
     }
 
     public Class<TemplateCEConfiguration> getConfigurationClass() {
@@ -91,27 +87,17 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     public ProtocolMetaData doDeploy(final Archive<?> archive) throws DeploymentException {
         final String templateURL = readTemplateUrl();
         try {
-            log.info(String.format("Using Git repository: %s", configuration.getGitRepository()));
-
             final String newArchiveName;
-            if (isTemplateDeployment()) {
+            boolean templateDeployment = isTemplateDeployment();
+            if (templateDeployment) {
                 log.info("Ignoring Arquillian deployment ...");
                 newArchiveName = newName(archive);
             } else {
-                log.info("Committing Arquillian deployment ...");
+                log.info(String.format("Using Git repository: %s, committing Arquillian deployment ...", configuration.getGitRepository(true)));
                 newArchiveName = commitDeployment(archive);
             }
 
-            Class<? extends Archive> expected = (archive instanceof EnterpriseArchive) ? EnterpriseArchive.class : WebArchive.class;
-            Archive<?> proxy = BytecodeUtils.proxy(expected, new MethodHandler() {
-                public Object invoke(Object self, Method method, Method proceed, Object[] args) throws Throwable {
-                    if ("getName".equals(method.getName())) {
-                        return newArchiveName;
-                    } else {
-                        return method.invoke(archive, args);
-                    }
-                }
-            });
+            Archive<?> proxy = Archives.toProxy(archive, newArchiveName);
 
             int replicas = readReplicas();
             Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(proxy);
@@ -119,9 +105,11 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             List<ParamValue> values = new ArrayList<>();
             addParameterValues(values, System.getenv());
             addParameterValues(values, System.getProperties());
-            values.add(new ParamValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository()));
-            values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
             values.add(new ParamValue("DEPLOYMENT_NAME", labels.get(OpenShiftAdapter.DEPLOYMENT_ARCHIVE_NAME_KEY)));
+            values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
+            if (templateDeployment == false || (configuration.getGitRepository(false) != null)) {
+                values.add(new ParamValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository(true)));
+            }
 
             log.info(String.format("Applying OpenShift template: %s", templateURL));
             // use old archive name as templateKey
@@ -170,7 +158,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         String name = newName(archive);
 
         File dir = client.getDir(archive);
-        try (GitAdapter git = GitAdapter.cloneRepository(dir, configuration.getGitRepository()).prepare("deployments/" + name)) {
+        try (GitAdapter git = GitAdapter.cloneRepository(dir, configuration.getGitRepository(true)).prepare("deployments/" + name)) {
             client.exportAsZip(new File(dir, "deployments"), archive, name);
 
             CredentialsProvider cp;

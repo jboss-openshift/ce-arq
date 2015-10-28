@@ -26,7 +26,6 @@ package org.jboss.arquillian.ce.runinpod;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
-import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.shrinkwrap.api.Archive;
@@ -35,9 +34,9 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class RunInPodContainer implements DeployableContainer<RunInPodConfiguration> {
-    private DeployableContainer<? extends Configuration> delegate;
-    private Archive<?> archive;
+public abstract class RunInPodContainer implements DeployableContainer<RunInPodConfiguration> {
+    protected final DeployableContainer<? extends Configuration> delegate;
+    protected final Archive<?> archive;
 
     public RunInPodContainer(DeployableContainer<? extends Configuration> delegate, Archive<?> archive) {
         this.delegate = delegate;
@@ -58,14 +57,6 @@ public class RunInPodContainer implements DeployableContainer<RunInPodConfigurat
 
     public void setup(RunInPodConfiguration c) {
         // should be already invoked on delegate
-    }
-
-    public void start() throws LifecycleException {
-        delegate.start();
-    }
-
-    public void stop() throws LifecycleException {
-        delegate.stop();
     }
 
     public ProtocolDescription getDefaultProtocol() {

@@ -42,10 +42,12 @@ import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
+import org.jboss.arquillian.container.test.impl.domain.ProtocolRegistry;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 import org.jboss.arquillian.core.api.annotation.Inject;
+import org.jboss.arquillian.core.spi.ServiceLoader;
 import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
@@ -71,10 +73,17 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     @Inject
     protected Instance<TestClass> tc;
 
+    @Inject
+    private Instance<ServiceLoader> serviceLoader;
+
+    @Inject
+    private Instance<ProtocolRegistry> protocolRegistry;
+
     protected T configuration;
     protected OpenShiftAdapter client;
     protected Proxy proxy;
 
+    protected RunInPodUtils runInPodUtils;
     protected RunInPodContainer runInPodContainer;
 
     protected String getName(String prefix, Archive<?> archive) {
@@ -85,29 +94,15 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected abstract String getPrefix();
 
-    protected RunInPodContainer create() {
-        return RunInPodUtils.createContainer(this, tc.get().getJavaClass());
-    }
-
-    protected boolean isSPI() {
-        return (tc == null); // not injected by ARQ
-    }
-
     public void setup(T configuration) {
         this.configuration = getConfigurationClass().cast(configuration);
-        this.configurationInstanceProducer.set(configuration);
-
-        if (!isSPI() && RunInPodUtils.hasRunInPod(tc.get().getJavaClass())) {
-            log.info("Found @RunInPod, setting up container ...");
-            runInPodContainer = create();
+        // provide configuration
+        if (this.configurationInstanceProducer != null) {
+            this.configurationInstanceProducer.set(configuration);
         }
     }
 
     public void start() throws LifecycleException {
-        if (runInPodContainer != null) {
-            runInPodContainer.start();
-        }
-
         this.client = OpenShiftAdapterFactory.getOpenShiftAdapter(configuration);
         this.proxy = client.createProxy();
 
@@ -140,7 +135,33 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected abstract ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException;
 
+    protected RunInPodContainer create() {
+        return runInPodUtils.createContainer(this);
+    }
+
+    protected boolean isSPI() {
+        return (tc == null); // not injected by ARQ
+    }
+
+    /**
+     * Only handle this now, as tc finally has TestClass injected.
+     */
+    private void handleRunInPod() throws DeploymentException {
+        if (!isSPI() && RunInPodUtils.hasRunInPod(tc.get().getJavaClass())) {
+            log.info("Found @RunInPod, setting up utils, container ...");
+            runInPodUtils = new RunInPodUtils(this, serviceLoader.get(), protocolRegistry.get(), tc.get());
+            runInPodContainer = create();
+            try {
+                runInPodContainer.start();
+            } catch (LifecycleException e) {
+                throw new DeploymentException("Cannot start RunInPodContainer!", e);
+            }
+        }
+    }
+
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
+        handleRunInPod();
+
         if (runInPodContainer != null) {
             runInPodContainer.deploy();
         }

@@ -27,7 +27,6 @@ import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.RunInPod;
 import org.jboss.arquillian.ce.api.RunInPodDeployment;
-import org.jboss.arquillian.ce.api.TemplateDeployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
@@ -40,7 +39,6 @@ import org.junit.runner.RunWith;
  */
 @RunWith(Arquillian.class)
 @RunInPod
-@TemplateDeployment
 public class RunInPodTest {
     private static Logger log = Logger.getLogger(RunInPodTest.class.getName());
 

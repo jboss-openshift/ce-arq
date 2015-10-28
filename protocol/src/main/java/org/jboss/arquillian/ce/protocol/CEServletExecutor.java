@@ -45,6 +45,8 @@ import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
 import org.jboss.arquillian.test.spi.TestMethodExecutor;
 import org.jboss.arquillian.test.spi.TestResult;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -94,7 +96,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
         String context;
         String podName;
         if (isRunInPod(testMethodExecutor)) {
-            context = "";
+            context = "/runinpod";
             podName = findRunInPod();
         } else {
             context = contextRoot;
@@ -131,7 +133,8 @@ public class CEServletExecutor extends ServletMethodExecutor {
     }
 
     private String findRunInPod() {
-        Map<String, String> labels = null; // TODO
+        WebArchive dummy = ShrinkWrap.create(WebArchive.class, "runinpod.war");
+        Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(dummy);
         return proxy.findPod(labels, config().getNamespace());
     }
 

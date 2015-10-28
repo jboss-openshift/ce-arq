@@ -34,6 +34,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-container-test-impl-base</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.arquillian.protocol</groupId>
             <artifactId>arquillian-protocol-servlet</artifactId>
         </dependency>
