@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.logging.Logger;
 
+import org.jboss.arquillian.ce.runinpod.RunInPodUtils;
 import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Proxy;
@@ -90,15 +91,23 @@ public class CEServletExecutor extends ServletMethodExecutor {
 
         Class<?> testClass = testMethodExecutor.getInstance().getClass();
 
-        Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
+        String context;
+        String podName;
+        if (isRunInPod(testMethodExecutor)) {
+            context = "";
+            podName = findRunInPod();
+        } else {
+            context = contextRoot;
+            podName = locatePodName(testMethodExecutor);
+        }
+
         String host = config().getKubernetesMaster();
         String version = config().getApiVersion();
         String namespace = config().getNamespace();
-        int index = locatePodIndex(testMethodExecutor);
 
-        String url = proxy.url(labels, host, version, namespace, index, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
+        String url = proxy.url(host, version, namespace, podName, context + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
         log.info(String.format("Invoking test, url: %s", url));
-        String eventUrl = proxy.url(labels, host, version, namespace, index, contextRoot + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
+        String eventUrl = proxy.url(host, version, namespace, podName, context + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
 
         Timer eventTimer = null;
         try {
@@ -117,7 +126,16 @@ public class CEServletExecutor extends ServletMethodExecutor {
         return proxy.post(url, returnType, requestObject);
     }
 
-    private int locatePodIndex(TestMethodExecutor testMethodExecutor) {
+    private boolean isRunInPod(TestMethodExecutor testMethodExecutor) {
+        return RunInPodUtils.isRunInPod(testMethodExecutor.getInstance().getClass(), testMethodExecutor.getMethod());
+    }
+
+    private String findRunInPod() {
+        Map<String, String> labels = null; // TODO
+        return proxy.findPod(labels, config().getNamespace());
+    }
+
+    private String locatePodName(TestMethodExecutor testMethodExecutor) {
         Method method = testMethodExecutor.getMethod();
         TargetsContainer tc = method.getAnnotation(TargetsContainer.class);
         int index = 0;
@@ -126,27 +144,19 @@ public class CEServletExecutor extends ServletMethodExecutor {
             index = Strings.parseNumber(value);
         }
 
+        Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
+
         OperateOnDeployment ood = method.getAnnotation(OperateOnDeployment.class);
         if (ood != null) {
-            return findDeploymentsPod();
+            return findDeploymentsPod(labels);
         }
 
-        return index;
+        return proxy.findPod(labels, config().getNamespace(), index);
     }
 
-    /**
-     * Poke all pods, and see which one responds with 200 ... any better way?
-     */
-    private int findDeploymentsPod() {
-        log.info(String.format("Searching for pod with context %s ...", contextRoot));
-        Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
-        String host = config().getKubernetesMaster();
-        String version = config().getApiVersion();
+    private String findDeploymentsPod(Map<String, String> labels) {
         String namespace = config().getNamespace();
-        Map.Entry<Integer, String> entry = proxy.findPod(labels, host, version, namespace, contextRoot + "/_poke");
-        int index = entry.getKey();
-        log.info(String.format("Found '%s' context on #%s pod, pod: %s", contextRoot, index, entry.getValue()));
-        return index;
+        return proxy.findPod(labels, namespace);
     }
 
 }

@@ -21,25 +21,12 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.web;
-
-import java.io.Serializable;
+package org.jboss.arquillian.ce.runinpod;
 
 import org.jboss.arquillian.ce.utils.Configuration;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class WebCEConfiguration extends Configuration implements Serializable {
-    private static final long serialVersionUID = 1L;
-
-    private int mgmtPort = Integer.parseInt(System.getProperty("container.mgmt.port", "9990"));
-
-    public int getMgmtPort() {
-        return mgmtPort;
-    }
-
-    public void setMgmtPort(int mgmtPort) {
-        this.mgmtPort = mgmtPort;
-    }
+class RunInPodConfiguration extends Configuration {
 }

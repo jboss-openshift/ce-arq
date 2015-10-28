@@ -32,6 +32,8 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.Replicas;
+import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
+import org.jboss.arquillian.ce.runinpod.RunInPodUtils;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
@@ -73,6 +75,8 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected OpenShiftAdapter client;
     protected Proxy proxy;
 
+    protected RunInPodContainer runInPodContainer;
+
     protected String getName(String prefix, Archive<?> archive) {
         String name = archive.getName();
         int p = name.lastIndexOf(".");
@@ -81,18 +85,29 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected abstract String getPrefix();
 
-    protected void cleanup(Archive<?> archive) throws Exception {
-        String name = getName(getPrefix(), archive) + "rc";
-        client.cleanReplicationControllers(name);
-        client.cleanPods(AbstractOpenShiftAdapter.getDeploymentLabels(archive));
+    protected RunInPodContainer create() {
+        return RunInPodUtils.createContainer(this, tc.get().getJavaClass());
+    }
+
+    protected boolean isSPI() {
+        return (tc == null); // not injected by ARQ
     }
 
     public void setup(T configuration) {
         this.configuration = getConfigurationClass().cast(configuration);
         this.configurationInstanceProducer.set(configuration);
+
+        if (!isSPI() && RunInPodUtils.hasRunInPod(tc.get().getJavaClass())) {
+            log.info("Found @RunInPod, setting up container ...");
+            runInPodContainer = create();
+        }
     }
 
     public void start() throws LifecycleException {
+        if (runInPodContainer != null) {
+            runInPodContainer.start();
+        }
+
         this.client = OpenShiftAdapterFactory.getOpenShiftAdapter(configuration);
         this.proxy = client.createProxy();
 
@@ -105,6 +120,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     public void stop() throws LifecycleException {
+        if (runInPodContainer != null) {
+            runInPodContainer.stop();
+        }
+
         try {
             if (configuration.isGeneratedNS()) {
                 client.deleteProject(configuration.getNamespace());
@@ -122,6 +141,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected abstract ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException;
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
+        if (runInPodContainer != null) {
+            runInPodContainer.deploy();
+        }
+
         client.prepare(archive);
         return doDeploy(archive);
     }
@@ -131,6 +154,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     protected int readReplicas() {
+        if (tc == null) {
+            return 1; // @RunInPod
+        }
+
         TestClass testClass = tc.get();
         Replicas replicas = testClass.getAnnotation(Replicas.class);
         int r = -1;
@@ -244,7 +271,17 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         context.add(arqServlet);
     }
 
+    protected void cleanup(Archive<?> archive) throws Exception {
+        String name = getName(getPrefix(), archive) + "rc";
+        client.cleanReplicationControllers(name);
+        client.cleanPods(AbstractOpenShiftAdapter.getDeploymentLabels(archive));
+    }
+
     public void undeploy(Archive<?> archive) throws DeploymentException {
+        if (runInPodContainer != null) {
+            runInPodContainer.undeploy();
+        }
+
         // do we keep test config around for some more?
         if (configuration.isIgnoreCleanup() == false) {
             try {

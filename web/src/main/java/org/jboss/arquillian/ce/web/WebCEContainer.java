@@ -23,67 +23,10 @@
 
 package org.jboss.arquillian.ce.web;
 
-import java.io.OutputStream;
-import java.util.Collections;
-import java.util.List;
-
-import org.jboss.arquillian.ce.protocol.CEServletProtocol;
-import org.jboss.arquillian.ce.utils.AbstractCEContainer;
-import org.jboss.arquillian.ce.utils.Port;
-import org.jboss.arquillian.ce.utils.RCContext;
-import org.jboss.arquillian.container.spi.client.container.DeploymentException;
-import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
-import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
-import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.arquillian.ce.spi.WebSPIContainer;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
-    public Class<WebCEConfiguration> getConfigurationClass() {
-        return WebCEConfiguration.class;
-    }
-
-    public void apply(OutputStream outputStream) {
-        // nothing atm
-    }
-
-    @Override
-    public ProtocolDescription getDefaultProtocol() {
-        return new ProtocolDescription(CEServletProtocol.PROTOCOL_NAME);
-    }
-
-    public ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException {
-        try {
-            String imageName = buildImage(archive, "ce-registry.usersys.redhat.com/jboss-webserver-3/webserver30-tomcat8-openshift:1.2", "/opt/webserver/webapps/");
-
-            // clean old k8s stuff
-            cleanup(archive);
-
-            // add new k8s config
-
-            // http
-            Port http = new Port();
-            http.setName("http");
-            http.setContainerPort(8080);
-            List<Port> ports = Collections.singletonList(http);
-
-            RCContext context = new RCContext(archive, imageName, ports, 1);
-
-            context.setProbeHook(configuration.getProbeHookType());
-            context.setProbeCommands(configuration.getProbeCommands());
-
-            String rc = deployReplicationController(context);
-            log.info("Deployed replication controller: " + rc);
-
-            return getProtocolMetaData(archive, 1);
-        } catch (Throwable t) {
-            throw new DeploymentException("Cannot deploy in CE env.", t);
-        }
-    }
-
-    protected String getPrefix() {
-        return "jws";
-    }
-
+public class WebCEContainer extends WebSPIContainer {
 }

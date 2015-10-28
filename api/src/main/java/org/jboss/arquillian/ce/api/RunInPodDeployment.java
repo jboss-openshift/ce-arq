@@ -21,32 +21,18 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.utils;
+package org.jboss.arquillian.ce.api;
 
-import java.io.InputStream;
-import java.util.Map;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface Proxy {
-    void setDefaultSSLContext();
-
-    String url(String host, String version, String namespace, String podName, String path, String parameters);
-
-    String url(Map<String, String> labels, String host, String version, String namespace, String path, String parameters);
-
-    String url(Map<String, String> labels, String host, String version, String namespace, int index, String path, String parameters);
-
-    int getReadyPodsSize(Map<String, String> labels, String namespace);
-
-    <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
-
-    InputStream post(Map<String, String> labels, Configuration configuration, int pod, String path) throws Exception;
-
-    int status(String url);
-
-    String findPod(Map<String, String> labels, String namespace);
-
-    String findPod(Map<String, String> labels, String namespace, int index);
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface RunInPodDeployment {
+    String env() default "eap";
 }

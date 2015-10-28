@@ -21,32 +21,38 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.utils;
+package org.jboss.arquillian.ce.spi;
 
-import java.io.InputStream;
-import java.util.Map;
+import java.io.Serializable;
+import java.util.UUID;
+
+import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.Strings;
 
 /**
+ * We have this SPI containers so we can delegate @RunInPod deployment ot them.
+ *
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface Proxy {
-    void setDefaultSSLContext();
+public class WildFlySPIConfiguration extends Configuration implements Serializable {
+    private static final long serialVersionUID = 1L;
 
-    String url(String host, String version, String namespace, String podName, String path, String parameters);
+    private int mgmtPort = Integer.parseInt(Strings.getSystemPropertyOrEnvVar("container.mgmt.port", "9990"));
+    private String hornetQClusterPassword = Strings.getSystemPropertyOrEnvVar("hornetq.cluster.password", UUID.randomUUID().toString());
 
-    String url(Map<String, String> labels, String host, String version, String namespace, String path, String parameters);
+    public int getMgmtPort() {
+        return mgmtPort;
+    }
 
-    String url(Map<String, String> labels, String host, String version, String namespace, int index, String path, String parameters);
+    public void setMgmtPort(int mgmtPort) {
+        this.mgmtPort = mgmtPort;
+    }
 
-    int getReadyPodsSize(Map<String, String> labels, String namespace);
+    public String getHornetQClusterPassword() {
+        return hornetQClusterPassword;
+    }
 
-    <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
-
-    InputStream post(Map<String, String> labels, Configuration configuration, int pod, String path) throws Exception;
-
-    int status(String url);
-
-    String findPod(Map<String, String> labels, String namespace);
-
-    String findPod(Map<String, String> labels, String namespace, int index);
+    public void setHornetQClusterPassword(String hornetQClusterPassword) {
+        this.hornetQClusterPassword = hornetQClusterPassword;
+    }
 }

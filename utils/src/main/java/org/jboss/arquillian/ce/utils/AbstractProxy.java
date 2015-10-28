@@ -28,8 +28,6 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,18 +56,15 @@ public abstract class AbstractProxy<P> implements Proxy {
         return (parameters != null && parameters.length() > 0) ? url + "?" + parameters : url;
     }
 
-    public Map.Entry<Integer, String> findPod(Map<String, String> labels, Configuration configuration, String path) {
-        String host = configuration.getKubernetesMaster();
-        String version = configuration.getApiVersion();
-        String namespace = configuration.getNamespace();
-        return findPod(labels, host, version, namespace, path);
-    }
-
     protected abstract List<P> getPods(String namespace, Map<String, String> labels);
 
     protected abstract String getName(P pod);
 
     protected abstract boolean isReady(P pod);
+
+    public String url(Map<String, String> labels, String host, String version, String namespace, String path, String parameters) {
+        return url(labels, host, version, namespace, 0, path, parameters);
+    }
 
     public String url(Map<String, String> labels, String host, String version, String namespace, int index, String path, String parameters) {
         List<P> items = getPods(namespace, labels);
@@ -79,17 +74,6 @@ public abstract class AbstractProxy<P> implements Proxy {
         String pod = getName(items.get(index));
 
         return url(host, version, namespace, pod, path, parameters);
-    }
-
-    public List<String> urls(Map<String, String> labels, String host, String namespace, String version, String path) {
-        List<P> items = getPods(namespace, labels);
-
-        List<String> urls = new ArrayList<>();
-        for (P pod : items) {
-            String podName = getName(pod);
-            urls.add(url(host, version, namespace, podName, path, null));
-        }
-        return urls;
     }
 
     public int getReadyPodsSize(Map<String, String> labels, String namespace) {
@@ -103,17 +87,17 @@ public abstract class AbstractProxy<P> implements Proxy {
         return count;
     }
 
-    public Map.Entry<Integer, String> findPod(Map<String, String> labels, String host, String version, String namespace, String path) {
+    public String findPod(Map<String, String> labels, String namespace) {
+        return findPod(labels, namespace, 0);
+    }
+
+    public String findPod(Map<String, String> labels, String namespace, int index) {
         List<P> items = getPods(namespace, labels);
-        int i;
-        for (i = 0; i < items.size(); i++) {
-            String podName = getName(items.get(i));
-            String url = url(host, version, namespace, podName, path, null);
-            if (status(url) == 200) {
-                return new AbstractMap.SimpleEntry<>(i, podName);
-            }
+        if (index >= items.size()) {
+            throw new IllegalStateException(String.format("Not enough pods (%s) to invoke pod index %s!", items, index));
+        } else {
+            return getName(items.get(index));
         }
-        throw new IllegalArgumentException(String.format("No matching pod: %s, path: %s", items, path));
     }
 
     protected abstract AsyncHttpClient getHttpClient();
@@ -165,7 +149,6 @@ public abstract class AbstractProxy<P> implements Proxy {
             configuration.getKubernetesMaster(),
             configuration.getApiVersion(),
             configuration.getNamespace(),
-            pod,
             path,
             null
         );

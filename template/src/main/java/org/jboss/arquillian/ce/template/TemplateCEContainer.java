@@ -39,6 +39,8 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.jboss.arquillian.ce.api.GitDeployment;
 import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
+import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
+import org.jboss.arquillian.ce.runinpod.RunInPodUtils;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.BytecodeUtils;
@@ -56,6 +58,11 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfiguration> {
+    @Override
+    protected RunInPodContainer create() {
+        return RunInPodUtils.createContainer(tc.get().getJavaClass(), configuration);
+    }
+
     public Class<TemplateCEConfiguration> getConfigurationClass() {
         return TemplateCEConfiguration.class;
     }
