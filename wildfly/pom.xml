@@ -24,6 +24,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-ce-fabric8</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.arquillian.protocol</groupId>
             <artifactId>arquillian-protocol-ce</artifactId>
         </dependency>

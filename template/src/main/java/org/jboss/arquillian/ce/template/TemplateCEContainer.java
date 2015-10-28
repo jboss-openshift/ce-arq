@@ -36,7 +36,6 @@ import org.eclipse.jgit.transport.NetRCCredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.ce.api.TemplateDeployment;
-import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
@@ -44,7 +43,6 @@ import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
-import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
@@ -64,11 +62,6 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     }
 
     public void apply(OutputStream outputStream) throws IOException {
-    }
-
-    @Override
-    public ProtocolDescription getDefaultProtocol() {
-        return new ProtocolDescription(CEServletProtocol.PROTOCOL_NAME);
     }
 
     @SuppressWarnings("unchecked")

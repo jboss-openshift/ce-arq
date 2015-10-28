@@ -35,6 +35,8 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptor;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public abstract class RunInPodContainer implements DeployableContainer<RunInPodConfiguration> {
+    private final static ThreadLocal<Boolean> check = new ThreadLocal<>();
+
     protected final DeployableContainer<? extends Configuration> delegate;
     protected final Archive<?> archive;
 
@@ -43,12 +45,30 @@ public abstract class RunInPodContainer implements DeployableContainer<RunInPodC
         this.archive = archive;
     }
 
+    public boolean isSame(DeployableContainer<? extends Configuration> container) {
+        return (delegate == container);
+    }
+
     public void deploy() throws DeploymentException {
-        deploy(archive);
+        if (check.get() == null) {
+            check.set(true);
+            try {
+                deploy(archive);
+            } finally {
+                check.remove();
+            }
+        }
     }
 
     public void undeploy() throws DeploymentException {
-        undeploy(archive);
+        if (check.get() == null) {
+            check.set(true);
+            try {
+                undeploy(archive);
+            } finally {
+                check.remove();
+            }
+        }
     }
 
     public Class<RunInPodConfiguration> getConfigurationClass() {

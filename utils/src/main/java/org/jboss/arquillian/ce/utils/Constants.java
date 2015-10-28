@@ -21,39 +21,11 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.test.arquillian.ce;
-
-import java.util.logging.Logger;
-
-import org.jboss.arquillian.ce.api.RunInPod;
-import org.jboss.arquillian.ce.api.RunInPodDeployment;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+package org.jboss.arquillian.ce.utils;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-@RunWith(Arquillian.class)
-@RunInPod
-public class RunInPodTest {
-    private static Logger log = Logger.getLogger(RunInPodTest.class.getName());
-
-    @Deployment
-    @RunInPodDeployment
-    public static WebArchive getDeployment() {
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "run-in-pod.war");
-        war.setWebXML(new StringAsset("<web-app/>"));
-        return war;
-    }
-
-    @Test
-    public void testBasic() throws Exception {
-        log.info("BANG!!");
-    }
-
+public final class Constants {
+    public static final String PROTOCOL_NAME = "CE Servlet Protocol 1.0";
 }

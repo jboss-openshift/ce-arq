@@ -140,7 +140,8 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     protected boolean isSPI() {
-        return (tc == null); // not injected by ARQ
+        // not injected by ARQ, or this is its own runaspod container
+        return (tc == null) || (runInPodContainer != null && runInPodContainer.isSame(this));
     }
 
     /**
@@ -171,7 +172,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     public ProtocolDescription getDefaultProtocol() {
-        return new ProtocolDescription("Servlet 3.0");
+        return new ProtocolDescription(Constants.PROTOCOL_NAME);
     }
 
     protected int readReplicas() {

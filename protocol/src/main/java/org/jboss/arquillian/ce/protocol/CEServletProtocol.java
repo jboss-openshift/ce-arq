@@ -23,6 +23,7 @@
 
 package org.jboss.arquillian.ce.protocol;
 
+import org.jboss.arquillian.ce.utils.Constants;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.test.spi.ContainerMethodExecutor;
@@ -34,14 +35,12 @@ import org.jboss.arquillian.container.test.spi.command.CommandCallback;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class CEServletProtocol implements Protocol<CEProtocolConfiguration> {
-    public static final String PROTOCOL_NAME = "CE Servlet Protocol 1.0";
-
     public Class<CEProtocolConfiguration> getProtocolConfigurationClass() {
         return CEProtocolConfiguration.class;
     }
 
     public ProtocolDescription getDescription() {
-        return new ProtocolDescription(PROTOCOL_NAME);
+        return new ProtocolDescription(Constants.PROTOCOL_NAME);
     }
 
     public DeploymentPackager getPackager() {

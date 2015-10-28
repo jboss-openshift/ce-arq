@@ -137,6 +137,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
         Probe probe = null;
         if (context.getProbeCommands() != null && context.getProbeCommands().size() > 0 && context.getProbeHook() != null) {
+            probe = new Probe();
             handleProbe(probe, context.getProbeHook(), context.getProbeCommands(), cps);
         }
 
