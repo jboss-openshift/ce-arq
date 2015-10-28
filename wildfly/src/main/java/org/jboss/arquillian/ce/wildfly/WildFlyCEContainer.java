@@ -31,7 +31,6 @@ import java.util.List;
 
 import org.jboss.arquillian.ce.protocol.CEServletProtocol;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
-import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -96,8 +95,12 @@ public class WildFlyCEContainer extends AbstractCEContainer<WildFlyCEConfigurati
             context.setPreStopPath(configuration.getPreStopPath());
             context.setIgnorePreStop(configuration.isIgnorePreStop());
 
-            context.setProbeHook(HookType.EXEC);
-            context.setProbeCommands(Arrays.asList("/bin/bash", "-c", "/opt/eap/bin/readinessProbe.sh"));
+            context.setProbeHook(configuration.getProbeHookType());
+            List<String> probeCommands = configuration.getProbeCommands();
+            if (probeCommands == null) {
+                probeCommands = Arrays.asList("/bin/bash", "-c", "/opt/eap/bin/readinessProbe.sh");
+            }
+            context.setProbeCommands(probeCommands);
 
             String rc = deployReplicationController(context);
             log.info(String.format("Deployed replication controller [%s]: %s", replicas, rc));

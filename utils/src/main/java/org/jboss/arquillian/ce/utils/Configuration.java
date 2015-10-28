@@ -26,6 +26,8 @@ package org.jboss.arquillian.ce.utils;
 import static org.jboss.arquillian.ce.utils.Strings.getSystemPropertyOrEnvVar;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 
@@ -59,6 +61,9 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private String preStopHookType = getSystemPropertyOrEnvVar("kubernetes.container.pre-stop-hook-type", HookType.HTTP_GET.name());
     private String preStopPath = getSystemPropertyOrEnvVar("kubernetes.container.pre-stop", "/pre-stop/_hook");
     private boolean ignorePreStop = Boolean.parseBoolean(getSystemPropertyOrEnvVar("kubernetes.container.pre-stop-ignore"));
+
+    private String probeHookType = getSystemPropertyOrEnvVar("kubernetes.readiness.probe.hook-type", HookType.EXEC.name());
+    private String probeCommands = getSystemPropertyOrEnvVar("kubernetes.readiness.probe.commands");
 
     private String imageName = getSystemPropertyOrEnvVar("docker.test.image", "cetestimage");
     private String imageTag = getSystemPropertyOrEnvVar("docker.test.tag", "latest");
@@ -231,6 +236,26 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setPreStopPath(String preStopPath) {
         this.preStopPath = preStopPath;
+    }
+
+    public HookType getProbeHookType() {
+        return HookType.toHookType(probeHookType);
+    }
+
+    public void setProbeHookType(String probeHookType) {
+        this.probeHookType = probeHookType;
+    }
+
+    public List<String> getProbeCommands() {
+        if (probeCommands == null) {
+            return null;
+        } else {
+            return Arrays.asList(probeCommands.split(","));
+        }
+    }
+
+    public void setProbeCommands(String probeCommands) {
+        this.probeCommands = probeCommands;
     }
 
     public boolean isIgnorePreStop() {

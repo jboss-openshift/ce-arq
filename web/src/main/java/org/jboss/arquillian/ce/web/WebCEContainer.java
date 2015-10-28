@@ -69,6 +69,10 @@ public class WebCEContainer extends AbstractCEContainer<WebCEConfiguration> {
             List<Port> ports = Collections.singletonList(http);
 
             RCContext context = new RCContext(archive, imageName, ports, 1);
+
+            context.setProbeHook(configuration.getProbeHookType());
+            context.setProbeCommands(configuration.getProbeCommands());
+
             String rc = deployReplicationController(context);
             log.info("Deployed replication controller: " + rc);
 
