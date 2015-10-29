@@ -61,10 +61,6 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     public void apply(OutputStream outputStream) throws IOException {
     }
 
-    private void addParameterValues(List<ParamValue> values, Map map) {
-        addParameterValues(values, map, true);
-    }
-
     @SuppressWarnings("unchecked")
     private void addParameterValues(List<ParamValue> values, Map map, boolean filter) {
         Set<Map.Entry> entries = map.entrySet();
@@ -105,8 +101,8 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
 
             if (executeProcessTemplate()) {
                 List<ParamValue> values = new ArrayList<>();
-                addParameterValues(values, System.getenv());
-                addParameterValues(values, System.getProperties());
+                addParameterValues(values, System.getenv(), true);
+                addParameterValues(values, System.getProperties(), true);
                 addParameterValues(values, readParameters(), false);
                 values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
                 if (externalDeployment == false || (configuration.getGitRepository(false) != null)) {
@@ -157,7 +153,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
 
     private boolean executeProcessTemplate() {
         Template template = readTemplate();
-        return (template == null || template.process()) && (configuration.isTemplateProcess());
+        return (template == null || template.process()) && configuration.isTemplateProcess();
     }
 
     private Map<String, String> readParameters() {
