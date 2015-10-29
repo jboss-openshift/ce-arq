@@ -27,12 +27,10 @@ import java.util.Collections;
 import java.util.List;
 
 import org.jboss.arquillian.ce.api.ExternalDeployment;
+import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
 import org.jboss.arquillian.test.spi.TestClass;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -40,21 +38,13 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 public class ExternalDeploymentScenarioGenerator implements DeploymentScenarioGenerator {
     private final static String DELEGATE_CLASS = "org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator";
 
-    private final static String WEB_XML =
-        "<web-app version=\"3.0\"\n" +
-            "         xmlns=\"http://java.sun.com/xml/ns/javaee\"\n" +
-            "         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
-            "         xsi:schemaLocation=\"http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd\"\n" +
-            "         metadata-complete=\"false\">\n" +
-            "</web-app>";
-
     public static boolean isExternalDeployment(Class<?> clazz) {
         return clazz.isAnnotationPresent(ExternalDeployment.class);
     }
 
     public List<DeploymentDescription> generate(TestClass testClass) {
         if (isExternalDeployment(testClass.getJavaClass())) {
-            return Collections.singletonList(generateDummyDeployment());
+            return Collections.singletonList(Archives.generateDummyDeployment("ROOT.war"));
         } else {
             try {
                 DeploymentScenarioGenerator delegate = (DeploymentScenarioGenerator) Class.forName(DELEGATE_CLASS).newInstance();
@@ -63,11 +53,5 @@ public class ExternalDeploymentScenarioGenerator implements DeploymentScenarioGe
                 throw new IllegalStateException(e);
             }
         }
-    }
-
-    private DeploymentDescription generateDummyDeployment() {
-        WebArchive archive = ShrinkWrap.create(WebArchive.class, "ROOT.war");
-        archive.setWebXML(new StringAsset(WEB_XML));
-        return new DeploymentDescription("_DEFAULT_", archive);
     }
 }

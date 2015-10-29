@@ -26,7 +26,10 @@ package org.jboss.arquillian.ce.utils;
 import java.lang.reflect.Method;
 
 import javassist.util.proxy.MethodHandler;
+import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
@@ -34,6 +37,29 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class Archives {
+
+    private final static String WEB_XML =
+        "<web-app version=\"3.0\"\n" +
+            "         xmlns=\"http://java.sun.com/xml/ns/javaee\"\n" +
+            "         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+            "         xsi:schemaLocation=\"http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd\"\n" +
+            "         metadata-complete=\"false\">\n" +
+            "</web-app>";
+
+    public static Archive<?> generateDummyArchive() {
+        return generateDummyArchive(null);
+    }
+
+    public static Archive<?> generateDummyArchive(String name) {
+        WebArchive war = (name == null) ? ShrinkWrap.create(WebArchive.class) : ShrinkWrap.create(WebArchive.class, name);
+        war.setWebXML(new StringAsset(WEB_XML));
+        return war;
+    }
+
+    public static DeploymentDescription generateDummyDeployment(String name) {
+        return new DeploymentDescription("_DEFAULT_", generateDummyArchive(name));
+    }
+
     public static Archive<?> toProxy(final Archive<?> archive, final String newArchiveName) {
         Class<? extends Archive> expected = (archive instanceof EnterpriseArchive) ? EnterpriseArchive.class : WebArchive.class;
         return BytecodeUtils.proxy(expected, new MethodHandler() {
@@ -46,4 +72,5 @@ public class Archives {
             }
         });
     }
+
 }

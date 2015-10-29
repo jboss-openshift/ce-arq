@@ -56,10 +56,7 @@ import org.jboss.arquillian.container.test.spi.client.protocol.Protocol;
 import org.jboss.arquillian.core.spi.ServiceLoader;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.container.ClassContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -220,18 +217,12 @@ public class RunInPodUtils {
 
     private Archive<?> getRunInPodArchive(Method m) {
         try {
-            Archive<?> archive = (m != null) ? ((Archive<?>) m.invoke(null)) : generate();
+            Archive<?> archive = (m != null) ? ((Archive<?>) m.invoke(null)) : Archives.generateDummyArchive();
             applyProcessors(archive);
             return Archives.toProxy(archive, DEFAULT_NAME);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    protected Archive<?> generate() {
-        WebArchive war = ShrinkWrap.create(WebArchive.class);
-        war.setWebXML(new StringAsset("<web-app/>"));
-        return war;
     }
 
     private static Method findRunInContainerDeploymentMethod(Class<?> clazz) {
