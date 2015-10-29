@@ -29,6 +29,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.RunInPod;
 import org.jboss.arquillian.ce.api.RunInPodDeployment;
@@ -55,12 +56,17 @@ import org.jboss.arquillian.container.test.spi.client.protocol.Protocol;
 import org.jboss.arquillian.core.spi.ServiceLoader;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.container.ClassContainer;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class RunInPodUtils {
+    private static final Logger log = Logger.getLogger(RunInPodUtils.class.getName());
+
     private static final String DEFAULT_ENV = Strings.getSystemPropertyOrEnvVar("runinpod.default.env", "eap");
     private static final String DEFAULT_NAME = Strings.getSystemPropertyOrEnvVar("runinpod.default.name", "runinpod.war");
 
@@ -101,8 +107,12 @@ public class RunInPodUtils {
 
     public RunInPodContainer createContainer(Configuration orignal) {
         Method method = findRunInContainerDeploymentMethod(testClass.getJavaClass());
-        RunInPodDeployment runInPodDeployment = method.getAnnotation(RunInPodDeployment.class);
-        String env = (runInPodDeployment != null) ? runInPodDeployment.env() : DEFAULT_ENV;
+
+        String env = DEFAULT_ENV;
+        if (method != null) {
+            RunInPodDeployment runInPodDeployment = method.getAnnotation(RunInPodDeployment.class);
+            env = (runInPodDeployment != null) ? runInPodDeployment.env() : DEFAULT_ENV;
+        }
 
         DeployableContainer<? extends Configuration> container;
         switch (env) {
@@ -210,12 +220,18 @@ public class RunInPodUtils {
 
     private Archive<?> getRunInPodArchive(Method m) {
         try {
-            Archive<?> archive = (Archive<?>) m.invoke(null);
+            Archive<?> archive = (m != null) ? ((Archive<?>) m.invoke(null)) : generate();
             applyProcessors(archive);
             return Archives.toProxy(archive, DEFAULT_NAME);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    protected Archive<?> generate() {
+        WebArchive war = ShrinkWrap.create(WebArchive.class);
+        war.setWebXML(new StringAsset("<web-app/>"));
+        return war;
     }
 
     private static Method findRunInContainerDeploymentMethod(Class<?> clazz) {
@@ -229,7 +245,8 @@ public class RunInPodUtils {
             return m;
         }
 
-        throw new IllegalStateException("No RunInPod deployment method found: " + clazz.getName());
+        log.info("No RunInPod deployment method found: " + clazz.getName());
+        return null;
     }
 
     private static Method findDeploymentMethodInternal(Class<?> clazz, Class<? extends Annotation> annotationClass) {
