@@ -176,7 +176,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     protected int readReplicas() {
-        if (tc == null) {
+        if (isSPI()) {
             return 1; // @RunInPod
         }
 
