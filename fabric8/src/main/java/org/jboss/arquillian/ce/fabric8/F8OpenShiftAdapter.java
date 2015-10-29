@@ -222,7 +222,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         if (config != null) {
             return client.lists().inNamespace(namespace).delete(config);
         }
-        return null;
+        return config;
     }
 
     private String deployService(String name, String apiVersion, String portName, int port, int containerPort, Map<String, String> selector) throws Exception {

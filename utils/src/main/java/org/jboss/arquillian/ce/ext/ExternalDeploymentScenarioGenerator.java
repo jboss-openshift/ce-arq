@@ -26,7 +26,6 @@ package org.jboss.arquillian.ce.ext;
 import java.util.Collections;
 import java.util.List;
 
-import org.jboss.arquillian.ce.api.ExternalDeployment;
 import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
@@ -38,12 +37,8 @@ import org.jboss.arquillian.test.spi.TestClass;
 public class ExternalDeploymentScenarioGenerator implements DeploymentScenarioGenerator {
     private final static String DELEGATE_CLASS = "org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator";
 
-    public static boolean isExternalDeployment(Class<?> clazz) {
-        return clazz.isAnnotationPresent(ExternalDeployment.class);
-    }
-
     public List<DeploymentDescription> generate(TestClass testClass) {
-        if (isExternalDeployment(testClass.getJavaClass())) {
+        if (Archives.isExternalDeployment(testClass.getJavaClass())) {
             return Collections.singletonList(Archives.generateDummyDeployment("ROOT.war"));
         } else {
             try {

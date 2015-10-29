@@ -38,6 +38,7 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
     private String templateURL = Strings.getSystemPropertyOrEnvVar("openshift.template.url");
     private String templateLabels = Strings.getSystemPropertyOrEnvVar("openshift.template.labels");
     private String templateParameters = Strings.getSystemPropertyOrEnvVar("openshift.template.parameters");
+    private boolean templateProcess = Boolean.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.template.process", "true"));
 
     private String gitRepository = Strings.getSystemPropertyOrEnvVar("git.repository");
     private String gitCredentials = Strings.getSystemPropertyOrEnvVar("git.credentials");
@@ -70,6 +71,14 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
 
     public void setTemplateParameters(String templateParameters) {
         this.templateParameters = templateParameters;
+    }
+
+    public boolean isTemplateProcess() {
+        return templateProcess;
+    }
+
+    public void setTemplateProcess(boolean templateProcess) {
+        this.templateProcess = templateProcess;
     }
 
     public String getGitRepository(boolean fail) {

@@ -215,7 +215,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
                 client.delete(resource);
             }
         }
-        return null;
+        return resources;
     }
 
     public IService getService(String namespace, String serviceName) {

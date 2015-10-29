@@ -35,7 +35,6 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.jboss.arquillian.ce.api.Template;
-import org.jboss.arquillian.ce.ext.ExternalDeploymentScenarioGenerator;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.Archives;
@@ -87,7 +86,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         final String templateURL = readTemplateUrl();
         try {
             final String newArchiveName;
-            boolean externalDeployment = ExternalDeploymentScenarioGenerator.isExternalDeployment(tc.get().getJavaClass());
+            boolean externalDeployment = Archives.isExternalDeployment(tc.get().getJavaClass());
             if (externalDeployment) {
                 log.info("Ignoring Arquillian deployment ...");
                 newArchiveName = newName(archive);
@@ -104,18 +103,22 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
                 log.warning(String.format("Empty labels for template: %s, namespace: %s", templateURL, configuration.getNamespace()));
             }
 
-            List<ParamValue> values = new ArrayList<>();
-            addParameterValues(values, System.getenv());
-            addParameterValues(values, System.getProperties());
-            addParameterValues(values, readParameters(), false);
-            values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
-            if (externalDeployment == false || (configuration.getGitRepository(false) != null)) {
-                values.add(new ParamValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository(true)));
-            }
+            if (executeProcessTemplate()) {
+                List<ParamValue> values = new ArrayList<>();
+                addParameterValues(values, System.getenv());
+                addParameterValues(values, System.getProperties());
+                addParameterValues(values, readParameters(), false);
+                values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
+                if (externalDeployment == false || (configuration.getGitRepository(false) != null)) {
+                    values.add(new ParamValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository(true)));
+                }
 
-            log.info(String.format("Applying OpenShift template: %s", templateURL));
-            // use old archive name as templateKey
-            client.processTemplateAndCreateResources(archive.getName(), templateURL, configuration.getNamespace(), values);
+                log.info(String.format("Applying OpenShift template: %s", templateURL));
+                // use old archive name as templateKey
+                client.processTemplateAndCreateResources(archive.getName(), templateURL, configuration.getNamespace(), values);
+            } else {
+                log.info(String.format("Ignoring template [%s] processing ...", templateURL));
+            }
 
             return getProtocolMetaData(proxy, labels, replicas);
         } catch (Throwable t) {
@@ -150,6 +153,11 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             }
         }
         return configuration.getTemplateLabels();
+    }
+
+    private boolean executeProcessTemplate() {
+        Template template = readTemplate();
+        return (template == null || template.process()) && (configuration.isTemplateProcess());
     }
 
     private Map<String, String> readParameters() {

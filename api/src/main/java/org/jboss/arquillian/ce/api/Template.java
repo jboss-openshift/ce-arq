@@ -39,4 +39,9 @@ public @interface Template {
     String labels() default "";
 
     String parameters() default "";
+
+    /**
+     * Do we invoke K8s process template?
+     */
+    boolean process() default true;
 }

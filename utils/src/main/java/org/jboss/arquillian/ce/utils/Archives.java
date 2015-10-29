@@ -26,6 +26,7 @@ package org.jboss.arquillian.ce.utils;
 import java.lang.reflect.Method;
 
 import javassist.util.proxy.MethodHandler;
+import org.jboss.arquillian.ce.api.ExternalDeployment;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -45,6 +46,10 @@ public class Archives {
             "         xsi:schemaLocation=\"http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd\"\n" +
             "         metadata-complete=\"false\">\n" +
             "</web-app>";
+
+    public static boolean isExternalDeployment(Class<?> clazz) {
+        return clazz.isAnnotationPresent(ExternalDeployment.class);
+    }
 
     public static Archive<?> generateDummyArchive() {
         return generateDummyArchive(null);
