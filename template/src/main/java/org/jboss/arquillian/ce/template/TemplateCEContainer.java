@@ -62,14 +62,22 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     public void apply(OutputStream outputStream) throws IOException {
     }
 
-    @SuppressWarnings("unchecked")
     private void addParameterValues(List<ParamValue> values, Map map) {
+        addParameterValues(values, map, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addParameterValues(List<ParamValue> values, Map map, boolean filter) {
         Set<Map.Entry> entries = map.entrySet();
         for (Map.Entry env : entries) {
             if (env.getKey() instanceof String && env.getValue() instanceof String) {
                 String key = (String) env.getKey();
-                if (key.startsWith("ARQ_")) {
-                    values.add(new ParamValue(key.substring("ARQ_".length()), (String) env.getValue()));
+                if (filter == false || key.startsWith("ARQ_") || key.startsWith("arq_")) {
+                    if (filter) {
+                        values.add(new ParamValue(key.substring("ARQ_".length()), (String) env.getValue()));
+                    } else {
+                        values.add(new ParamValue(key, (String) env.getValue()));
+                    }
                 }
             }
         }
@@ -99,6 +107,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             List<ParamValue> values = new ArrayList<>();
             addParameterValues(values, System.getenv());
             addParameterValues(values, System.getProperties());
+            addParameterValues(values, readParameters(), false);
             values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
             if (externalDeployment == false || (configuration.getGitRepository(false) != null)) {
                 values.add(new ParamValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository(true)));
@@ -121,7 +130,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     protected String readTemplateUrl() {
         Template template = readTemplate();
         String templateUrl = template == null ? null : template.url();
-        if (templateUrl == null) {
+        if (templateUrl == null || templateUrl.length() == 0) {
             templateUrl = configuration.getTemplateURL();
         }
 
@@ -137,10 +146,21 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         if (template != null) {
             String string = template.labels();
             if (string != null && string.length() > 0) {
-                return Strings.toLabels(string);
+                return Strings.splitKeyValueList(string);
             }
         }
         return configuration.getTemplateLabels();
+    }
+
+    private Map<String, String> readParameters() {
+        Template template = readTemplate();
+        if (template != null) {
+            String string = template.parameters();
+            if (string != null && string.length() > 0) {
+                return Strings.splitKeyValueList(string);
+            }
+        }
+        return configuration.getTemplateParameters();
     }
 
     @Override

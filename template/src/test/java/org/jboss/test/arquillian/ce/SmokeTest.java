@@ -25,6 +25,7 @@ package org.jboss.test.arquillian.ce;
 
 import java.util.logging.Logger;
 
+import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -37,6 +38,7 @@ import org.junit.runner.RunWith;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 @RunWith(Arquillian.class)
+@Template(labels = "deploymentArchiveName=ROOT.war", parameters = "DEPLOYMENT_NAME=ROOT.war")
 public class SmokeTest {
     private static Logger log = Logger.getLogger(SmokeTest.class.getName());
 

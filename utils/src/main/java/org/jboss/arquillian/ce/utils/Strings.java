@@ -96,7 +96,7 @@ public class Strings {
         return isNullOrEmpty(str) == false;
     }
 
-    public static Map<String, String> toLabels(String string) {
+    public static Map<String, String> splitKeyValueList(String string) {
         Map<String, String> labels = new HashMap<>();
         if (string != null && string.length() > 0) {
             String[] split = string.split(",");

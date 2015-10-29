@@ -34,7 +34,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Template {
-    String url();
+    String url() default "";
 
-    String labels();
+    String labels() default "";
+
+    String parameters() default "";
 }
