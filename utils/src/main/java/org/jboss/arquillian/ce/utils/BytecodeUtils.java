@@ -92,6 +92,14 @@ public final class BytecodeUtils {
         }
     }
 
+    public static <T> T narrow(Class<T> expected, final T target) {
+        return proxy(expected, new MethodHandler() {
+            public Object invoke(Object self, Method method, Method proceed, Object[] args) throws Throwable {
+                return method.invoke(target, args);
+            }
+        });
+    }
+
     protected static Class<?> getProxyClass(ProxyFactory factory) {
         SecurityManager sm = System.getSecurityManager();
         if (sm == null)

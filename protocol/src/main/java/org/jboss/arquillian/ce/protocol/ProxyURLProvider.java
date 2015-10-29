@@ -47,16 +47,13 @@ import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
  */
 public class ProxyURLProvider implements ResourceProvider {
     @Inject
-    Instance<Configuration> configurationInstance;
-
-    @Inject
     Instance<ProtocolMetaData> protocolMetaDataInstance;
 
     private Proxy proxy;
 
-    private synchronized Proxy getProxy() {
+    private synchronized Proxy getProxy(Configuration configuration) {
         if (proxy == null) {
-            proxy = ProxyFactory.getProxy(configurationInstance.get());
+            proxy = ProxyFactory.getProxy(configuration);
             proxy.setDefaultSSLContext();
         }
         return proxy;
@@ -89,17 +86,16 @@ public class ProxyURLProvider implements ResourceProvider {
         try {
             DeploymentContext deploymentContext = DeploymentContext.getDeploymentContext(protocolMetaDataInstance.get());
             Map<String, String> labels = deploymentContext.getLabels();
-
-            Configuration c = configurationInstance.get();
+            Configuration c = deploymentContext.getConfiguration();
 
             String context = getContext();
             if (context.endsWith("/") == false) {
                 context = context + "/";
             }
 
-            String podName = getProxy().findPod(labels, c.getNamespace());
+            String podName = getProxy(c).findPod(labels, c.getNamespace());
 
-            String spec = getProxy().url(c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), podName, context, null);
+            String spec = getProxy(c).url(c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), podName, context, null);
             return new URL(spec);
         } catch (Exception e) {
             throw new IllegalStateException(e);

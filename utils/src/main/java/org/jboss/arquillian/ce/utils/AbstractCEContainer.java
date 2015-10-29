@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import org.jboss.arquillian.ce.api.ConfigurationHandle;
 import org.jboss.arquillian.ce.api.Replicas;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
 import org.jboss.arquillian.ce.runinpod.RunInPodUtils;
@@ -68,7 +69,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     @Inject
     @ApplicationScoped
-    private InstanceProducer<Configuration> configurationInstanceProducer;
+    private InstanceProducer<ConfigurationHandle> configurationInstanceProducer;
 
     @Inject
     protected Instance<TestClass> tc;
@@ -98,7 +99,8 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         this.configuration = getConfigurationClass().cast(configuration);
         // provide configuration
         if (this.configurationInstanceProducer != null) {
-            this.configurationInstanceProducer.set(configuration);
+            // prevent setters access
+            this.configurationInstanceProducer.set(BytecodeUtils.narrow(ConfigurationHandle.class, configuration));
         }
     }
 

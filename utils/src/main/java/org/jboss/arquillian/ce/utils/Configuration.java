@@ -31,13 +31,14 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 
+import org.jboss.arquillian.ce.api.ConfigurationHandle;
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public abstract class Configuration implements ContainerConfiguration, Serializable {
+public abstract class Configuration implements ContainerConfiguration, ConfigurationHandle, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String kubernetesMaster = getSystemPropertyOrEnvVar("kubernetes.master");
@@ -73,8 +74,6 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
     private String password = getSystemPropertyOrEnvVar("docker.password", "");
     private String email = getSystemPropertyOrEnvVar("docker.email", "");
     private String address = getSystemPropertyOrEnvVar("docker.address", "");
-
-    private String webContext = getSystemPropertyOrEnvVar("arquillian.server.context", "");
 
     private long startupTimeout = Integer.parseInt(getSystemPropertyOrEnvVar("arquillian.startup.timeout", "600")); // 10min ...
 
@@ -320,14 +319,6 @@ public abstract class Configuration implements ContainerConfiguration, Serializa
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public String getWebContext() {
-        return webContext;
-    }
-
-    public void setWebContext(String webContext) {
-        this.webContext = webContext;
     }
 
     public long getStartupTimeout() {
