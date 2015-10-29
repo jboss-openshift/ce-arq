@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.utils;
 
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.shrinkwrap.api.Archive;
 
@@ -34,6 +35,7 @@ public class RCContext {
     private Archive<?> archive;
     private String imageName;
     private List<Port> ports;
+    private Map<String, String> labels;
     private int replicas;
     private HookType lifecycleHook;
     private String preStopPath;
@@ -44,10 +46,11 @@ public class RCContext {
     public RCContext() {
     }
 
-    public RCContext(Archive<?> archive, String imageName, List<Port> ports, int replicas) {
+    public RCContext(Archive<?> archive, String imageName, List<Port> ports, Map<String, String> labels, int replicas) {
         this.archive = archive;
         this.imageName = imageName;
         this.ports = ports;
+        this.labels = labels;
         this.replicas = replicas;
     }
 
@@ -73,6 +76,14 @@ public class RCContext {
 
     public void setPorts(List<Port> ports) {
         this.ports = ports;
+    }
+
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
     }
 
     public int getReplicas() {

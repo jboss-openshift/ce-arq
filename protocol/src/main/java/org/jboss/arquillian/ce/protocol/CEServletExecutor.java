@@ -30,8 +30,9 @@ import java.util.Timer;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.runinpod.RunInPodUtils;
-import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.ProxyFactory;
 import org.jboss.arquillian.ce.utils.Strings;
@@ -45,8 +46,6 @@ import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
 import org.jboss.arquillian.test.spi.TestMethodExecutor;
 import org.jboss.arquillian.test.spi.TestResult;
 import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -55,7 +54,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
     private static final Logger log = Logger.getLogger(CEServletExecutor.class.getName());
 
     private String contextRoot;
-    private Archive<?> archive;
+    private DeploymentContext deploymentContext;
     private Proxy proxy;
 
     public CEServletExecutor(CEProtocolConfiguration configuration, ProtocolMetaData protocolMetaData, CommandCallback callback) {
@@ -63,9 +62,9 @@ public class CEServletExecutor extends ServletMethodExecutor {
         this.callback = callback;
 
         this.contextRoot = readContextRoot(protocolMetaData);
-        this.archive = protocolMetaData.getContexts(Archive.class).iterator().next();
+        deploymentContext = DeploymentContext.getDeploymentContext(protocolMetaData);
 
-        Configuration original = protocolMetaData.getContexts(Configuration.class).iterator().next();
+        Configuration original = deploymentContext.getConfiguration();
         config().setConfiguration(original);
 
         this.proxy = ProxyFactory.getProxy(original);
@@ -133,8 +132,8 @@ public class CEServletExecutor extends ServletMethodExecutor {
     }
 
     private String findRunInPod() {
-        WebArchive dummy = ShrinkWrap.create(WebArchive.class, "runinpod.war");
-        Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(dummy);
+        Archive<?> dummy = Archives.generateDummyArchive("runinpod.war");
+        Map<String, String> labels = DeploymentContext.getDeploymentLabels(dummy);
         return proxy.findPod(labels, config().getNamespace());
     }
 
@@ -147,7 +146,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
             index = Strings.parseNumber(value);
         }
 
-        Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
+        Map<String, String> labels = deploymentContext.getLabels();
 
         OperateOnDeployment ood = method.getAnnotation(OperateOnDeployment.class);
         if (ood != null) {

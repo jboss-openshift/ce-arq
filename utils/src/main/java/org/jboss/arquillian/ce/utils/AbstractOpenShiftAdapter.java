@@ -32,7 +32,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -122,10 +121,6 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
 
     public Proxy createProxy() {
         return ProxyFactory.getProxy(configuration);
-    }
-
-    public static Map<String, String> getDeploymentLabels(Archive<?> archive) {
-        return Collections.singletonMap(DEPLOYMENT_ARCHIVE_NAME_KEY, archive.getName());
     }
 
     public File exportAsZip(File dir, Archive<?> deployment) {

@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.Client;
-import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.ProxyFactory;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -38,7 +38,6 @@ import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
-import org.jboss.shrinkwrap.api.Archive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -72,8 +71,8 @@ public class ClientCreator {
         public synchronized InputStream execute(int pod, String path) throws Exception {
             log.info(String.format("Invoking pod #%s for path '%s'", pod, path));
 
-            Archive<?> archive = protocolMetaDataInstance.get().getContexts(Archive.class).iterator().next();
-            Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
+            DeploymentContext context = DeploymentContext.getDeploymentContext(protocolMetaDataInstance.get());
+            Map<String, String> labels = context.getLabels();
 
             return proxy.post(labels, configuration, pod, path);
         }

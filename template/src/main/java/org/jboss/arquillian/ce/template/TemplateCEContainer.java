@@ -38,13 +38,11 @@ import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.ce.ext.ExternalDeploymentScenarioGenerator;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
-import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Archives;
-import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.ParamValue;
+import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
-import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
@@ -93,12 +91,14 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             Archive<?> proxy = Archives.toProxy(archive, newArchiveName);
 
             int replicas = readReplicas();
-            Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(proxy);
+            Map<String, String> labels = readLabels();
+            if (labels.isEmpty()) {
+                log.warning(String.format("Empty labels for template: %s, namespace: %s", templateURL, configuration.getNamespace()));
+            }
 
             List<ParamValue> values = new ArrayList<>();
             addParameterValues(values, System.getenv());
             addParameterValues(values, System.getProperties());
-            values.add(new ParamValue("DEPLOYMENT_NAME", labels.get(OpenShiftAdapter.DEPLOYMENT_ARCHIVE_NAME_KEY)));
             values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
             if (externalDeployment == false || (configuration.getGitRepository(false) != null)) {
                 values.add(new ParamValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository(true)));
@@ -108,15 +108,18 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             // use old archive name as templateKey
             client.processTemplateAndCreateResources(archive.getName(), templateURL, configuration.getNamespace(), values);
 
-            return getProtocolMetaData(proxy, replicas);
+            return getProtocolMetaData(proxy, labels, replicas);
         } catch (Throwable t) {
             throw new DeploymentException("Cannot deploy template: " + templateURL, t);
         }
     }
 
+    protected Template readTemplate() {
+        return tc.get().getAnnotation(Template.class);
+    }
+
     protected String readTemplateUrl() {
-        TestClass testClass = tc.get();
-        Template template = testClass.getAnnotation(Template.class);
+        Template template = readTemplate();
         String templateUrl = template == null ? null : template.url();
         if (templateUrl == null) {
             templateUrl = configuration.getTemplateURL();
@@ -127,6 +130,17 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         }
 
         return templateUrl;
+    }
+
+    private Map<String, String> readLabels() {
+        Template template = readTemplate();
+        if (template != null) {
+            String string = template.labels();
+            if (string != null && string.length() > 0) {
+                return Strings.toLabels(string);
+            }
+        }
+        return configuration.getTemplateLabels();
     }
 
     @Override

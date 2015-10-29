@@ -26,6 +26,8 @@ package org.jboss.arquillian.ce.utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
@@ -94,6 +96,18 @@ public class Strings {
         return isNullOrEmpty(str) == false;
     }
 
+    public static Map<String, String> toLabels(String string) {
+        Map<String, String> labels = new HashMap<>();
+        if (string != null && string.length() > 0) {
+            String[] split = string.split(",");
+            for (String s : split) {
+                String[] ss = s.split("=");
+                labels.put(ss[0], ss[1]);
+            }
+        }
+        return labels;
+    }
+
     // ---
 
     static String toString(InputStream stream) {
@@ -126,5 +140,4 @@ public class Strings {
         }
         return null;
     }
-
 }

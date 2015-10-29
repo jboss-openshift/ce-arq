@@ -37,8 +37,6 @@ import org.jboss.shrinkwrap.api.Archive;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public interface OpenShiftAdapter extends Closeable, RegistryLookup {
-    String DEPLOYMENT_ARCHIVE_NAME_KEY = "deploymentArchiveName";
-
     void prepare(Archive<?> archive);
 
     void reset(Archive<?> archive);

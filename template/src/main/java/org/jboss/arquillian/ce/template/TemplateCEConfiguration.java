@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.template;
 
 import java.io.Serializable;
+import java.util.Map;
 
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Strings;
@@ -35,6 +36,7 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
     private static final long serialVersionUID = 1L;
 
     private String templateURL = Strings.getSystemPropertyOrEnvVar("openshift.template.url");
+    private String templateLabels = Strings.getSystemPropertyOrEnvVar("openshift.template.labels");
 
     private String gitRepository = Strings.getSystemPropertyOrEnvVar("git.repository");
     private String gitCredentials = Strings.getSystemPropertyOrEnvVar("git.credentials");
@@ -51,6 +53,14 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
 
     public void setTemplateURL(String templateURL) {
         this.templateURL = templateURL;
+    }
+
+    public Map<String, String> getTemplateLabels() {
+        return Strings.toLabels(templateLabels);
+    }
+
+    public void setTemplateLabels(String templateLabels) {
+        this.templateLabels = templateLabels;
     }
 
     public String getGitRepository(boolean fail) {

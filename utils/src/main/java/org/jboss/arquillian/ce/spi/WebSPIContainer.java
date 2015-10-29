@@ -26,8 +26,10 @@ package org.jboss.arquillian.ce.spi;
 import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
+import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -63,7 +65,9 @@ public class WebSPIContainer extends AbstractCEContainer<WebSPIConfiguration> {
             http.setContainerPort(8080);
             List<Port> ports = Collections.singletonList(http);
 
-            RCContext context = new RCContext(archive, imageName, ports, 1);
+            Map<String, String> labels = DeploymentContext.getDeploymentLabels(archive);
+
+            RCContext context = new RCContext(archive, imageName, ports, labels, 1);
 
             context.setProbeHook(configuration.getProbeHookType());
             context.setProbeCommands(configuration.getProbeCommands());
@@ -71,7 +75,7 @@ public class WebSPIContainer extends AbstractCEContainer<WebSPIConfiguration> {
             String rc = deployReplicationController(context);
             log.info("Deployed replication controller: " + rc);
 
-            return getProtocolMetaData(archive, 1);
+            return getProtocolMetaData(archive, labels, 1);
         } catch (Throwable t) {
             throw new DeploymentException("Cannot deploy in CE env.", t);
         }

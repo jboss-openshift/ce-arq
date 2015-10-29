@@ -25,11 +25,10 @@ package org.jboss.arquillian.ce.protocol;
 
 import java.lang.annotation.Annotation;
 import java.net.URL;
-import java.util.Collection;
 import java.util.Map;
 
-import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.ProxyFactory;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
@@ -65,13 +64,11 @@ public class ProxyURLProvider implements ResourceProvider {
 
     private String getContext() {
         ProtocolMetaData pmd = protocolMetaDataInstance.get();
+        DeploymentContext deploymentContext = DeploymentContext.getDeploymentContext(pmd);
 
-        Collection<Archive> archives = pmd.getContexts(Archive.class);
-        if (archives.size() > 0) {
-            Archive top = archives.iterator().next();
-            if (top instanceof EnterpriseArchive) {
-                return "";
-            }
+        Archive top = deploymentContext.getArchive();
+        if (top instanceof EnterpriseArchive) {
+            return "";
         }
 
         for (HTTPContext httpContext : pmd.getContexts(HTTPContext.class)) {
@@ -90,8 +87,8 @@ public class ProxyURLProvider implements ResourceProvider {
 
     public Object lookup(ArquillianResource arquillianResource, Annotation... annotations) {
         try {
-            Archive<?> archive = protocolMetaDataInstance.get().getContexts(Archive.class).iterator().next();
-            Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
+            DeploymentContext deploymentContext = DeploymentContext.getDeploymentContext(protocolMetaDataInstance.get());
+            Map<String, String> labels = deploymentContext.getLabels();
 
             Configuration c = configurationInstance.get();
 

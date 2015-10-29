@@ -221,13 +221,11 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected String deployReplicationController(RCContext context) throws Exception {
         String name = getName(getPrefix(), context.getArchive());
-        return client.deployReplicationController(name, AbstractOpenShiftAdapter.getDeploymentLabels(context.getArchive()), getPrefix(), context);
+        return client.deployReplicationController(name, context.getLabels(), getPrefix(), context);
     }
 
-    protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final int replicas) throws Exception {
+    protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final Map<String, String> labels, final int replicas) throws Exception {
         log.info("Creating ProtocolMetaData ...");
-
-        final Map<String, String> labels = AbstractOpenShiftAdapter.getDeploymentLabels(archive);
 
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {
@@ -244,8 +242,8 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         addServlets(context, archive);
 
         ProtocolMetaData pmd = new ProtocolMetaData();
-        pmd.addContext(configuration); // we need original instance; due to generated values
-        pmd.addContext(archive);
+        // we need original configuration instance; due to generated values
+        pmd.addContext(new DeploymentContext(archive, labels, configuration));
         pmd.addContext(context);
         return pmd;
     }
@@ -296,7 +294,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected void cleanup(Archive<?> archive) throws Exception {
         String name = getName(getPrefix(), archive) + "rc";
         client.cleanReplicationControllers(name);
-        client.cleanPods(AbstractOpenShiftAdapter.getDeploymentLabels(archive));
+        client.cleanPods(DeploymentContext.getDeploymentLabels(archive));
     }
 
     public void undeploy(Archive<?> archive) throws DeploymentException {
