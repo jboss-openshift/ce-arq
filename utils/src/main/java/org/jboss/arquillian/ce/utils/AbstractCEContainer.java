@@ -115,20 +115,22 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     public void stop() throws LifecycleException {
-        if (runInPodContainer != null) {
-            runInPodContainer.stop();
-        }
-
         try {
-            if (configuration.isGeneratedNS()) {
-                client.deleteProject(configuration.getNamespace());
+            if (runInPodContainer != null) {
+                runInPodContainer.stop();
             }
         } finally {
             try {
-                client.close();
-            } catch (IOException e) {
-                //noinspection ThrowFromFinallyBlock
-                throw new LifecycleException("Error closing Kubernetes client.", e);
+                if (configuration.isGeneratedNS()) {
+                    client.deleteProject(configuration.getNamespace());
+                }
+            } finally {
+                try {
+                    client.close();
+                } catch (IOException e) {
+                    //noinspection ThrowFromFinallyBlock
+                    throw new LifecycleException("Error closing Kubernetes client.", e);
+                }
             }
         }
     }
@@ -161,14 +163,16 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
-        handleRunInPod();
+        client.prepare(archive);
 
+        ProtocolMetaData protocolMetaData = doDeploy(archive);
+
+        handleRunInPod();
         if (runInPodContainer != null) {
             runInPodContainer.deploy();
         }
 
-        client.prepare(archive);
-        return doDeploy(archive);
+        return protocolMetaData;
     }
 
     public ProtocolDescription getDefaultProtocol() {
@@ -298,21 +302,23 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     public void undeploy(Archive<?> archive) throws DeploymentException {
-        if (runInPodContainer != null) {
-            runInPodContainer.undeploy();
-        }
-
-        // do we keep test config around for some more?
-        if (configuration.isIgnoreCleanup() == false) {
-            try {
-                cleanup(archive);
-            } catch (Exception ignored) {
+        try {
+            if (runInPodContainer != null) {
+                runInPodContainer.undeploy();
             }
-        } else {
-            log.info("Ignore Kubernetes cleanup -- test config is still available.");
-        }
+        } finally {
+            // do we keep test config around for some more?
+            if (configuration.isIgnoreCleanup() == false) {
+                try {
+                    cleanup(archive);
+                } catch (Exception ignored) {
+                }
+            } else {
+                log.info("Ignore Kubernetes cleanup -- test config is still available.");
+            }
 
-        client.reset(archive);
+            client.reset(archive);
+        }
     }
 
     public void deploy(Descriptor descriptor) throws DeploymentException {
