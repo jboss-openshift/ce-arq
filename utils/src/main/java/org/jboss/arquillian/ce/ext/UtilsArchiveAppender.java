@@ -21,44 +21,32 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.test.arquillian.ce;
-
-import java.util.logging.Logger;
+package org.jboss.arquillian.ce.ext;
 
 import org.jboss.arquillian.ce.api.ConfigurationHandle;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.arquillian.container.test.spi.RemoteLoadableExtension;
+import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
+import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-@RunWith(Arquillian.class)
-public class SmokeTest {
-    private static Logger log = Logger.getLogger(SmokeTest.class.getName());
+public class UtilsArchiveAppender implements AuxiliaryArchiveAppender {
+    @Inject
+    private Instance<ConfigurationHandle> configurationInstance;
 
-    @ArquillianResource
-    private ConfigurationHandle configuration;
-
-    @Deployment
-    public static WebArchive getDeployment() throws Exception {
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
-        war.setWebXML("web.xml");
-        war.add(new StringAsset("<html><body>Smoke!</body></html>"), "index.html");
-        war.addClass(ConfigurationHandle.class);
-        return war;
-    }
-
-    @Test
-    public void testBasic() throws Exception {
-        Assert.assertNotNull(configuration);
-        log.info("BANG!!");
+    public Archive<?> createAuxiliaryArchive() {
+        return ShrinkWrap.create(JavaArchive.class)
+            .add(new StringAsset(ConfigurationResourceProvider.toProperties(configurationInstance.get())), ConfigurationResourceProvider.FILE_NAME)
+            .addClass(ConfigurationHandle.class)
+            .addClass(UtilsCEExtensionContainer.class)
+            .addClass(ConfigurationResourceProvider.class)
+            .addAsServiceProviderAndClasses(RemoteLoadableExtension.class, UtilsCEExtensionContainer.class);
     }
 
 }
