@@ -21,12 +21,12 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.template;
+package org.jboss.arquillian.ce.ext;
 
 import java.util.Collections;
 import java.util.List;
 
-import org.jboss.arquillian.ce.api.TemplateDeployment;
+import org.jboss.arquillian.ce.api.ExternalDeployment;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
 import org.jboss.arquillian.test.spi.TestClass;
@@ -37,7 +37,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class TemplateDeploymentScenarioGenerator implements DeploymentScenarioGenerator {
+public class ExternalDeploymentScenarioGenerator implements DeploymentScenarioGenerator {
     private final static String DELEGATE_CLASS = "org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator";
 
     private final static String WEB_XML =
@@ -48,8 +48,12 @@ public class TemplateDeploymentScenarioGenerator implements DeploymentScenarioGe
             "         metadata-complete=\"false\">\n" +
             "</web-app>";
 
+    public static boolean isExternalDeployment(Class<?> clazz) {
+        return clazz.isAnnotationPresent(ExternalDeployment.class);
+    }
+
     public List<DeploymentDescription> generate(TestClass testClass) {
-        if (testClass.isAnnotationPresent(TemplateDeployment.class)) {
+        if (isExternalDeployment(testClass.getJavaClass())) {
             return Collections.singletonList(generateDummyDeployment());
         } else {
             try {

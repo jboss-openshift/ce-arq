@@ -29,9 +29,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * This marks external deployment, no need for @Deployment --> Archive<?>
+ * e.g. template build config via git repository
+ *
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface TemplateDeployment {
+public @interface ExternalDeployment {
 }

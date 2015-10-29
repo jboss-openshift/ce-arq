@@ -35,7 +35,7 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.jboss.arquillian.ce.api.Template;
-import org.jboss.arquillian.ce.api.TemplateDeployment;
+import org.jboss.arquillian.ce.ext.ExternalDeploymentScenarioGenerator;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
@@ -81,8 +81,8 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         final String templateURL = readTemplateUrl();
         try {
             final String newArchiveName;
-            boolean templateDeployment = isTemplateDeployment();
-            if (templateDeployment) {
+            boolean externalDeployment = ExternalDeploymentScenarioGenerator.isExternalDeployment(tc.get().getJavaClass());
+            if (externalDeployment) {
                 log.info("Ignoring Arquillian deployment ...");
                 newArchiveName = newName(archive);
             } else {
@@ -100,7 +100,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             addParameterValues(values, System.getProperties());
             values.add(new ParamValue("DEPLOYMENT_NAME", labels.get(OpenShiftAdapter.DEPLOYMENT_ARCHIVE_NAME_KEY)));
             values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
-            if (templateDeployment == false || (configuration.getGitRepository(false) != null)) {
+            if (externalDeployment == false || (configuration.getGitRepository(false) != null)) {
                 values.add(new ParamValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository(true)));
             }
 
@@ -112,11 +112,6 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         } catch (Throwable t) {
             throw new DeploymentException("Cannot deploy template: " + templateURL, t);
         }
-    }
-
-    protected boolean isTemplateDeployment() {
-        TestClass testClass = tc.get();
-        return testClass.isAnnotationPresent(TemplateDeployment.class);
     }
 
     protected String readTemplateUrl() {

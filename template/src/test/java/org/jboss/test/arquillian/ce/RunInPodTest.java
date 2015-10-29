@@ -25,8 +25,8 @@ package org.jboss.test.arquillian.ce;
 
 import java.util.logging.Logger;
 
+import org.jboss.arquillian.ce.api.ExternalDeployment;
 import org.jboss.arquillian.ce.api.RunInPod;
-import org.jboss.arquillian.ce.api.TemplateDeployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(Arquillian.class)
 @RunInPod
-@TemplateDeployment
+@ExternalDeployment
 public class RunInPodTest {
     private static Logger log = Logger.getLogger(RunInPodTest.class.getName());
 
