@@ -72,8 +72,8 @@ public class WebSPIContainer extends AbstractCEContainer<WebSPIConfiguration> {
             context.setProbeHook(configuration.getProbeHookType());
             context.setProbeCommands(configuration.getProbeCommands());
 
-            String rc = deployReplicationController(context);
-            log.info("Deployed replication controller: " + rc);
+            String rc = deployResourceContext(context);
+            log.info("Deployed k8s resource: " + rc);
 
             return getProtocolMetaData(archive, labels, 1);
         } catch (Throwable t) {

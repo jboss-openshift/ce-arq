@@ -1,0 +1,25 @@
+{
+  "kind": "Pod",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "${POD_NAME}",
+    "namespace": "${NAMESPACE}",
+    "labels": {
+      ${POD_LABELS}
+    }
+  },
+  "spec": {
+    "containers": [
+      {
+        "name": "${CONTAINER_NAME}",
+        "image": "${IMAGE_NAME}",
+        "ports": [
+          ${PORTS}
+        ],
+        ${PROBE}
+        ${LIFECYCLE}
+        "imagePullPolicy": "${IMAGE_PULL_POLICY}"
+      }
+    ]
+  }
+}

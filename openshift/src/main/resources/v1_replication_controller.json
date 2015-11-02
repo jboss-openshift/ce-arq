@@ -26,7 +26,7 @@
             "command": [],
             "env": [],
             "image": "${IMAGE_NAME}",
-            "imagePullPolicy": "${IMAGE_PULL}",
+            "imagePullPolicy": "${IMAGE_PULL_POLICY}",
             ${PROBE}
             ${LIFECYCLE}
             "name": "${CONTAINER_NAME}",

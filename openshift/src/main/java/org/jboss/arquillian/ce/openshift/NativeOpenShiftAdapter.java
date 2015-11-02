@@ -122,26 +122,36 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return true;
     }
 
-    public String deployReplicationController(String name, Map<String, String> deploymentLabels, String env, RCContext context) throws Exception {
+    public String deployPod(String name, String env, RCContext context) throws Exception {
+        Properties properties = getResourceProperties(name, env, context);
+        IPod rc = createResource(Templates.POD, properties);
+        return client.create(rc, configuration.getNamespace()).getName();
+    }
+
+    public String deployReplicationController(String name, String env, RCContext context) throws Exception {
+        Properties properties = getResourceProperties(name, env, context);
+        IReplicationController rc = createResource(Templates.REPLICATION_CONTROLLER, properties);
+        return client.create(rc, configuration.getNamespace()).getName();
+    }
+
+    private Properties getResourceProperties(String name, String env, RCContext context) {
         Properties properties = new Properties();
         properties.put("NAMESPACE", configuration.getNamespace());
         properties.put("NAME", name);
         Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
         properties.put("TOP_LABELS", toLabels(labels));
-        Map<String, String> podLabels = new HashMap<>(deploymentLabels);
+        Map<String, String> podLabels = new HashMap<>(context.getLabels());
         podLabels.put("name", name + "Pod");
         properties.put("POD_LABELS", toLabels(podLabels));
         properties.put("REPLICAS", String.valueOf(context.getReplicas()));
         properties.put("POD_NAME", name + "Pod");
         properties.put("CONTAINER_NAME", name + "-container");
         properties.put("IMAGE_NAME", context.getImageName());
-        properties.put("IMAGE_PULL", configuration.getImagePullPolicy());
+        properties.put("IMAGE_PULL_POLICY", configuration.getImagePullPolicy());
         properties.put("PROBE", createProbe(env, context.getProbeHook(), context.getProbeCommands()));
         properties.put("LIFECYCLE", createLifecycle(env, context.getLifecycleHook(), context.getPreStopPath(), context.isIgnorePreStop()));
         properties.put("PORTS", toPorts(context.getPorts()));
-        IReplicationController rc = createResource(Templates.REPLICATION_CONTROLLER, properties);
-
-        return client.create(rc, configuration.getNamespace()).getName();
+        return properties;
     }
 
     private String createProbe(String env, HookType probeHook, List<String> probeCommands) {

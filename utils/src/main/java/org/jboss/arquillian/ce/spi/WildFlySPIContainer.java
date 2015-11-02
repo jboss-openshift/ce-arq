@@ -100,8 +100,8 @@ public class WildFlySPIContainer extends AbstractCEContainer<WildFlySPIConfigura
             }
             context.setProbeCommands(probeCommands);
 
-            String rc = deployReplicationController(context);
-            log.info(String.format("Deployed replication controller [%s]: %s", replicas, rc));
+            String rc = deployResourceContext(context);
+            log.info(String.format("Deployed k8s resource [%s]: %s", replicas, rc));
 
             return getProtocolMetaData(archive, labels, replicas);
         } catch (Throwable t) {

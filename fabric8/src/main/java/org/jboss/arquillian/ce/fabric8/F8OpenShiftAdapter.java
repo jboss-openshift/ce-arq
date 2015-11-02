@@ -113,9 +113,43 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.projects().withName(namespace).delete();
     }
 
-    public String deployReplicationController(String name, Map<String, String> deploymentLabels, String env, RCContext context) throws Exception {
-        String apiVersion = configuration.getApiVersion();
+    public String deployPod(String name, String env, RCContext context) throws Exception {
+        List<Container> containers = getContainers(name, context);
 
+        PodSpec podSpec = new PodSpec();
+        podSpec.setContainers(containers);
+
+        Map<String, String> podLabels = new HashMap<>();
+        podLabels.put("name", name + "Pod");
+        podLabels.putAll(context.getLabels());
+
+        ObjectMeta metadata = new ObjectMeta();
+        metadata.setLabels(podLabels);
+
+        Pod pod = new Pod();
+        pod.setApiVersion(Pod.ApiVersion.fromValue(configuration.getApiVersion()));
+        pod.setMetadata(metadata);
+        pod.setSpec(podSpec);
+
+        return client.pods().inNamespace(configuration.getNamespace()).create(pod).getMetadata().getName();
+    }
+
+    public String deployReplicationController(String name, String env, RCContext context) throws Exception {
+        List<Container> containers = getContainers(name, context);
+
+        Map<String, String> podLabels = new HashMap<>();
+        podLabels.put("name", name + "Pod");
+        podLabels.putAll(context.getLabels());
+        PodTemplateSpec podTemplate = createPodTemplateSpec(podLabels, containers);
+
+        Map<String, String> selector = Collections.singletonMap("name", name + "Pod");
+        Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
+        ReplicationController rc = createReplicationController(name + "rc", configuration.getApiVersion(), labels, context.getReplicas(), selector, podTemplate);
+
+        return client.replicationControllers().inNamespace(configuration.getNamespace()).create(rc).getMetadata().getName();
+    }
+
+    private List<Container> getContainers(String name, RCContext context) throws Exception {
         List<EnvVar> envVars = Collections.emptyList();
 
         List<ContainerPort> cps = new ArrayList<>();
@@ -143,17 +177,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
         Container container = createContainer(context.getImageName(), name + "-container", envVars, cps, volumes, lifecycle, probe, configuration.getImagePullPolicy());
 
-        List<Container> containers = Collections.singletonList(container);
-        Map<String, String> podLabels = new HashMap<>();
-        podLabels.put("name", name + "Pod");
-        podLabels.putAll(deploymentLabels);
-        PodTemplateSpec podTemplate = createPodTemplateSpec(podLabels, containers);
-
-        Map<String, String> selector = Collections.singletonMap("name", name + "Pod");
-        Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
-        ReplicationController rc = createReplicationController(name + "rc", apiVersion, labels, context.getReplicas(), selector, podTemplate);
-
-        return deployReplicationController(rc);
+        return Collections.singletonList(container);
     }
 
     private Handler createHandler(HookType hookType, String preStopPath, List<ContainerPort> ports) {
@@ -331,10 +355,6 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         } catch (Exception e) {
             log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", labels, e), e);
         }
-    }
-
-    private String deployReplicationController(ReplicationController rc) throws Exception {
-        return client.replicationControllers().inNamespace(configuration.getNamespace()).create(rc).getMetadata().getName();
     }
 
     public void close() throws IOException {

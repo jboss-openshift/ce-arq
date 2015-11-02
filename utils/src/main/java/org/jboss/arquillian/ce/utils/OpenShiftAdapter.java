@@ -55,7 +55,9 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup {
 
     boolean deleteProject(String namespace);
 
-    String deployReplicationController(String name, Map<String, String> labels, String env, RCContext context) throws Exception;
+    String deployPod(String name, String env, RCContext context) throws Exception;
+
+    String deployReplicationController(String name, String env, RCContext context) throws Exception;
 
     Object processTemplateAndCreateResources(String templateKey, String templateURL, String namespace, List<ParamValue> values) throws Exception;
 

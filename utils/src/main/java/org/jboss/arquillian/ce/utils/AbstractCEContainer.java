@@ -225,9 +225,16 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return client.buildAndPushImage(this, dockerfileTemplate, archive, properties);
     }
 
-    protected String deployReplicationController(RCContext context) throws Exception {
+    protected String deployResourceContext(RCContext context) throws Exception {
         String name = getName(getPrefix(), context.getArchive());
-        return client.deployReplicationController(name, context.getLabels(), getPrefix(), context);
+        int replicas = context.getReplicas();
+        if (replicas <= 0) {
+            throw new IllegalArgumentException(String.format("Invalid # of replicas: %s", replicas));
+        } else if (replicas == 1) {
+            return client.deployPod(name, getPrefix(), context);
+        } else {
+            return client.deployReplicationController(name, getPrefix(), context);
+        }
     }
 
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final Map<String, String> labels, final int replicas) throws Exception {
