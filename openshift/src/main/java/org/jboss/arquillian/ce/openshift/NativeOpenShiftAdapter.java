@@ -141,10 +141,10 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
         properties.put("TOP_LABELS", toLabels(labels));
         Map<String, String> podLabels = new HashMap<>(context.getLabels());
-        podLabels.put("name", name + "Pod");
+        podLabels.put("name", name + "-pod");
         properties.put("POD_LABELS", toLabels(podLabels));
         properties.put("REPLICAS", String.valueOf(context.getReplicas()));
-        properties.put("POD_NAME", name + "Pod");
+        properties.put("POD_NAME", name + "-pod");
         properties.put("CONTAINER_NAME", name + "-container");
         properties.put("IMAGE_NAME", context.getImageName());
         properties.put("IMAGE_PULL_POLICY", configuration.getImagePullPolicy());

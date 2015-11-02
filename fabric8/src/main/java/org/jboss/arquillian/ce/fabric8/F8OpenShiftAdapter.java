@@ -120,7 +120,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         podSpec.setContainers(containers);
 
         Map<String, String> podLabels = new HashMap<>();
-        podLabels.put("name", name + "Pod");
+        podLabels.put("name", name + "-pod");
         podLabels.putAll(context.getLabels());
 
         ObjectMeta metadata = new ObjectMeta();
@@ -138,11 +138,11 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         List<Container> containers = getContainers(name, context);
 
         Map<String, String> podLabels = new HashMap<>();
-        podLabels.put("name", name + "Pod");
+        podLabels.put("name", name + "-pod");
         podLabels.putAll(context.getLabels());
         PodTemplateSpec podTemplate = createPodTemplateSpec(podLabels, containers);
 
-        Map<String, String> selector = Collections.singletonMap("name", name + "Pod");
+        Map<String, String> selector = Collections.singletonMap("name", name + "-pod");
         Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
         ReplicationController rc = createReplicationController(name + "rc", configuration.getApiVersion(), labels, context.getReplicas(), selector, podTemplate);
 
