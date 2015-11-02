@@ -54,8 +54,8 @@ public abstract class Configuration implements ContainerConfiguration, Configura
     private String deploymentDir = getSystemPropertyOrEnvVar("deployment.dir");
 
     private String registryType = getSystemPropertyOrEnvVar("kubernetes.registry.type", "static");
-    private String registryURL = getSystemPropertyOrEnvVar("kubernetes.registry.url", "ce-registry.usersys.redhat.com");
-    private String registryPort = getSystemPropertyOrEnvVar("kubernetes.registry.port");
+    private String registryURL = getSystemPropertyOrEnvVar("kubernetes.registry.url", "ce-os-registry.usersys.redhat.com");
+    private String registryPort = getSystemPropertyOrEnvVar("kubernetes.registry.port", "5000");
     private String registryNamespace = getSystemPropertyOrEnvVar("kubernetes.registry.namespace", "default");
     private String registryServiceName = getSystemPropertyOrEnvVar("kubernetes.registry.service.name", "docker-registry");
 
