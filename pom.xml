@@ -22,7 +22,7 @@
     <!-- Properties -->
     <properties>
         <version.arquillian>1.1.8.Final</version.arquillian>
-        <version.dockerjava>2.1.0</version.dockerjava>
+        <version.dockerjava>2.1.1</version.dockerjava>
         <version.async-client>1.9.30</version.async-client>
         <version.openshift.client>3.0.1.Final</version.openshift.client>
         <version.fabric8>2.2.38</version.fabric8>
