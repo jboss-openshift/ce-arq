@@ -124,6 +124,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         podLabels.putAll(context.getLabels());
 
         ObjectMeta metadata = new ObjectMeta();
+        metadata.setName(name + "-pod");
         metadata.setLabels(podLabels);
 
         Pod pod = new Pod();
