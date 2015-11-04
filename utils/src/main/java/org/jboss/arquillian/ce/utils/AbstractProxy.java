@@ -31,6 +31,8 @@ import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.net.ssl.SSLContext;
 
@@ -76,15 +78,15 @@ public abstract class AbstractProxy<P> implements Proxy {
         return url(host, version, namespace, pod, path, parameters);
     }
 
-    public int getReadyPodsSize(Map<String, String> labels, String namespace) {
-        int count = 0;
+    public Set<String> getReadyPods(Map<String, String> labels, String namespace) {
+        Set<String> names = new TreeSet<>();
         List<P> pods = getPods(namespace, labels);
         for (P pod : pods) {
             if (isReady(pod)) {
-                count++;
+                names.add(getName(pod));
             }
         }
-        return count;
+        return names;
     }
 
     public String findPod(Map<String, String> labels, String namespace) {

@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.ConfigurationHandle;
@@ -242,7 +243,12 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {
-                return (proxy.getReadyPodsSize(labels, configuration.getNamespace()) >= replicas);
+                Set<String> pods = proxy.getReadyPods(labels, configuration.getNamespace());
+                boolean result = (pods.size() >= replicas);
+                if (result) {
+                    log.info(String.format("Pods are ready: %s", pods));
+                }
+                return result;
             }
 
             @Override

@@ -25,6 +25,7 @@ package org.jboss.arquillian.ce.utils;
 
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -38,7 +39,7 @@ public interface Proxy {
 
     String url(Map<String, String> labels, String host, String version, String namespace, int index, String path, String parameters);
 
-    int getReadyPodsSize(Map<String, String> labels, String namespace);
+    Set<String> getReadyPods(Map<String, String> labels, String namespace);
 
     <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
 
