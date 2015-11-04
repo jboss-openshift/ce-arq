@@ -41,6 +41,8 @@ import java.util.logging.Logger;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
+import com.github.dockerjava.api.model.BuildResponseItem;
+import com.github.dockerjava.api.model.PushResponseItem;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
@@ -192,7 +194,7 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         // Build image on your Docker host
         try (BuildImageCmd buildImageCmd = dockerClient.buildImageCmd(dir)) {
             timer.reset();
-            String imageId = buildImageCmd.withTag(imageName).exec(new BuildImageResultCallback()).awaitImageId();
+            String imageId = buildImageCmd.withTag(imageName).exec(new PrintBuildImageResultCallback()).awaitImageId();
             log.info(String.format("Built image: %s [%s].", imageId, timer));
         }
 
@@ -205,7 +207,7 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
                 pushImageCmd.withTag(imageTag);
             }
             timer.reset();
-            pushImageCmd.exec(new PushImageResultCallback()).awaitSuccess();
+            pushImageCmd.exec(new PrintPushImageResultCallback()).awaitSuccess();
             log.info(String.format("Pushed image %s with tag %s [%s].", imageName, imageTag, timer));
         }
 
@@ -223,5 +225,27 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
             output.write(buffer, 0, read);
         }
         output.flush();
+    }
+
+    private static void printResponse(String type, String result) {
+        if (result != null) {
+            log.info(String.format("%s: %s", type, result));
+        }
+    }
+
+    private static class PrintBuildImageResultCallback extends BuildImageResultCallback {
+        @Override
+        public void onNext(BuildResponseItem item) {
+            super.onNext(item);
+            printResponse("Build stream", item.getStream());
+        }
+    }
+
+    private static class PrintPushImageResultCallback extends PushImageResultCallback {
+        @Override
+        public void onNext(PushResponseItem item) {
+            super.onNext(item);
+            printResponse("Push progress", item.getProgress());
+        }
     }
 }
