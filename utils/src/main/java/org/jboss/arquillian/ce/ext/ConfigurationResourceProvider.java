@@ -60,31 +60,31 @@ public class ConfigurationResourceProvider implements ResourceProvider {
 
     @Override
     public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
+        final Properties properties = new Properties();
         try {
-            final Properties properties = new Properties();
             try (InputStream stream = ConfigurationResourceProvider.class.getClassLoader().getResourceAsStream(FILE_NAME)) {
                 properties.load(stream);
             }
-
-            return new ConfigurationHandle() {
-                public String getDockerUrl() {
-                    return properties.getProperty("docker.url");
-                }
-
-                public String getKubernetesMaster() {
-                    return properties.getProperty("kubernetes.master");
-                }
-
-                public String getApiVersion() {
-                    return properties.getProperty("kubernetes.api.version");
-                }
-
-                public String getNamespace() {
-                    return properties.getProperty("kubernetes.namespace");
-                }
-            };
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+
+        return new ConfigurationHandle() {
+            public String getDockerUrl() {
+                return properties.getProperty("docker.url");
+            }
+
+            public String getKubernetesMaster() {
+                return properties.getProperty("kubernetes.master");
+            }
+
+            public String getApiVersion() {
+                return properties.getProperty("kubernetes.api.version");
+            }
+
+            public String getNamespace() {
+                return properties.getProperty("kubernetes.namespace");
+            }
+        };
     }
 }
