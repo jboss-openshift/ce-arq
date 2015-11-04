@@ -187,24 +187,29 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         final DockerClient dockerClient = DockerClientBuilder.getInstance(builder).build();
         log.info(String.format("Docker client: %s", configuration.getDockerUrl()));
 
+        final Timer timer = new Timer();
+
         // Build image on your Docker host
         try (BuildImageCmd buildImageCmd = dockerClient.buildImageCmd(dir)) {
+            timer.reset();
             String imageId = buildImageCmd.withTag(imageName).exec(new BuildImageResultCallback()).awaitImageId();
-            log.info(String.format("Built image: %s", imageId));
+            log.info(String.format("Built image: %s [%s].", imageId, timer));
         }
 
+        final String imageTag = configuration.getImageTag();
+
         // Push image to Docker registry service
+        log.info(String.format("Pushing image %s with tag %s ...", imageName, imageTag));
         try (PushImageCmd pushImageCmd = dockerClient.pushImageCmd(imageName)) {
-            String imageTag = configuration.getImageTag();
             if (imageTag != null) {
                 pushImageCmd.withTag(imageTag);
             }
+            timer.reset();
             pushImageCmd.exec(new PushImageResultCallback()).awaitSuccess();
-            log.info(String.format("Pushed image %s with tag %s.", imageName, imageTag));
+            log.info(String.format("Pushed image %s with tag %s [%s].", imageName, imageTag, timer));
         }
 
         StringBuilder fullImageName = new StringBuilder(imageName);
-        String imageTag = configuration.getImageTag();
         if (imageTag != null) {
             fullImageName.append(":").append(imageTag);
         }
