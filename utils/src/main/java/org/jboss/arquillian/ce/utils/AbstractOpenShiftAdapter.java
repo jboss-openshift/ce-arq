@@ -227,9 +227,9 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         output.flush();
     }
 
-    private static void printResponse(String type, String result) {
+    private static void printResponse(String prefix, String result) {
         if (result != null) {
-            log.info(String.format("%s: %s", type, result));
+            log.info(String.format("%s: %s", prefix, result));
         }
     }
 
@@ -245,7 +245,7 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         @Override
         public void onNext(PushResponseItem item) {
             super.onNext(item);
-            printResponse("Push progress", item.getProgress());
+            printResponse(String.format("Push progress [%s]", item.getId()), item.getProgress());
         }
     }
 }
