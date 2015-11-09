@@ -33,21 +33,21 @@ import java.util.Set;
 public interface Proxy {
     void setDefaultSSLContext();
 
-    String url(String host, String version, String namespace, String podName, String path, String parameters);
+    String url(String podName, String path, String parameters);
 
-    String url(Map<String, String> labels, String host, String version, String namespace, String path, String parameters);
+    String url(Map<String, String> labels, String path, String parameters);
 
-    String url(Map<String, String> labels, String host, String version, String namespace, int index, String path, String parameters);
+    String url(Map<String, String> labels, int index, String path, String parameters);
 
-    Set<String> getReadyPods(Map<String, String> labels, String namespace);
+    Set<String> getReadyPods(Map<String, String> labels);
 
     <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
 
-    InputStream post(Map<String, String> labels, Configuration configuration, int pod, String path) throws Exception;
+    InputStream post(Map<String, String> labels, int pod, String path) throws Exception;
 
     int status(String url);
 
-    String findPod(Map<String, String> labels, String namespace);
+    String findPod(Map<String, String> labels);
 
-    String findPod(Map<String, String> labels, String namespace, int index);
+    String findPod(Map<String, String> labels, int index);
 }

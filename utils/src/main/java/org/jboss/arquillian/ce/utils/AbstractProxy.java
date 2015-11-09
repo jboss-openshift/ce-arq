@@ -40,6 +40,7 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
+import org.jboss.arquillian.ce.api.ConfigurationHandle;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -47,40 +48,50 @@ import com.ning.http.client.cookie.Cookie;
 public abstract class AbstractProxy<P> implements Proxy {
     private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s:8080/proxy%s";
 
+    protected final ConfigurationHandle configuration;
     private final Map<String, Cookie> cookieMap = new HashMap<>();
+
+    public AbstractProxy(ConfigurationHandle configuration) {
+        this.configuration = configuration;
+    }
 
     public void setDefaultSSLContext() {
         SSLContext.setDefault(getHttpClient().getConfig().getSSLContext());
     }
 
-    public String url(String host, String version, String namespace, String podName, String path, String parameters) {
+    private String url(String host, String version, String namespace, String podName, String path, String parameters) {
         String url = String.format(PROXY_URL, host, version, namespace, podName, path);
         return (parameters != null && parameters.length() > 0) ? url + "?" + parameters : url;
     }
 
-    protected abstract List<P> getPods(String namespace, Map<String, String> labels);
+    public String url(String podName, String path, String parameters) {
+        String url = String.format(PROXY_URL, configuration.getKubernetesMaster(), configuration.getApiVersion(), configuration.getNamespace(), podName, path);
+        return (parameters != null && parameters.length() > 0) ? url + "?" + parameters : url;
+    }
+
+    protected abstract List<P> getPods(Map<String, String> labels);
 
     protected abstract String getName(P pod);
 
     protected abstract boolean isReady(P pod);
 
-    public String url(Map<String, String> labels, String host, String version, String namespace, String path, String parameters) {
-        return url(labels, host, version, namespace, 0, path, parameters);
+    public String url(Map<String, String> labels, String path, String parameters) {
+        return url(labels, 0, path, parameters);
     }
 
-    public String url(Map<String, String> labels, String host, String version, String namespace, int index, String path, String parameters) {
-        List<P> items = getPods(namespace, labels);
+    public String url(Map<String, String> labels, int index, String path, String parameters) {
+        List<P> items = getPods(labels);
         if (index >= items.size()) {
             throw new IllegalStateException(String.format("Not enough pods (%s) to invoke pod index %s!", items.size(), index));
         }
         String pod = getName(items.get(index));
 
-        return url(host, version, namespace, pod, path, parameters);
+        return url(pod, path, parameters);
     }
 
-    public Set<String> getReadyPods(Map<String, String> labels, String namespace) {
+    public Set<String> getReadyPods(Map<String, String> labels) {
         Set<String> names = new TreeSet<>();
-        List<P> pods = getPods(namespace, labels);
+        List<P> pods = getPods(labels);
         for (P pod : pods) {
             if (isReady(pod)) {
                 names.add(getName(pod));
@@ -89,12 +100,12 @@ public abstract class AbstractProxy<P> implements Proxy {
         return names;
     }
 
-    public String findPod(Map<String, String> labels, String namespace) {
-        return findPod(labels, namespace, 0);
+    public String findPod(Map<String, String> labels) {
+        return findPod(labels, 0);
     }
 
-    public String findPod(Map<String, String> labels, String namespace, int index) {
-        List<P> items = getPods(namespace, labels);
+    public String findPod(Map<String, String> labels, int index) {
+        List<P> items = getPods(labels);
         if (index >= items.size()) {
             throw new IllegalStateException(String.format("Not enough pods (%s) to invoke pod index %s!", items, index));
         } else {
@@ -145,12 +156,9 @@ public abstract class AbstractProxy<P> implements Proxy {
         return null; // TODO
     }
 
-    public synchronized InputStream post(Map<String, String> labels, Configuration configuration, int pod, String path) throws Exception {
+    public synchronized InputStream post(Map<String, String> labels, int pod, String path) throws Exception {
         String url = url(
             labels,
-            configuration.getKubernetesMaster(),
-            configuration.getApiVersion(),
-            configuration.getNamespace(),
             path,
             null
         );

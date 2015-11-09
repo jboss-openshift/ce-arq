@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.Client;
-import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -63,10 +62,9 @@ public class ClientProvider implements ResourceProvider {
 
             DeploymentContext context = DeploymentContext.getDeploymentContext(protocolMetaDataInstance.get());
             Map<String, String> labels = context.getLabels();
-            Configuration configuration = context.getConfiguration();
             Proxy proxy = context.getProxy();
 
-            return proxy.post(labels, configuration, pod, path);
+            return proxy.post(labels, pod, path);
         }
     }
 }

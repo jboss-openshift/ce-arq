@@ -37,13 +37,11 @@ public class DeploymentContext {
 
     private final Archive<?> archive;
     private Map<String, String> labels;
-    private Configuration configuration;
     private Proxy proxy;
 
-    public DeploymentContext(Archive<?> archive, Map<String, String> labels, Configuration configuration, Proxy proxy) {
+    public DeploymentContext(Archive<?> archive, Map<String, String> labels, Proxy proxy) {
         this.archive = archive;
         this.labels = labels;
-        this.configuration = configuration;
         this.proxy = proxy;
     }
 
@@ -61,10 +59,6 @@ public class DeploymentContext {
 
     public Map<String, String> getLabels() {
         return Collections.unmodifiableMap(labels);
-    }
-
-    public Configuration getConfiguration() {
-        return configuration;
     }
 
     public Proxy getProxy() {

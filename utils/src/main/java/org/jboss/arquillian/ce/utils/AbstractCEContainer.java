@@ -243,7 +243,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {
-                Set<String> pods = proxy.getReadyPods(labels, configuration.getNamespace());
+                Set<String> pods = proxy.getReadyPods(labels);
                 boolean result = (pods.size() >= replicas);
                 if (result) {
                     log.info(String.format("Pods are ready: %s", pods));
@@ -262,7 +262,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         ProtocolMetaData pmd = new ProtocolMetaData();
         // we need original configuration instance; due to generated values
-        pmd.addContext(new DeploymentContext(archive, labels, configuration, proxy));
+        pmd.addContext(new DeploymentContext(archive, labels, proxy));
         pmd.addContext(context);
         return pmd;
     }

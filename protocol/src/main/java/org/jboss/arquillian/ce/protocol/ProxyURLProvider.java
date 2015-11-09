@@ -27,7 +27,6 @@ import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.util.Map;
 
-import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
@@ -75,7 +74,6 @@ public class ProxyURLProvider implements ResourceProvider {
         try {
             DeploymentContext deploymentContext = DeploymentContext.getDeploymentContext(protocolMetaDataInstance.get());
             Map<String, String> labels = deploymentContext.getLabels();
-            Configuration c = deploymentContext.getConfiguration();
 
             String context = getContext();
             if (context.endsWith("/") == false) {
@@ -85,9 +83,9 @@ public class ProxyURLProvider implements ResourceProvider {
             Proxy proxy = deploymentContext.getProxy();
             proxy.setDefaultSSLContext(); // URL instance needs this
 
-            String podName = proxy.findPod(labels, c.getNamespace());
+            String podName = proxy.findPod(labels);
 
-            String spec = proxy.url(c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), podName, context, null);
+            String spec = proxy.url(podName, context, null);
             return new URL(spec);
         } catch (Exception e) {
             throw new IllegalStateException(e);

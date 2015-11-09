@@ -45,6 +45,7 @@ public class NativeProxy extends AbstractProxy<IPod> {
     private final AsyncHttpClient httpClient;
 
     public NativeProxy(Configuration configuration) {
+        super(configuration);
         this.client = new ClientFactory().create(configuration.getKubernetesMaster(), new NoopSSLCertificateCallback());
         this.client.setAuthorizationStrategy(new TokenAuthorizationStrategy(configuration.getToken()));
         this.httpClient = createHttpClient(configuration);
@@ -58,8 +59,8 @@ public class NativeProxy extends AbstractProxy<IPod> {
         return httpClient;
     }
 
-    protected List<IPod> getPods(String namespace, Map<String, String> labels) {
-        return client.list(ResourceKind.POD, namespace, labels);
+    protected List<IPod> getPods(Map<String, String> labels) {
+        return client.list(ResourceKind.POD, configuration.getNamespace(), labels);
     }
 
     protected String getName(IPod pod) {

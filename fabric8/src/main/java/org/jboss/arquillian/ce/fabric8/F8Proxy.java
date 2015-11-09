@@ -31,6 +31,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.openshift.client.OpenShiftClient;
+import org.jboss.arquillian.ce.api.ConfigurationHandle;
 import org.jboss.arquillian.ce.utils.AbstractProxy;
 
 /**
@@ -39,7 +40,8 @@ import org.jboss.arquillian.ce.utils.AbstractProxy;
 public class F8Proxy extends AbstractProxy<Pod> {
     private final OpenShiftClient client;
 
-    public F8Proxy(OpenShiftClient client) {
+    public F8Proxy(ConfigurationHandle configuration, OpenShiftClient client) {
+        super(configuration);
         this.client = client;
     }
 
@@ -47,8 +49,8 @@ public class F8Proxy extends AbstractProxy<Pod> {
         return client.getHttpClient();
     }
 
-    protected List<Pod> getPods(String namespace, Map<String, String> labels) {
-        return client.pods().inNamespace(namespace).withLabels(labels).list().getItems();
+    protected List<Pod> getPods(Map<String, String> labels) {
+        return client.pods().inNamespace(configuration.getNamespace()).withLabels(labels).list().getItems();
     }
 
     protected String getName(Pod pod) {

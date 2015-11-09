@@ -94,7 +94,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     public Proxy createProxy() {
-        return new F8Proxy(client);
+        return new F8Proxy(configuration, client);
     }
 
     public RegistryLookupEntry lookup() {

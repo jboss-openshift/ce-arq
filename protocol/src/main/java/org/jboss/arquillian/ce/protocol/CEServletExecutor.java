@@ -77,10 +77,6 @@ public class CEServletExecutor extends ServletMethodExecutor {
         throw new IllegalArgumentException("No Arquillian servlet in HTTPContext meta data!");
     }
 
-    private CEProtocolConfiguration config() {
-        return CEProtocolConfiguration.class.cast(config);
-    }
-
     public TestResult invoke(final TestMethodExecutor testMethodExecutor) {
         if (testMethodExecutor == null) {
             throw new IllegalArgumentException("TestMethodExecutor must be specified");
@@ -98,13 +94,9 @@ public class CEServletExecutor extends ServletMethodExecutor {
             podName = locatePodName(testMethodExecutor);
         }
 
-        String host = config().getKubernetesMaster();
-        String version = config().getApiVersion();
-        String namespace = config().getNamespace();
-
-        String url = proxy.url(host, version, namespace, podName, context + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
+        String url = proxy.url(podName, context + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
         log.info(String.format("Invoking test, url: %s", url));
-        String eventUrl = proxy.url(host, version, namespace, podName, context + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
+        String eventUrl = proxy.url(podName, context + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
 
         Timer eventTimer = null;
         try {
@@ -130,7 +122,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
     private String findRunInPod() {
         Archive<?> dummy = Archives.generateDummyArchive("runinpod.war");
         Map<String, String> labels = DeploymentContext.getDeploymentLabels(dummy);
-        return proxy.findPod(labels, config().getNamespace());
+        return proxy.findPod(labels);
     }
 
     private String locatePodName(TestMethodExecutor testMethodExecutor) {
@@ -147,12 +139,11 @@ public class CEServletExecutor extends ServletMethodExecutor {
             return findDeploymentsPod(labels);
         }
 
-        return proxy.findPod(labels, config().getNamespace(), index);
+        return proxy.findPod(labels, index);
     }
 
     private String findDeploymentsPod(Map<String, String> labels) {
-        String namespace = config().getNamespace();
-        return proxy.findPod(labels, namespace);
+        return proxy.findPod(labels);
     }
 
 }
