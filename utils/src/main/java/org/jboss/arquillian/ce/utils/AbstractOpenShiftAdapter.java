@@ -179,15 +179,20 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         }
         log.info(String.format("Docker image name: %s", imageName));
 
+        String dockerUrl = configuration.getDockerUrl();
+        if (dockerUrl == null) {
+            throw new IllegalArgumentException("Missing Docker url / host!");
+        }
+
         // Docker-java requires AuthConfig, hence this user/pass stuff
         DockerClientConfig.DockerClientConfigBuilder builder = DockerClientConfig.createDefaultConfigBuilder();
-        builder.withUri(configuration.getDockerUrl());
+        builder.withUri(dockerUrl);
         builder.withUsername(configuration.getUsername());
         builder.withPassword(configuration.getPassword());
         builder.withEmail(configuration.getEmail());
         builder.withServerAddress(configuration.getAddress());
         final DockerClient dockerClient = DockerClientBuilder.getInstance(builder).build();
-        log.info(String.format("Docker client: %s", configuration.getDockerUrl()));
+        log.info(String.format("Docker client: %s", dockerUrl));
 
         final Timer timer = new Timer();
 

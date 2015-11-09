@@ -101,9 +101,6 @@ public abstract class Configuration implements ContainerConfiguration, Configura
         if (kubernetesMaster == null) {
             throw new ConfigurationException("Null Kubernetes master!");
         }
-//        if (dockerUrl == null) {
-//            throw new ConfigurationException("Null Docker url!");
-//        }
     }
 
     public String getKubernetesMaster() {
