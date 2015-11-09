@@ -23,10 +23,16 @@
 
 package org.jboss.arquillian.ce.protocol;
 
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.Client;
+import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.DeploymentContext;
+import org.jboss.arquillian.ce.utils.Proxy;
+import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -39,21 +45,28 @@ public class ClientProvider implements ResourceProvider {
     private static final Logger log = Logger.getLogger(ClientProvider.class.getName());
 
     @Inject
-    Instance<Client> clientInstance;
+    Instance<ProtocolMetaData> protocolMetaDataInstance;
 
     public boolean canProvide(Class<?> type) {
         return Client.class.isAssignableFrom(type);
     }
 
     public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
-        Client client = clientInstance.get();
-        if (client == null) {
-            throw new IllegalStateException("Unable to inject client into test.");
-        }
-
+        Client client = new ClientImpl();
         log.info(String.format("Providing client [%s] instance.", client));
-
         return client;
     }
 
+    private class ClientImpl implements Client {
+        public synchronized InputStream execute(int pod, String path) throws Exception {
+            log.info(String.format("Invoking pod #%s for path '%s'", pod, path));
+
+            DeploymentContext context = DeploymentContext.getDeploymentContext(protocolMetaDataInstance.get());
+            Map<String, String> labels = context.getLabels();
+            Configuration configuration = context.getConfiguration();
+            Proxy proxy = context.getProxy();
+
+            return proxy.post(labels, configuration, pod, path);
+        }
+    }
 }

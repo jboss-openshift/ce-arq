@@ -31,10 +31,8 @@ import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.runinpod.RunInPodUtils;
 import org.jboss.arquillian.ce.utils.Archives;
-import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.utils.Proxy;
-import org.jboss.arquillian.ce.utils.ProxyFactory;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -54,7 +52,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
     private static final Logger log = Logger.getLogger(CEServletExecutor.class.getName());
 
     private String contextRoot;
-    private DeploymentContext deploymentContext;
+    private Map<String, String> labels;
     private Proxy proxy;
 
     public CEServletExecutor(CEProtocolConfiguration configuration, ProtocolMetaData protocolMetaData, CommandCallback callback) {
@@ -62,12 +60,10 @@ public class CEServletExecutor extends ServletMethodExecutor {
         this.callback = callback;
 
         this.contextRoot = readContextRoot(protocolMetaData);
-        deploymentContext = DeploymentContext.getDeploymentContext(protocolMetaData);
+        DeploymentContext deploymentContext = DeploymentContext.getDeploymentContext(protocolMetaData);
 
-        Configuration original = deploymentContext.getConfiguration();
-        config().setConfiguration(original);
-
-        this.proxy = ProxyFactory.getProxy(original);
+        this.labels = deploymentContext.getLabels();
+        this.proxy = deploymentContext.getProxy();
     }
 
     private String readContextRoot(ProtocolMetaData protocolMetaData) {
@@ -145,8 +141,6 @@ public class CEServletExecutor extends ServletMethodExecutor {
             String value = tc.value();
             index = Strings.parseNumber(value);
         }
-
-        Map<String, String> labels = deploymentContext.getLabels();
 
         OperateOnDeployment ood = method.getAnnotation(OperateOnDeployment.class);
         if (ood != null) {

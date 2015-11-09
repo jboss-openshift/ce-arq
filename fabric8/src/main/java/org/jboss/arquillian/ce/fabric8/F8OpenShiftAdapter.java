@@ -67,6 +67,7 @@ import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.Port;
+import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.RCContext;
 
 /**
@@ -90,6 +91,10 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     public F8OpenShiftAdapter(Configuration configuration) {
         super(configuration);
         this.client = create(configuration);
+    }
+
+    public Proxy createProxy() {
+        return new F8Proxy(client);
     }
 
     public RegistryLookupEntry lookup() {

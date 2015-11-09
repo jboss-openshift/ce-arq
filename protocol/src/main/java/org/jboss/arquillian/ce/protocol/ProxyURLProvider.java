@@ -30,7 +30,6 @@ import java.util.Map;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.utils.Proxy;
-import org.jboss.arquillian.ce.utils.ProxyFactory;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
@@ -48,16 +47,6 @@ import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
 public class ProxyURLProvider implements ResourceProvider {
     @Inject
     Instance<ProtocolMetaData> protocolMetaDataInstance;
-
-    private Proxy proxy;
-
-    private synchronized Proxy getProxy(Configuration configuration) {
-        if (proxy == null) {
-            proxy = ProxyFactory.getProxy(configuration);
-            proxy.setDefaultSSLContext();
-        }
-        return proxy;
-    }
 
     private String getContext() {
         ProtocolMetaData pmd = protocolMetaDataInstance.get();
@@ -93,9 +82,12 @@ public class ProxyURLProvider implements ResourceProvider {
                 context = context + "/";
             }
 
-            String podName = getProxy(c).findPod(labels, c.getNamespace());
+            Proxy proxy = deploymentContext.getProxy();
+            proxy.setDefaultSSLContext(); // URL instance needs this
 
-            String spec = getProxy(c).url(c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), podName, context, null);
+            String podName = proxy.findPod(labels, c.getNamespace());
+
+            String spec = proxy.url(c.getKubernetesMaster(), c.getApiVersion(), c.getNamespace(), podName, context, null);
             return new URL(spec);
         } catch (Exception e) {
             throw new IllegalStateException(e);

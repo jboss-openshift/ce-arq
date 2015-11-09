@@ -36,7 +36,6 @@ public class CEExtension implements LoadableExtension {
     public void register(LoadableExtension.ExtensionBuilder builder) {
         builder.service(Protocol.class, CEServletProtocol.class);
         // handle client
-        builder.observer(ClientCreator.class);
         builder.service(ResourceProvider.class, ClientProvider.class);
         // override url
         Class<ResourceProvider> urpClass = (Class<ResourceProvider>) loadClass("org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider");

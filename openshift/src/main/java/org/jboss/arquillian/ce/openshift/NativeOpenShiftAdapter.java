@@ -58,6 +58,7 @@ import org.jboss.arquillian.ce.utils.CustomValueExpressionResolver;
 import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.Port;
+import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ValueExpression;
@@ -98,6 +99,10 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         Parameter parameter = new Parameter(node);
         parameter.setValue(value);
         return parameter;
+    }
+
+    public Proxy createProxy() {
+        return new NativeProxy(configuration);
     }
 
     public RegistryLookupEntry lookup() {

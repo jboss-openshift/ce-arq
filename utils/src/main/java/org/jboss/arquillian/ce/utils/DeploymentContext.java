@@ -38,11 +38,13 @@ public class DeploymentContext {
     private final Archive<?> archive;
     private Map<String, String> labels;
     private Configuration configuration;
+    private Proxy proxy;
 
-    public DeploymentContext(Archive<?> archive, Map<String, String> labels, Configuration configuration) {
+    public DeploymentContext(Archive<?> archive, Map<String, String> labels, Configuration configuration, Proxy proxy) {
         this.archive = archive;
         this.labels = labels;
         this.configuration = configuration;
+        this.proxy = proxy;
     }
 
     public static DeploymentContext getDeploymentContext(ProtocolMetaData pmd) {
@@ -63,5 +65,9 @@ public class DeploymentContext {
 
     public Configuration getConfiguration() {
         return configuration;
+    }
+
+    public Proxy getProxy() {
+        return proxy;
     }
 }

@@ -262,7 +262,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         ProtocolMetaData pmd = new ProtocolMetaData();
         // we need original configuration instance; due to generated values
-        pmd.addContext(new DeploymentContext(archive, labels, configuration));
+        pmd.addContext(new DeploymentContext(archive, labels, configuration, proxy));
         pmd.addContext(context);
         return pmd;
     }

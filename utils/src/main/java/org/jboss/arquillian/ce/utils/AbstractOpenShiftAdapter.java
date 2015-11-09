@@ -121,10 +121,6 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         target.delete();
     }
 
-    public Proxy createProxy() {
-        return ProxyFactory.getProxy(configuration);
-    }
-
     public File exportAsZip(File dir, Archive<?> deployment) {
         return exportAsZip(dir, deployment, deployment.getName());
     }
