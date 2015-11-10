@@ -183,10 +183,10 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         // Docker-java requires AuthConfig, hence this user/pass stuff
         DockerClientConfig.DockerClientConfigBuilder builder = DockerClientConfig.createDefaultConfigBuilder();
         builder.withUri(dockerUrl);
-        builder.withUsername(configuration.getUsername());
-        builder.withPassword(configuration.getPassword());
-        builder.withEmail(configuration.getEmail());
-        builder.withServerAddress(configuration.getAddress());
+        builder.withUsername(configuration.getDockerUsername());
+        builder.withPassword(configuration.getDockerPassword());
+        builder.withEmail(configuration.getDockerEmail());
+        builder.withServerAddress(configuration.getDockerAddress());
         final DockerClient dockerClient = DockerClientBuilder.getInstance(builder).build();
         log.info(String.format("Docker client: %s", dockerUrl));
 

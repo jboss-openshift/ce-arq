@@ -44,6 +44,9 @@ public abstract class Configuration implements ContainerConfiguration, Configura
     private String kubernetesMaster = getSystemPropertyOrEnvVar("kubernetes.master");
     private String dockerUrl = getSystemPropertyOrEnvVar("docker.url");
 
+    private String openshiftUsername = getSystemPropertyOrEnvVar("openshift.username", "admin");
+    private String openshiftPassword = getSystemPropertyOrEnvVar("openshift.password", "admin");
+
     private String apiVersion = getSystemPropertyOrEnvVar("kubernetes.api.version", "v1");
     private String namespace = getSystemPropertyOrEnvVar("kubernetes.namespace");
     private String token = getSystemPropertyOrEnvVar("kubernetes.auth.token");
@@ -70,10 +73,10 @@ public abstract class Configuration implements ContainerConfiguration, Configura
     private String imageTag = getSystemPropertyOrEnvVar("docker.test.tag", "latest");
     private String imagePullPolicy = getSystemPropertyOrEnvVar("docker.test.pull.policy", "Always");
 
-    private String username = getSystemPropertyOrEnvVar("docker.username", "");
-    private String password = getSystemPropertyOrEnvVar("docker.password", "");
-    private String email = getSystemPropertyOrEnvVar("docker.email", "");
-    private String address = getSystemPropertyOrEnvVar("docker.address", "");
+    private String dockerUsername = getSystemPropertyOrEnvVar("docker.username", "");
+    private String dockerPassword = getSystemPropertyOrEnvVar("docker.password", "");
+    private String dockerEmail = getSystemPropertyOrEnvVar("docker.email", "");
+    private String dockerAddress = getSystemPropertyOrEnvVar("docker.address", "");
 
     private long startupTimeout = Integer.parseInt(getSystemPropertyOrEnvVar("arquillian.startup.timeout", "600")); // 10min ...
 
@@ -143,10 +146,23 @@ public abstract class Configuration implements ContainerConfiguration, Configura
         return generatedNS;
     }
 
+    public String getOpenshiftUsername() {
+        return openshiftUsername;
+    }
+
+    public void setOpenshiftUsername(String openshiftUsername) {
+        this.openshiftUsername = openshiftUsername;
+    }
+
+    public String getOpenshiftPassword() {
+        return openshiftPassword;
+    }
+
+    public void setOpenshiftPassword(String openshiftPassword) {
+        this.openshiftPassword = openshiftPassword;
+    }
+
     public String getToken() {
-        if (token == null) {
-            throw new IllegalStateException("Missing kubernetes.auth.token!");
-        }
         return token;
     }
 
@@ -286,36 +302,36 @@ public abstract class Configuration implements ContainerConfiguration, Configura
         this.imagePullPolicy = imagePullPolicy;
     }
 
-    public String getUsername() {
-        return username;
+    public String getDockerUsername() {
+        return dockerUsername;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setDockerUsername(String dockerUsername) {
+        this.dockerUsername = dockerUsername;
     }
 
-    public String getPassword() {
-        return password;
+    public String getDockerPassword() {
+        return dockerPassword;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setDockerPassword(String dockerPassword) {
+        this.dockerPassword = dockerPassword;
     }
 
-    public String getEmail() {
-        return email;
+    public String getDockerEmail() {
+        return dockerEmail;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setDockerEmail(String dockerEmail) {
+        this.dockerEmail = dockerEmail;
     }
 
-    public String getAddress() {
-        return address;
+    public String getDockerAddress() {
+        return dockerAddress;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setDockerAddress(String dockerAddress) {
+        this.dockerAddress = dockerAddress;
     }
 
     public long getStartupTimeout() {

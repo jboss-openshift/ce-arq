@@ -57,8 +57,6 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
@@ -76,16 +74,21 @@ import org.jboss.arquillian.ce.utils.RCContext;
 public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     private final static Logger log = Logger.getLogger(F8OpenShiftAdapter.class.getName());
 
-    private final OpenShiftClient client;
+    private final CeOpenShiftClient client;
     private Map<String, KubernetesList> templates = new HashMap<>();
 
-    static OpenShiftClient create(Configuration configuration) {
-        OpenShiftConfig config = new OpenShiftConfigBuilder()
-            .withMasterUrl(configuration.getKubernetesMaster())
-            .withTrustCerts(configuration.isTrustCerts())
-            .build();
+    static OpenShiftConfig toOpenShiftConfig(Configuration configuration) {
+        return new OpenShiftConfigBuilder()
+                .withMasterUrl(configuration.getKubernetesMaster())
+                .withTrustCerts(configuration.isTrustCerts())
+                .withUsername(configuration.getOpenshiftUsername())
+                .withPassword(configuration.getOpenshiftPassword())
+                .build();
+    }
 
-        return new DefaultOpenShiftClient(config);
+    static CeOpenShiftClient create(Configuration configuration) {
+        OpenShiftConfig config = toOpenShiftConfig(configuration);
+        return new CeOpenShiftClient(config);
     }
 
     public F8OpenShiftAdapter(Configuration configuration) {

@@ -28,19 +28,16 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.net.ssl.SSLContext;
-
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.Response;
-import com.ning.http.client.cookie.Cookie;
-import org.jboss.arquillian.ce.api.ConfigurationHandle;
+import com.squareup.okhttp.MediaType;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -48,16 +45,22 @@ import org.jboss.arquillian.ce.api.ConfigurationHandle;
 public abstract class AbstractProxy<P> implements Proxy {
     private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s:8080/proxy%s";
 
-    protected final ConfigurationHandle configuration;
-    private final Map<String, Cookie> cookieMap = new HashMap<>();
+    private boolean sslContextSet;
+    protected final Configuration configuration;
+//    private final Map<String, Cookie> cookieMap = new HashMap<>();
 
-    public AbstractProxy(ConfigurationHandle configuration) {
+    public AbstractProxy(Configuration configuration) {
         this.configuration = configuration;
     }
 
-    public void setDefaultSSLContext() {
-        SSLContext.setDefault(getHttpClient().getConfig().getSSLContext());
+    public synchronized void setDefaultSSLContext() {
+        if (sslContextSet == false) {
+            sslContextSet = true;
+            setDefaultSSLContextInternal();
+        }
     }
+
+    protected abstract void setDefaultSSLContextInternal();
 
     private String url(String host, String version, String namespace, String podName, String path, String parameters) {
         String url = String.format(PROXY_URL, host, version, namespace, podName, path);
@@ -113,12 +116,13 @@ public abstract class AbstractProxy<P> implements Proxy {
         }
     }
 
-    protected abstract AsyncHttpClient getHttpClient();
+    protected abstract OkHttpClient getHttpClient();
 
     public <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception {
-        final AsyncHttpClient httpClient = getHttpClient();
+        final OkHttpClient httpClient = getHttpClient();
 
-        AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
+        Request.Builder builder = new Request.Builder();
+        builder.url(url);
 
         if (requestObject != null) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -128,17 +132,18 @@ public abstract class AbstractProxy<P> implements Proxy {
             } catch (Exception e) {
                 throw new RuntimeException("Error sending request Object, " + requestObject, e);
             }
-            builder.setBody(baos.toByteArray());
+            RequestBody body = RequestBody.create(MediaType.parse("application/octet-stream"), baos.toByteArray());
+            builder.post(body);
         }
 
-        ListenableFuture<Response> future = builder.execute();
-        Response response = future.get();
+        Request request = builder.build();
+        Response response = httpClient.newCall(request).execute();
 
-        int responseCode = response.getStatusCode();
+        int responseCode = response.code();
 
         if (responseCode == HttpURLConnection.HTTP_OK) {
             Object o;
-            try (ObjectInputStream ois = new ObjectInputStream(response.getResponseBodyAsStream())) {
+            try (ObjectInputStream ois = new ObjectInputStream(response.body().byteStream())) {
                 o = ois.readObject();
             }
 
@@ -150,7 +155,7 @@ public abstract class AbstractProxy<P> implements Proxy {
         } else if (responseCode == HttpURLConnection.HTTP_NO_CONTENT) {
             return null;
         } else if (responseCode != HttpURLConnection.HTTP_NOT_FOUND) {
-            throw new IllegalStateException("Error launching test at " + url + ". Got " + responseCode + " (" + response.getStatusText() + ")");
+            throw new IllegalStateException("Error launching test at " + url + ". Got " + responseCode + " (" + response.message() + ")");
         }
 
         return null; // TODO
@@ -163,9 +168,11 @@ public abstract class AbstractProxy<P> implements Proxy {
             null
         );
 
-        AsyncHttpClient httpClient = getHttpClient();
-        AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
+        OkHttpClient httpClient = getHttpClient();
+        Request.Builder builder = new Request.Builder();
+        builder.url(url);
 
+/*
         Cookie match = null;
         for (Map.Entry<String, Cookie> entry : cookieMap.entrySet()) {
             if (path.startsWith(entry.getKey())) {
@@ -174,12 +181,16 @@ public abstract class AbstractProxy<P> implements Proxy {
             }
         }
         if (match != null) {
-            builder.addCookie(match);
+            CookieHandler cookieHandler = httpClient.getCookieHandler();
+            cookieHandler.put(URI.create(url), match);
         }
+*/
 
-        Response response = builder.execute().get();
+        Request request = builder.build();
+        Response response = httpClient.newCall(request).execute();
 
         // handle cookies
+/*
         List<Cookie> cookies = response.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
@@ -188,16 +199,17 @@ public abstract class AbstractProxy<P> implements Proxy {
                 }
             }
         }
+*/
 
-        return response.getResponseBodyAsStream();
+        return response.body().byteStream();
     }
 
     public int status(String url) {
         try {
-            AsyncHttpClient httpClient = getHttpClient();
-            AsyncHttpClient.BoundRequestBuilder builder = httpClient.preparePost(url);
-            Response response = builder.execute().get();
-            return response.getStatusCode();
+            OkHttpClient httpClient = getHttpClient();
+            Request request = new Request.Builder().url(url).build();
+            Response response = httpClient.newCall(request).execute();
+            return response.code();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }

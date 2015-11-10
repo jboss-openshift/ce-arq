@@ -25,14 +25,12 @@ package org.jboss.arquillian.ce.openshift;
 
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.openshift.restclient.ClientFactory;
 import com.openshift.restclient.IClient;
-import com.openshift.restclient.NoopSSLCertificateCallback;
 import com.openshift.restclient.ResourceKind;
-import com.openshift.restclient.authorization.TokenAuthorizationStrategy;
 import com.openshift.restclient.model.IPod;
+import com.squareup.okhttp.OkHttpClient;
 import org.jboss.arquillian.ce.utils.AbstractProxy;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.dmr.ModelNode;
@@ -42,20 +40,19 @@ import org.jboss.dmr.ModelNode;
  */
 public class NativeProxy extends AbstractProxy<IPod> {
     private final IClient client;
-    private final AsyncHttpClient httpClient;
+    private final OkHttpClient httpClient;
 
-    public NativeProxy(Configuration configuration) {
+    public NativeProxy(Configuration configuration, IClient client) {
         super(configuration);
-        this.client = new ClientFactory().create(configuration.getKubernetesMaster(), new NoopSSLCertificateCallback());
-        this.client.setAuthorizationStrategy(new TokenAuthorizationStrategy(configuration.getToken()));
-        this.httpClient = createHttpClient(configuration);
+        this.client = client;
+        this.httpClient = HttpClientCreator.createHttpClient(configuration);
     }
 
-    protected AsyncHttpClient createHttpClient(Configuration configuration) {
-        return AsyncHttpClientCreator.createHttpClient(configuration);
+    public void setDefaultSSLContextInternal() {
+        Logger.getLogger(NativeProxy.class.getName()).warning("Not implemented yet, use Fabric8 OpenShift artifact!");
     }
 
-    protected AsyncHttpClient getHttpClient() {
+    protected OkHttpClient getHttpClient() {
         return httpClient;
     }
 

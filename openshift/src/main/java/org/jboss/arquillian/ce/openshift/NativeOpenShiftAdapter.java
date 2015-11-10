@@ -42,6 +42,10 @@ import com.openshift.restclient.ClientFactory;
 import com.openshift.restclient.IClient;
 import com.openshift.restclient.NoopSSLCertificateCallback;
 import com.openshift.restclient.ResourceKind;
+import com.openshift.restclient.authorization.AuthorizationClientFactory;
+import com.openshift.restclient.authorization.BasicAuthorizationStrategy;
+import com.openshift.restclient.authorization.IAuthorizationClient;
+import com.openshift.restclient.authorization.IAuthorizationContext;
 import com.openshift.restclient.authorization.TokenAuthorizationStrategy;
 import com.openshift.restclient.capability.resources.IProjectTemplateProcessing;
 import com.openshift.restclient.model.IPod;
@@ -81,8 +85,18 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         System.getProperty("osjc.k8e.apiversion", configuration.getApiVersion());
         System.getProperty("osjc.openshift.apiversion", configuration.getApiVersion());
 
-        this.client = new ClientFactory().create(configuration.getKubernetesMaster(), new NoopSSLCertificateCallback());
-        this.client.setAuthorizationStrategy(new TokenAuthorizationStrategy(configuration.getToken()));
+        IClient tmpClient = new ClientFactory().create(configuration.getKubernetesMaster(), new NoopSSLCertificateCallback());
+        tmpClient.setAuthorizationStrategy(new BasicAuthorizationStrategy(configuration.getOpenshiftUsername(), configuration.getDockerPassword(), ""));
+        IAuthorizationClient authClient = new AuthorizationClientFactory().create(tmpClient);
+        IAuthorizationContext context = authClient.getContext(tmpClient.getBaseURL().toString());
+        String token = context.getToken();
+        tmpClient.setAuthorizationStrategy(new TokenAuthorizationStrategy(token));
+        if (configuration.getToken() != null) {
+            log.info("Overriding auth token ...");
+        }
+        configuration.setToken(token); // re-set token
+
+        this.client = tmpClient;
     }
 
     <T extends IResource> T createResource(String json, Properties properties) {
@@ -102,7 +116,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     public Proxy createProxy() {
-        return new NativeProxy(configuration);
+        return new NativeProxy(configuration, client);
     }
 
     public RegistryLookupEntry lookup() {

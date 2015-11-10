@@ -26,27 +26,44 @@ package org.jboss.arquillian.ce.fabric8;
 import java.util.List;
 import java.util.Map;
 
-import com.ning.http.client.AsyncHttpClient;
+import javax.net.ssl.SSLContext;
+
+import com.squareup.okhttp.OkHttpClient;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.PodStatus;
-import io.fabric8.openshift.client.OpenShiftClient;
-import org.jboss.arquillian.ce.api.ConfigurationHandle;
+import io.fabric8.kubernetes.client.internal.SSLUtils;
 import org.jboss.arquillian.ce.utils.AbstractProxy;
+import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.OkHttpClientUtils;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class F8Proxy extends AbstractProxy<Pod> {
-    private final OpenShiftClient client;
+    private final CeOpenShiftClient client;
+    private OkHttpClient httpClient;
 
-    public F8Proxy(ConfigurationHandle configuration, OpenShiftClient client) {
+    public F8Proxy(Configuration configuration, CeOpenShiftClient client) {
         super(configuration);
         this.client = client;
     }
 
-    protected AsyncHttpClient getHttpClient() {
-        return client.getHttpClient();
+    public void setDefaultSSLContextInternal() {
+        try {
+            SSLContext.setDefault(SSLUtils.sslContext(client.getConfiguration()));
+        } catch (Throwable t) {
+            throw new IllegalStateException(t);
+        }
+    }
+
+    protected synchronized OkHttpClient getHttpClient() {
+        if (httpClient == null) {
+            OkHttpClient okHttpClient = client.getHttpClient();
+            OkHttpClientUtils.applyCookieHandler(okHttpClient);
+            httpClient = okHttpClient;
+        }
+        return httpClient;
     }
 
     protected List<Pod> getPods(Map<String, String> labels) {
