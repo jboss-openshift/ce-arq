@@ -24,10 +24,16 @@
 package org.jboss.arquillian.ce.openshift;
 
 import java.io.IOException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import com.squareup.okhttp.Interceptor;
 import com.squareup.okhttp.OkHttpClient;
@@ -40,22 +46,53 @@ import org.jboss.arquillian.ce.utils.OkHttpClientUtils;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 class HttpClientCreator {
-    static OkHttpClient createHttpClient(final Configuration configuration) {
+    static class CeOkHttpClient extends OkHttpClient {
+        private SSLContext sslContext;
+
+        SSLContext getSslContext() {
+            return sslContext;
+        }
+
+        private void setSslContext(SSLContext sslContext) {
+            this.sslContext = sslContext;
+        }
+    }
+
+    static CeOkHttpClient createHttpClient(final Configuration configuration) {
         try {
-            OkHttpClient httpClient = new OkHttpClient();
+            CeOkHttpClient httpClient = new CeOkHttpClient();
 
             // Follow any redirects
             httpClient.setFollowRedirects(true);
             httpClient.setFollowSslRedirects(true);
 
+            KeyManager[] keyManagers = null; // TODO
+            TrustManager[] trustManagers = null; // TODO
+
             if (configuration.isTrustCerts()) {
                 httpClient.setHostnameVerifier(new HostnameVerifier() {
-                    @Override
                     public boolean verify(String s, SSLSession sslSession) {
                         return true;
                     }
                 });
+
+                trustManagers = new TrustManager[]{new X509TrustManager() {
+                    public void checkClientTrusted(X509Certificate[] chain, String s) {
+                    }
+
+                    public void checkServerTrusted(X509Certificate[] chain, String s) {
+                    }
+
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                }};
             }
+
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(keyManagers, trustManagers, new SecureRandom());
+            httpClient.setSslSocketFactory(sslContext.getSocketFactory());
+            httpClient.setSslContext(sslContext); // impl detail
 
             httpClient.interceptors().add(new Interceptor() {
                 @Override

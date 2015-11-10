@@ -25,7 +25,8 @@ package org.jboss.arquillian.ce.openshift;
 
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
+
+import javax.net.ssl.SSLContext;
 
 import com.openshift.restclient.IClient;
 import com.openshift.restclient.ResourceKind;
@@ -40,7 +41,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class NativeProxy extends AbstractProxy<IPod> {
     private final IClient client;
-    private final OkHttpClient httpClient;
+    private final HttpClientCreator.CeOkHttpClient httpClient;
 
     public NativeProxy(Configuration configuration, IClient client) {
         super(configuration);
@@ -49,7 +50,7 @@ public class NativeProxy extends AbstractProxy<IPod> {
     }
 
     public void setDefaultSSLContextInternal() {
-        Logger.getLogger(NativeProxy.class.getName()).warning("Not implemented yet, use Fabric8 OpenShift artifact!");
+        SSLContext.setDefault(httpClient.getSslContext());
     }
 
     protected OkHttpClient getHttpClient() {
