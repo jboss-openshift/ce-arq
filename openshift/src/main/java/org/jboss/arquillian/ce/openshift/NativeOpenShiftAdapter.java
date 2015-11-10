@@ -86,7 +86,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         System.getProperty("osjc.openshift.apiversion", configuration.getApiVersion());
 
         IClient tmpClient = new ClientFactory().create(configuration.getKubernetesMaster(), new NoopSSLCertificateCallback());
-        tmpClient.setAuthorizationStrategy(new BasicAuthorizationStrategy(configuration.getOpenshiftUsername(), configuration.getDockerPassword(), ""));
+        tmpClient.setAuthorizationStrategy(new BasicAuthorizationStrategy(configuration.getOpenshiftUsername(), configuration.getOpenshiftPassword(), ""));
         IAuthorizationClient authClient = new AuthorizationClientFactory().create(tmpClient);
         IAuthorizationContext context = authClient.getContext(tmpClient.getBaseURL().toString());
         String token = context.getToken();

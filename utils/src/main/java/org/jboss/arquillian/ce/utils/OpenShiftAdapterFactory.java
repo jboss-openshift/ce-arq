@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.utils;
 
 import java.util.ServiceLoader;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -33,6 +34,7 @@ public class OpenShiftAdapterFactory {
         ServiceLoader<OpenShiftAdapterProvider> adapters = ServiceLoader.load(OpenShiftAdapterProvider.class, OpenShiftAdapterFactory.class.getClassLoader());
         //noinspection LoopStatementThatDoesntLoop
         for (OpenShiftAdapterProvider pp : adapters) {
+            Logger.getLogger(OpenShiftAdapterFactory.class.getName()).info(String.format("Using %s to access OpenShift API ...", pp.getClass().getSimpleName()));
             return pp.create(configuration);
         }
         throw new IllegalStateException("No OpenShiftAdapterProvider found!");
