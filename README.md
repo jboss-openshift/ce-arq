@@ -4,9 +4,19 @@
 
 To run tests against EAP, one **must** set these system properties / env vars (use your numbers / paths!):
 
+KUBERNETES_MASTER=https://172.28.128.4:8443
+
+When using Docker you **must** set this
+
 DOCKER_URL=http://172.28.128.4:2375
 
-KUBERNETES_MASTER=https://172.28.128.4:8443
+And **one way** of authentication, either username/password:
+
+-Dopenshift.username=[OpenShift username], default is "admin"
+
+-Dopenshift.password=[OpenShift password], default is "admin"
+
+Or auth token:
 
 -Dkubernetes.auth.token=[OpenShift OAuth token; oc whoami -t]
 

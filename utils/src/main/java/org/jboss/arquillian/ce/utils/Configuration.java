@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.utils;
 
 import static org.jboss.arquillian.ce.utils.Strings.getSystemPropertyOrEnvVar;
+import static org.jboss.arquillian.ce.utils.Strings.isNullOrEmpty;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -103,6 +104,10 @@ public abstract class Configuration implements ContainerConfiguration, Configura
     public void validate() throws ConfigurationException {
         if (kubernetesMaster == null) {
             throw new ConfigurationException("Null Kubernetes master!");
+        }
+
+        if ((isNullOrEmpty(openshiftUsername) || isNullOrEmpty(openshiftPassword)) && isNullOrEmpty(token)) {
+            throw new ConfigurationException("Missing OpenShift authentification -- username/password or token!");
         }
     }
 

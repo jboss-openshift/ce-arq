@@ -358,7 +358,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         try {
             for (Pod pod : pods.getItems()) {
                 String podId = KubernetesHelper.getName(pod);
-                boolean exists = client.pods().inNamespace(configuration.getNamespace()).withName(podId).cascading(false).delete();
+                boolean exists = client.pods().inNamespace(configuration.getNamespace()).withName(podId).delete();
                 log.info(String.format("Pod [%s] delete: %s.", podId, exists));
             }
         } catch (Exception e) {
