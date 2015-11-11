@@ -85,16 +85,21 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         System.getProperty("osjc.k8e.apiversion", configuration.getApiVersion());
         System.getProperty("osjc.openshift.apiversion", configuration.getApiVersion());
 
+        String token;
         IClient tmpClient = new ClientFactory().create(configuration.getKubernetesMaster(), new NoopSSLCertificateCallback());
-        tmpClient.setAuthorizationStrategy(new BasicAuthorizationStrategy(configuration.getOpenshiftUsername(), configuration.getOpenshiftPassword(), ""));
-        IAuthorizationClient authClient = new AuthorizationClientFactory().create(tmpClient);
-        IAuthorizationContext context = authClient.getContext(tmpClient.getBaseURL().toString());
-        String token = context.getToken();
-        tmpClient.setAuthorizationStrategy(new TokenAuthorizationStrategy(token));
-        if (configuration.getToken() != null) {
-            log.info("Overriding auth token ...");
+        if (configuration.hasOpenshiftBasicAuth()) {
+            tmpClient.setAuthorizationStrategy(new BasicAuthorizationStrategy(configuration.getOpenshiftUsername(), configuration.getOpenshiftPassword(), ""));
+            IAuthorizationClient authClient = new AuthorizationClientFactory().create(tmpClient);
+            IAuthorizationContext context = authClient.getContext(tmpClient.getBaseURL().toString());
+            token = context.getToken();
+            if (configuration.getToken() != null) {
+                log.info("Overriding auth token ...");
+            }
+            configuration.setToken(token); // re-set token
+        } else {
+            token = configuration.getToken();
         }
-        configuration.setToken(token); // re-set token
+        tmpClient.setAuthorizationStrategy(new TokenAuthorizationStrategy(token));
 
         this.client = tmpClient;
     }

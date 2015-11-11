@@ -78,12 +78,17 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     private Map<String, KubernetesList> templates = new HashMap<>();
 
     static OpenShiftConfig toOpenShiftConfig(Configuration configuration) {
-        return new OpenShiftConfigBuilder()
-                .withMasterUrl(configuration.getKubernetesMaster())
-                .withTrustCerts(configuration.isTrustCerts())
+        OpenShiftConfigBuilder builder = new OpenShiftConfigBuilder()
+            .withMasterUrl(configuration.getKubernetesMaster())
+            .withTrustCerts(configuration.isTrustCerts());
+
+        if (configuration.hasOpenshiftBasicAuth()) {
+            builder
                 .withUsername(configuration.getOpenshiftUsername())
-                .withPassword(configuration.getOpenshiftPassword())
-                .build();
+                .withPassword(configuration.getOpenshiftPassword());
+        }
+
+        return builder.build();
     }
 
     static CeOpenShiftClient create(Configuration configuration) {

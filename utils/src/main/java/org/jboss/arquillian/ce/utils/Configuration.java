@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.utils;
 
 import static org.jboss.arquillian.ce.utils.Strings.getSystemPropertyOrEnvVar;
+import static org.jboss.arquillian.ce.utils.Strings.isNotNullOrEmpty;
 import static org.jboss.arquillian.ce.utils.Strings.isNullOrEmpty;
 
 import java.io.Serializable;
@@ -149,6 +150,10 @@ public abstract class Configuration implements ContainerConfiguration, Configura
 
     public boolean isGeneratedNS() {
         return generatedNS;
+    }
+
+    public boolean hasOpenshiftBasicAuth() {
+        return isNotNullOrEmpty(openshiftUsername) && isNotNullOrEmpty(openshiftPassword);
     }
 
     public String getOpenshiftUsername() {
