@@ -21,7 +21,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.utils;
+package org.jboss.arquillian.ce.adapter;
 
 import java.io.Closeable;
 import java.io.File;
@@ -31,6 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.jboss.arquillian.ce.proxy.Proxy;
+import org.jboss.arquillian.ce.utils.DockerFileTemplateHandler;
+import org.jboss.arquillian.ce.utils.ParamValue;
+import org.jboss.arquillian.ce.utils.RCContext;
+import org.jboss.arquillian.ce.utils.RegistryLookup;
 import org.jboss.shrinkwrap.api.Archive;
 
 /**
@@ -51,17 +56,21 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup {
 
     String buildAndPushImage(DockerFileTemplateHandler dth, InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException;
 
-    Object createProject(String namespace);
+    Object createProject();
 
-    boolean deleteProject(String namespace);
+    boolean deleteProject();
 
     String deployPod(String name, String env, RCContext context) throws Exception;
 
     String deployReplicationController(String name, String env, RCContext context) throws Exception;
 
-    Object processTemplateAndCreateResources(String templateKey, String templateURL, String namespace, List<ParamValue> values) throws Exception;
+    Object processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values) throws Exception;
 
-    Object deleteTemplate(String templateKey, String namespace) throws Exception;
+    Object deleteTemplate(String templateKey) throws Exception;
+
+    void createResource(String resourcesKey, InputStream stream) throws IOException;
+
+    Object deleteResources(String resourcesKey);
 
     Object getService(String namespace, String serviceName);
 

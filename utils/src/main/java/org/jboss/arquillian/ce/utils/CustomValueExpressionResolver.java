@@ -33,6 +33,10 @@ import org.jboss.dmr.ValueExpressionResolver;
 public class CustomValueExpressionResolver extends ValueExpressionResolver {
     private final Properties properties;
 
+    public CustomValueExpressionResolver() {
+        this(new Properties()); // empty props
+    }
+
     public CustomValueExpressionResolver(Properties properties) {
         this.properties = properties;
     }

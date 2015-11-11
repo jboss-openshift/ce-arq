@@ -21,7 +21,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.utils;
+package org.jboss.arquillian.ce.proxy;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -38,6 +38,7 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
+import org.jboss.arquillian.ce.utils.Configuration;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>

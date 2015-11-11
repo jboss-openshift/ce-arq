@@ -21,19 +21,33 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.fabric8;
+package org.jboss.arquillian.ce.proxy;
 
-import org.jboss.arquillian.ce.utils.Configuration;
-import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
-import org.jboss.arquillian.ce.adapter.OpenShiftAdapterProvider;
-import org.kohsuke.MetaInfServices;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-@MetaInfServices(OpenShiftAdapterProvider.class)
-public class F8OpenShiftAdapterProvider implements OpenShiftAdapterProvider {
-    public OpenShiftAdapter create(Configuration configuration) {
-        return new F8OpenShiftAdapter(configuration);
-    }
+public interface Proxy {
+    void setDefaultSSLContext();
+
+    String url(String podName, String path, String parameters);
+
+    String url(Map<String, String> labels, String path, String parameters);
+
+    String url(Map<String, String> labels, int index, String path, String parameters);
+
+    Set<String> getReadyPods(Map<String, String> labels);
+
+    <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
+
+    InputStream post(Map<String, String> labels, int pod, String path) throws Exception;
+
+    int status(String url);
+
+    String findPod(Map<String, String> labels);
+
+    String findPod(Map<String, String> labels, int index);
 }

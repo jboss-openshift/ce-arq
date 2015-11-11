@@ -28,7 +28,7 @@ package org.jboss.arquillian.ce.utils;
  *
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-class Timer {
+public class Timer {
     private long start;
 
     public Timer() {

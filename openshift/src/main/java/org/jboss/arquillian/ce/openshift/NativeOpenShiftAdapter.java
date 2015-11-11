@@ -56,13 +56,14 @@ import com.openshift.restclient.model.IService;
 import com.openshift.restclient.model.project.IProjectRequest;
 import com.openshift.restclient.model.template.IParameter;
 import com.openshift.restclient.model.template.ITemplate;
-import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.proxy.Proxy;
+import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.CustomValueExpressionResolver;
 import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.Port;
-import org.jboss.arquillian.ce.utils.Proxy;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ValueExpression;
@@ -104,6 +105,16 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         this.client = tmpClient;
     }
 
+    protected OpenShiftResourceHandle createResourceFromStream(InputStream stream) throws IOException {
+        IResource resource;
+        try {
+            resource = client.getResourceFactory().create(stream);
+        } finally {
+            stream.close();
+        }
+        return new NativeOpenShiftResourceHandle(client.create(resource));
+    }
+
     <T extends IResource> T createResource(String json, Properties properties) {
         String template = Templates.readJson(configuration.getApiVersion(), json);
         final ValueExpressionResolver resolver = new CustomValueExpressionResolver(properties);
@@ -132,16 +143,16 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return new RegistryLookupEntry(ip, String.valueOf(port));
     }
 
-    public Object createProject(String namespace) {
+    public Object createProject() {
         // oc new-project <namespace>
         Properties properties = new Properties();
-        properties.put("PROJECT_NAME", namespace);
+        properties.put("PROJECT_NAME", configuration.getNamespace());
         IProjectRequest pr = createResource(Templates.PROJECT_REQUEST, properties);
         return client.create(pr);
     }
 
-    public boolean deleteProject(String namespace) {
-        IProject project = client.get(ResourceKind.PROJECT, namespace, "");
+    public boolean deleteProject() {
+        IProject project = client.get(ResourceKind.PROJECT, configuration.getNamespace(), "");
         client.delete(project);
         return true;
     }
@@ -221,7 +232,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return builder.toString();
     }
 
-    public Object processTemplateAndCreateResources(String templateKey, String templateURL, String namespace, List<ParamValue> values) throws Exception {
+    public Object processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values) throws Exception {
         final IProject project = client.get(ResourceKind.PROJECT, configuration.getNamespace(), "");
 
         final ITemplate template;
@@ -242,7 +253,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return resources;
     }
 
-    public Object deleteTemplate(String templateKey, String namespace) throws Exception {
+    public Object deleteTemplate(String templateKey) throws Exception {
         Collection<IResource> resources = templates.get(templateKey);
         if (resources != null) {
             for (IResource resource : resources) {
@@ -286,6 +297,18 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     public void close() throws IOException {
         templates.clear();
+    }
+
+    private class NativeOpenShiftResourceHandle implements OpenShiftResourceHandle {
+        private IResource resource;
+
+        public NativeOpenShiftResourceHandle(IResource resource) {
+            this.resource = resource;
+        }
+
+        public void delete() {
+            client.delete(resource);
+        }
     }
 
 }

@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.Client;
 import org.jboss.arquillian.ce.utils.DeploymentContext;
-import org.jboss.arquillian.ce.utils.Proxy;
+import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;

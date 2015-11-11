@@ -111,7 +111,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
 
                 log.info(String.format("Applying OpenShift template: %s", templateURL));
                 // use old archive name as templateKey
-                client.processTemplateAndCreateResources(archive.getName(), templateURL, configuration.getNamespace(), values);
+                client.processTemplateAndCreateResources(archive.getName(), templateURL, values);
             } else {
                 log.info(String.format("Ignoring template [%s] processing ...", templateURL));
             }
@@ -169,7 +169,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
 
     @Override
     protected void cleanup(Archive<?> archive) throws Exception {
-        client.deleteTemplate(archive.getName(), configuration.getNamespace());
+        client.deleteTemplate(archive.getName());
     }
 
     protected String newName(Archive<?> archive) {

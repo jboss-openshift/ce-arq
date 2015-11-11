@@ -23,6 +23,7 @@
 
 package org.jboss.arquillian.ce.fabric8;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -52,21 +53,26 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.ReplicationControllerSpec;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
 import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
-import org.jboss.arquillian.ce.utils.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.Port;
-import org.jboss.arquillian.ce.utils.Proxy;
+import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.utils.RCContext;
+import org.jboss.dmr.ModelNode;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -117,13 +123,13 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return new RegistryLookupEntry(ip, String.valueOf(port));
     }
 
-    public Object createProject(String namespace) {
+    public Object createProject() {
         // oc new-project <namespace>
-        return client.projectrequests().createNew().withNewMetadata().withName(namespace).endMetadata().done();
+        return client.projectrequests().createNew().withNewMetadata().withName(configuration.getNamespace()).endMetadata().done();
     }
 
-    public boolean deleteProject(String namespace) {
-        return client.projects().withName(namespace).delete();
+    public boolean deleteProject() {
+        return client.projects().withName(configuration.getNamespace()).delete();
     }
 
     public String deployPod(String name, String env, RCContext context) throws Exception {
@@ -230,35 +236,61 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
     }
 
-    public KubernetesList processTemplateAndCreateResources(String templateKey, String templateURL, String namespace, List<ParamValue> values) throws Exception {
+    public KubernetesList processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values) throws Exception {
         List<ParameterValue> pvs = new ArrayList<>();
         for (ParamValue value : values) {
             pvs.add(new ParameterValue(value.getName(), value.getValue()));
         }
-        KubernetesList list = processTemplate(templateURL, namespace, pvs);
-        KubernetesList result = createResources(namespace, list);
+        KubernetesList list = processTemplate(templateURL, pvs);
+        KubernetesList result = createResources(list);
         templates.put(templateKey, result);
         return result;
     }
 
-    private KubernetesList processTemplate(String templateURL, String namespace, List<ParameterValue> values) throws IOException {
+    private KubernetesList processTemplate(String templateURL, List<ParameterValue> values) throws IOException {
         try (InputStream stream = new URL(templateURL).openStream()) {
-            return client.templates().inNamespace(namespace).load(stream).process(values.toArray(new ParameterValue[values.size()]));
+            return client.templates().inNamespace(configuration.getNamespace()).load(stream).process(values.toArray(new ParameterValue[values.size()]));
         }
     }
 
-    private KubernetesList createResources(String namespace, KubernetesList list) {
-        return client.lists().inNamespace(namespace).create(list);
+    private KubernetesList createResources(KubernetesList list) {
+        return client.lists().inNamespace(configuration.getNamespace()).create(list);
     }
 
     private Object triggerBuild(String namespace, String buildName, String secret, String type) throws Exception {
         return client.buildConfigs().inNamespace(namespace).withName(buildName).withSecret(secret).withType(type).trigger(new WebHookTriggerBuilder().withSecret(secret).build());
     }
 
-    public Object deleteTemplate(String templateKey, String namespace) throws Exception {
+    protected OpenShiftResourceHandle createResourceFromStream(InputStream stream) throws IOException {
+        ModelNode json;
+        try {
+            json = ModelNode.fromJSONStream(stream);
+        } finally {
+            stream.close();
+        }
+        String kind = json.get("kind").asString();
+        return createResourceFromJson(kind, json);
+    }
+
+    private OpenShiftResourceHandle createResourceFromJson(String kind, ModelNode json) {
+        String content = json.asString();
+        if ("List".equalsIgnoreCase(kind)) {
+            return new ListOpenShiftResourceHandle(content);
+        } else if ("Secret".equalsIgnoreCase(kind)) {
+            return new SecretOpenShiftResourceHandle(content);
+        } else if ("ImageStream".equalsIgnoreCase(kind)) {
+            return new ImageStreamOpenShiftResourceHandle(content);
+        } else if ("ServiceAccount".equalsIgnoreCase(kind)) {
+            return new ServiceAccountOpenShiftResourceHandle(content);
+        } else {
+            throw new IllegalArgumentException(String.format("Kind '%s' not yet supported -- use Native OpenShift adapter!", kind));
+        }
+    }
+
+    public Object deleteTemplate(String templateKey) throws Exception {
         KubernetesList config = templates.get(templateKey);
         if (config != null) {
-            return client.lists().inNamespace(namespace).delete(config);
+            return client.lists().inNamespace(configuration.getNamespace()).delete(config);
         }
         return config;
     }
@@ -420,5 +452,71 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             }
         }
         throw new IllegalArgumentException("No such port: " + name);
+    }
+
+    private abstract class AbstractOpenShiftResourceHandle<T> implements OpenShiftResourceHandle {
+        protected final T resource;
+
+        public AbstractOpenShiftResourceHandle(String content) {
+            resource = createResource(new ByteArrayInputStream(content.getBytes()));
+        }
+
+        protected abstract T createResource(InputStream stream);
+    }
+    
+    private class ListOpenShiftResourceHandle extends AbstractOpenShiftResourceHandle<KubernetesList> {
+        public ListOpenShiftResourceHandle(String content) {
+            super(content);
+        }
+
+        protected KubernetesList createResource(InputStream stream) {
+            return client.lists().inNamespace(configuration.getNamespace()).load(stream).createNew().done();
+        }
+
+        public void delete() {
+            client.lists().inNamespace(configuration.getNamespace()).delete(resource);
+        }
+    }
+    
+    private class SecretOpenShiftResourceHandle extends AbstractOpenShiftResourceHandle<Secret> {
+        public SecretOpenShiftResourceHandle(String content) {
+            super(content);
+        }
+
+        protected Secret createResource(InputStream stream) {
+            return client.secrets().inNamespace(configuration.getNamespace()).load(stream).createNew().done();
+        }
+
+        public void delete() {
+            client.secrets().inNamespace(configuration.getNamespace()).delete(resource);
+        }
+    }
+    
+    private class ImageStreamOpenShiftResourceHandle extends AbstractOpenShiftResourceHandle<ImageStream> {
+        public ImageStreamOpenShiftResourceHandle(String content) {
+            super(content);
+        }
+
+        protected ImageStream createResource(InputStream stream) {
+            return client.imageStreams().inNamespace(configuration.getNamespace()).load(stream).createNew().done();
+        }
+
+        public void delete() {
+            client.imageStreams().inNamespace(configuration.getNamespace()).delete(resource);
+        }
+    }
+
+    private class ServiceAccountOpenShiftResourceHandle extends AbstractOpenShiftResourceHandle<ServiceAccount> {
+        public ServiceAccountOpenShiftResourceHandle(String content) {
+            super(content);
+        }
+
+        protected ServiceAccount createResource(InputStream stream) {
+            return client.serviceAccounts().inNamespace(configuration.getNamespace()).load(stream).createNew().done();
+        }
+
+        public void delete() {
+            client.serviceAccounts().inNamespace(configuration.getNamespace()).delete(resource);
+        }
     }
 }

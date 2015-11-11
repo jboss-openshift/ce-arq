@@ -28,7 +28,7 @@ import java.net.URL;
 import java.util.Map;
 
 import org.jboss.arquillian.ce.utils.DeploymentContext;
-import org.jboss.arquillian.ce.utils.Proxy;
+import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;

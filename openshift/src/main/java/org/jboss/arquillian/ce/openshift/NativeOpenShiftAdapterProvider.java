@@ -24,8 +24,8 @@
 package org.jboss.arquillian.ce.openshift;
 
 import org.jboss.arquillian.ce.utils.Configuration;
-import org.jboss.arquillian.ce.utils.OpenShiftAdapter;
-import org.jboss.arquillian.ce.utils.OpenShiftAdapterProvider;
+import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
+import org.jboss.arquillian.ce.adapter.OpenShiftAdapterProvider;
 import org.kohsuke.MetaInfServices;
 
 /**

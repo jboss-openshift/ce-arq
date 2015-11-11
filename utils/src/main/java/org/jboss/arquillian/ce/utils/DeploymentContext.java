@@ -26,6 +26,7 @@ package org.jboss.arquillian.ce.utils;
 import java.util.Collections;
 import java.util.Map;
 
+import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.shrinkwrap.api.Archive;
 

@@ -26,6 +26,8 @@ package org.jboss.arquillian.ce.utils;
 import java.net.URL;
 import java.util.logging.Logger;
 
+import org.jboss.arquillian.ce.proxy.Proxy;
+
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */

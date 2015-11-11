@@ -21,19 +21,11 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.fabric8;
-
-import org.jboss.arquillian.ce.utils.Configuration;
-import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
-import org.jboss.arquillian.ce.adapter.OpenShiftAdapterProvider;
-import org.kohsuke.MetaInfServices;
+package org.jboss.arquillian.ce.resources;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-@MetaInfServices(OpenShiftAdapterProvider.class)
-public class F8OpenShiftAdapterProvider implements OpenShiftAdapterProvider {
-    public OpenShiftAdapter create(Configuration configuration) {
-        return new F8OpenShiftAdapter(configuration);
-    }
+public interface OpenShiftResourceHandle {
+    void delete();
 }

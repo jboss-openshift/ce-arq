@@ -21,7 +21,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.utils;
+package org.jboss.arquillian.ce.adapter;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -32,7 +32,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -47,6 +49,13 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.PushImageResultCallback;
+import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
+import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.CustomValueExpressionResolver;
+import org.jboss.arquillian.ce.utils.DockerFileTemplateHandler;
+import org.jboss.arquillian.ce.utils.RegistryLookup;
+import org.jboss.arquillian.ce.utils.StaticRegistryLookup;
+import org.jboss.arquillian.ce.utils.Timer;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
 import org.jboss.shrinkwrap.api.Archive;
@@ -67,6 +76,8 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
 
     private Map<String, File> dirs = new HashMap<>();
     private RegistryLookup lookup;
+
+    private Map<String, List<OpenShiftResourceHandle>> resourcesMap = new HashMap<>();
 
     protected static File getTempRoot() {
         return AccessController.doPrivileged(new PrivilegedAction<File>() {
@@ -163,7 +174,7 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         exportAsZip(dir, deployment);
 
         // Grab Docker registry service
-        RegistryLookupEntry rle = lookup.lookup();
+        RegistryLookup.RegistryLookupEntry rle = lookup.lookup();
 
         String port = rle.getPort();
         // our Docker image name
@@ -217,6 +228,27 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
             fullImageName.append(":").append(imageTag);
         }
         return fullImageName.toString();
+    }
+
+    protected abstract OpenShiftResourceHandle createResourceFromStream(InputStream stream) throws IOException;
+
+    public void createResource(String resourcesKey, InputStream stream) throws IOException {
+        List<OpenShiftResourceHandle> list = resourcesMap.get(resourcesKey);
+        if (list == null) {
+            list = new ArrayList<>();
+            resourcesMap.put(resourcesKey, list);
+        }
+        list.add(createResourceFromStream(stream));
+    }
+
+    public Object deleteResources(String resourcesKey) {
+        List<OpenShiftResourceHandle> list = resourcesMap.remove(resourcesKey);
+        if (list != null) {
+            for (OpenShiftResourceHandle resource : list) {
+                resource.delete();
+            }
+        }
+        return list;
     }
 
     private static void copy(InputStream input, OutputStream output) throws IOException {

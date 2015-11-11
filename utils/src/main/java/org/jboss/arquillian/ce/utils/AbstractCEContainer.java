@@ -32,8 +32,12 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
+import org.jboss.arquillian.ce.adapter.OpenShiftAdapterFactory;
 import org.jboss.arquillian.ce.api.ConfigurationHandle;
 import org.jboss.arquillian.ce.api.Replicas;
+import org.jboss.arquillian.ce.proxy.Proxy;
+import org.jboss.arquillian.ce.resources.OpenShiftResourceFactory;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
 import org.jboss.arquillian.ce.runinpod.RunInPodUtils;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
@@ -113,7 +117,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         log.info("Using Kubernetes namespace / project: " + namespace);
 
         if (configuration.isGeneratedNS()) {
-            client.createProject(namespace);
+            client.createProject();
         }
     }
 
@@ -125,7 +129,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         } finally {
             try {
                 if (configuration.isGeneratedNS()) {
-                    client.deleteProject(configuration.getNamespace());
+                    client.deleteProject();
                 }
             } finally {
                 try {
@@ -165,8 +169,16 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         }
     }
 
+    private void handleResources(Archive<?> archive) {
+        if (!isSPI()) {
+            OpenShiftResourceFactory.createResources(archive.getName(), client, archive, tc.get().getJavaClass());
+        }
+    }
+
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
         client.prepare(archive);
+
+        handleResources(archive);
 
         ProtocolMetaData protocolMetaData = doDeploy(archive);
 
@@ -316,23 +328,33 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         client.cleanPods(DeploymentContext.getDeploymentLabels(archive));
     }
 
+    protected void cleanupResources(Archive<?> archive) {
+        if (!isSPI()) {
+            client.deleteResources(archive.getName());
+        }
+    }
+
     public void undeploy(Archive<?> archive) throws DeploymentException {
         try {
             if (runInPodContainer != null) {
                 runInPodContainer.undeploy();
             }
         } finally {
-            // do we keep test config around for some more?
-            if (configuration.isIgnoreCleanup() == false) {
-                try {
-                    cleanup(archive);
-                } catch (Exception ignored) {
+            try {
+                cleanupResources(archive);
+            } finally {
+                // do we keep test config around for some more?
+                if (configuration.isIgnoreCleanup() == false) {
+                    try {
+                        cleanup(archive);
+                    } catch (Exception ignored) {
+                    }
+                } else {
+                    log.info("Ignore Kubernetes cleanup -- test config is still available.");
                 }
-            } else {
-                log.info("Ignore Kubernetes cleanup -- test config is still available.");
-            }
 
-            client.reset(archive);
+                client.reset(archive);
+            }
         }
     }
 

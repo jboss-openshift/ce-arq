@@ -21,33 +21,18 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.utils;
+package org.jboss.arquillian.ce.api;
 
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Set;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface Proxy {
-    void setDefaultSSLContext();
-
-    String url(String podName, String path, String parameters);
-
-    String url(Map<String, String> labels, String path, String parameters);
-
-    String url(Map<String, String> labels, int index, String path, String parameters);
-
-    Set<String> getReadyPods(Map<String, String> labels);
-
-    <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
-
-    InputStream post(Map<String, String> labels, int pod, String path) throws Exception;
-
-    int status(String url);
-
-    String findPod(Map<String, String> labels);
-
-    String findPod(Map<String, String> labels, int index);
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+public @interface OpenShiftResources {
+    OpenShiftResource[] value();
 }

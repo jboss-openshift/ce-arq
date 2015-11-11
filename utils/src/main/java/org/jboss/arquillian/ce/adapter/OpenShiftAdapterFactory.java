@@ -21,10 +21,12 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.utils;
+package org.jboss.arquillian.ce.adapter;
 
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
+
+import org.jboss.arquillian.ce.utils.Configuration;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
