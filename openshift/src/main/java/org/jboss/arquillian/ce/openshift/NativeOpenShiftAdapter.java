@@ -264,14 +264,14 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return resources;
     }
 
-    public Object addRoleBinding(String roleRefName, String userName) {
+    public OpenShiftResourceHandle createRoleBinding(String roleRefName, String userName) {
         Properties properties = new Properties();
         properties.setProperty("NAMESPACE", configuration.getNamespace());
         properties.setProperty("ROLE_REF_NAME", roleRefName);
         properties.setProperty("USER_NAME", userName);
         properties.setProperty("SUBJECT_NAME", userName.substring(userName.lastIndexOf(":") + 1));
         IRoleBinding rb = createResource(Templates.ROLE_BINDING, properties);
-        return client.create(rb, configuration.getNamespace());
+        return new NativeOpenShiftResourceHandle(client.create(rb, configuration.getNamespace()));
     }
 
     public IService getService(String namespace, String serviceName) {

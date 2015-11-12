@@ -60,6 +60,7 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.openshift.api.model.ImageStream;
+import io.fabric8.openshift.api.model.RoleBinding;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
 import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
@@ -295,9 +296,9 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return config;
     }
 
-    public Object addRoleBinding(String roleRefName, String userName) {
+    protected OpenShiftResourceHandle createRoleBinding(String roleRefName, String userName) {
         String subjectName = userName.substring(userName.lastIndexOf(":") + 1);
-        return client
+        final RoleBinding roleBinding = client
             .roleBindings()
             .inNamespace(configuration.getNamespace())
             .createNew()
@@ -306,6 +307,11 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             .addToUserNames(userName)
             .addNewSubject().withKind("ServiceAccount").withNamespace(configuration.getNamespace()).withName(subjectName).endSubject()
             .done();
+        return new OpenShiftResourceHandle() {
+            public void delete() {
+                client.roleBindings().inNamespace(configuration.getNamespace()).delete(roleBinding);
+            }
+        };
     }
 
     private String deployService(String name, String apiVersion, String portName, int port, int containerPort, Map<String, String> selector) throws Exception {

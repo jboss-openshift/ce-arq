@@ -70,14 +70,13 @@ public class OpenShiftResourceFactory {
 
                 adapter.createResource(resourcesKey, stream);
             }
-
-
+            
             List<RoleBinding> roleBindings = new ArrayList<>();
             RB_FINDER.findAnnotations(roleBindings, testClass);
             for (RoleBinding rb : roleBindings) {
                 String roleRefName = new ValueExpression(rb.roleRefName()).resolveString(resolver);
                 String userName = new ValueExpression(rb.userName()).resolveString(resolver);
-                adapter.addRoleBinding(roleRefName, userName);
+                adapter.addRoleBinding(resourcesKey, roleRefName, userName);
             }
         } catch (Exception e) {
             throw new IllegalStateException(e);

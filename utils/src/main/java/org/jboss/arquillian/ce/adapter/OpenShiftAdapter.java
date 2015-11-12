@@ -72,7 +72,7 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup {
 
     Object deleteResources(String resourcesKey);
 
-    Object addRoleBinding(String roleRefName, String userName);
+    Object addRoleBinding(String resourcesKey, String roleRefName, String userName);
 
     Object getService(String namespace, String serviceName);
 

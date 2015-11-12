@@ -230,16 +230,20 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         return fullImageName.toString();
     }
 
-    protected abstract OpenShiftResourceHandle createResourceFromStream(InputStream stream) throws IOException;
-
-    public Object createResource(String resourcesKey, InputStream stream) throws IOException {
+    private void addResourceHandle(String resourcesKey, OpenShiftResourceHandle handle) {
         List<OpenShiftResourceHandle> list = resourcesMap.get(resourcesKey);
         if (list == null) {
             list = new ArrayList<>();
             resourcesMap.put(resourcesKey, list);
         }
+        list.add(handle);
+    }
+
+    protected abstract OpenShiftResourceHandle createResourceFromStream(InputStream stream) throws IOException;
+
+    public Object createResource(String resourcesKey, InputStream stream) throws IOException {
         OpenShiftResourceHandle resourceHandle = createResourceFromStream(stream);
-        list.add(resourceHandle);
+        addResourceHandle(resourcesKey, resourceHandle);
         return resourceHandle;
     }
 
@@ -251,6 +255,14 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
             }
         }
         return list;
+    }
+
+    protected abstract OpenShiftResourceHandle createRoleBinding(String roleRefName, String userName);
+
+    public Object addRoleBinding(String resourcesKey, String roleRefName, String userName) {
+        OpenShiftResourceHandle handle = createRoleBinding(roleRefName, userName);
+        addResourceHandle(resourcesKey, handle);
+        return handle;
     }
 
     private static void copy(InputStream input, OutputStream output) throws IOException {
