@@ -68,9 +68,11 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup {
 
     Object deleteTemplate(String templateKey) throws Exception;
 
-    void createResource(String resourcesKey, InputStream stream) throws IOException;
+    Object createResource(String resourcesKey, InputStream stream) throws IOException;
 
     Object deleteResources(String resourcesKey);
+
+    Object addRoleBinding(String roleRefName, String userName);
 
     Object getService(String namespace, String serviceName);
 

@@ -53,6 +53,7 @@ import com.openshift.restclient.model.IProject;
 import com.openshift.restclient.model.IReplicationController;
 import com.openshift.restclient.model.IResource;
 import com.openshift.restclient.model.IService;
+import com.openshift.restclient.model.authorization.IRoleBinding;
 import com.openshift.restclient.model.project.IProjectRequest;
 import com.openshift.restclient.model.template.IParameter;
 import com.openshift.restclient.model.template.ITemplate;
@@ -261,6 +262,16 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
             }
         }
         return resources;
+    }
+
+    public Object addRoleBinding(String roleRefName, String userName) {
+        Properties properties = new Properties();
+        properties.setProperty("NAMESPACE", configuration.getNamespace());
+        properties.setProperty("ROLE_REF_NAME", roleRefName);
+        properties.setProperty("USER_NAME", userName);
+        properties.setProperty("SUBJECT_NAME", userName.substring(userName.lastIndexOf(":") + 1));
+        IRoleBinding rb = createResource(Templates.ROLE_BINDING, properties);
+        return client.create(rb, configuration.getNamespace());
     }
 
     public IService getService(String namespace, String serviceName) {

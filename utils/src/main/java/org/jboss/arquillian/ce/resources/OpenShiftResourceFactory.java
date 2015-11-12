@@ -25,14 +25,16 @@ package org.jboss.arquillian.ce.resources;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.api.OpenShiftResource;
 import org.jboss.arquillian.ce.api.OpenShiftResources;
+import org.jboss.arquillian.ce.api.RoleBinding;
+import org.jboss.arquillian.ce.api.RoleBindings;
 import org.jboss.arquillian.ce.utils.CustomValueExpressionResolver;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
@@ -42,38 +44,16 @@ import org.jboss.shrinkwrap.api.Archive;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class OpenShiftResourceFactory {
-    private static void findAnnotations(List<OpenShiftResource> annotations, Class<?> testClass) {
-        if (testClass == Object.class) {
-            return;
-        }
-
-        OpenShiftResources anns = testClass.getAnnotation(OpenShiftResources.class);
-        if (anns != null) {
-            OpenShiftResource[] osrs = anns.value();
-            for (int i = osrs.length - 1; i >= 0; i--) {
-                annotations.add(0, osrs[i]);
-            }
-            Collections.addAll(annotations, anns.value());
-        }
-
-        OpenShiftResource ann = testClass.getAnnotation(OpenShiftResource.class);
-        if (ann != null) {
-            annotations.add(0, ann);
-        }
-
-        findAnnotations(annotations, testClass.getSuperclass());
-    }
+    private static final OSRFinder OSR_FINDER = new OSRFinder();
+    private static final RBFinder RB_FINDER = new RBFinder();
 
     public static void createResources(String resourcesKey, OpenShiftAdapter adapter, Archive<?> archive, Class<?> testClass) {
         try {
-            List<OpenShiftResource> annotations = new ArrayList<>();
-            findAnnotations(annotations, testClass);
-            if (annotations.isEmpty()) {
-                return;
-            }
+            final ValueExpressionResolver resolver = new CustomValueExpressionResolver();
 
-            ValueExpressionResolver resolver = new CustomValueExpressionResolver();
-            for (OpenShiftResource osr : annotations) {
+            List<OpenShiftResource> openShiftResources = new ArrayList<>();
+            OSR_FINDER.findAnnotations(openShiftResources, testClass);
+            for (OpenShiftResource osr : openShiftResources) {
                 ValueExpression ve = new ValueExpression(osr.value());
                 String file = ve.resolveString(resolver);
 
@@ -90,8 +70,76 @@ public class OpenShiftResourceFactory {
 
                 adapter.createResource(resourcesKey, stream);
             }
+
+
+            List<RoleBinding> roleBindings = new ArrayList<>();
+            RB_FINDER.findAnnotations(roleBindings, testClass);
+            for (RoleBinding rb : roleBindings) {
+                String roleRefName = new ValueExpression(rb.roleRefName()).resolveString(resolver);
+                String userName = new ValueExpression(rb.userName()).resolveString(resolver);
+                adapter.addRoleBinding(roleRefName, userName);
+            }
         } catch (Exception e) {
             throw new IllegalStateException(e);
+        }
+    }
+
+    private static abstract class Finder<U extends Annotation, V extends Annotation> {
+
+        protected abstract Class<U> getWrapperType();
+
+        protected abstract Class<V> getSingleType();
+
+        protected abstract V[] toSingles(U u);
+
+        void findAnnotations(List<V> annotations, Class<?> testClass) {
+            if (testClass == Object.class) {
+                return;
+            }
+
+            U anns = testClass.getAnnotation(getWrapperType());
+            if (anns != null) {
+                V[] ann = toSingles(anns);
+                for (int i = ann.length - 1; i >= 0; i--) {
+                    annotations.add(0, ann[i]);
+                }
+            }
+
+            V ann = testClass.getAnnotation(getSingleType());
+            if (ann != null) {
+                annotations.add(0, ann);
+            }
+
+            findAnnotations(annotations, testClass.getSuperclass());
+        }
+
+    }
+
+    private static class OSRFinder extends Finder<OpenShiftResources, OpenShiftResource> {
+        protected Class<OpenShiftResources> getWrapperType() {
+            return OpenShiftResources.class;
+        }
+
+        protected Class<OpenShiftResource> getSingleType() {
+            return OpenShiftResource.class;
+        }
+
+        protected OpenShiftResource[] toSingles(OpenShiftResources openShiftResources) {
+            return openShiftResources.value();
+        }
+    }
+
+    private static class RBFinder extends Finder<RoleBindings, RoleBinding> {
+        protected Class<RoleBindings> getWrapperType() {
+            return RoleBindings.class;
+        }
+
+        protected Class<RoleBinding> getSingleType() {
+            return RoleBinding.class;
+        }
+
+        protected RoleBinding[] toSingles(RoleBindings roleBindings) {
+            return roleBindings.value();
         }
     }
 }

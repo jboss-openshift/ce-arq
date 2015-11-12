@@ -36,6 +36,7 @@ final class Templates {
     static final String REPLICATION_CONTROLLER = "replication_controller";
     static final String READINESS_PROBE = "readiness_probe";
     static final String LIFECYCLE = "lifecycle";
+    static final String ROLE_BINDING = "rolebinding";
 
     static String readJson(String apiVersion, String json) {
         return readJson(apiVersion, json, null);

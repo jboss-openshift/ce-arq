@@ -232,13 +232,15 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
 
     protected abstract OpenShiftResourceHandle createResourceFromStream(InputStream stream) throws IOException;
 
-    public void createResource(String resourcesKey, InputStream stream) throws IOException {
+    public Object createResource(String resourcesKey, InputStream stream) throws IOException {
         List<OpenShiftResourceHandle> list = resourcesMap.get(resourcesKey);
         if (list == null) {
             list = new ArrayList<>();
             resourcesMap.put(resourcesKey, list);
         }
-        list.add(createResourceFromStream(stream));
+        OpenShiftResourceHandle resourceHandle = createResourceFromStream(stream);
+        list.add(resourceHandle);
+        return resourceHandle;
     }
 
     public Object deleteResources(String resourcesKey) {

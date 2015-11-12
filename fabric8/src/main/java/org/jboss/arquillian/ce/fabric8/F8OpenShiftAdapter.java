@@ -65,12 +65,12 @@ import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.Port;
-import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.dmr.ModelNode;
 
@@ -293,6 +293,19 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             return client.lists().inNamespace(configuration.getNamespace()).delete(config);
         }
         return config;
+    }
+
+    public Object addRoleBinding(String roleRefName, String userName) {
+        String subjectName = userName.substring(userName.lastIndexOf(":") + 1);
+        return client
+            .roleBindings()
+            .inNamespace(configuration.getNamespace())
+            .createNew()
+            .editMetadata().withName(roleRefName).endMetadata()
+            .withNewRoleRef().withName(roleRefName).endRoleRef()
+            .addToUserNames(userName)
+            .addNewSubject().withKind("ServiceAccount").withNamespace(configuration.getNamespace()).withName(subjectName).endSubject()
+            .done();
     }
 
     private String deployService(String name, String apiVersion, String portName, int port, int containerPort, Map<String, String> selector) throws Exception {
