@@ -23,44 +23,27 @@
 
 package org.jboss.arquillian.ce.adapter;
 
-import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
+import java.util.Properties;
 
-import org.jboss.arquillian.ce.proxy.Proxy;
-import org.jboss.arquillian.ce.utils.ParamValue;
-import org.jboss.arquillian.ce.utils.RCContext;
-import org.jboss.arquillian.ce.utils.RegistryLookup;
+import org.jboss.arquillian.ce.utils.DockerFileTemplateHandler;
+import org.jboss.shrinkwrap.api.Archive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface OpenShiftAdapter extends Closeable, RegistryLookup {
-    Proxy createProxy();
+public interface DockerAdapter {
+    void prepare(Archive<?> archive);
 
-    Object createProject();
+    void reset(Archive<?> archive);
 
-    boolean deleteProject();
+    File getDir(Archive<?> archive);
 
-    String deployPod(String name, String env, RCContext context) throws Exception;
+    File exportAsZip(File dir, Archive<?> deployment);
 
-    String deployReplicationController(String name, String env, RCContext context) throws Exception;
+    File exportAsZip(File dir, Archive<?> deployment, String name);
 
-    Object processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values) throws Exception;
-
-    Object deleteTemplate(String templateKey) throws Exception;
-
-    Object createResource(String resourcesKey, InputStream stream) throws IOException;
-
-    Object deleteResources(String resourcesKey);
-
-    Object addRoleBinding(String resourcesKey, String roleRefName, String userName);
-
-    Object getService(String namespace, String serviceName);
-
-    void cleanReplicationControllers(String... ids) throws Exception;
-
-    void cleanPods(Map<String, String> labels) throws Exception;
+    String buildAndPushImage(DockerFileTemplateHandler dth, InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException;
 }

@@ -183,9 +183,9 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     protected String commitDeployment(Archive<?> archive) throws Exception {
         String name = newName(archive);
 
-        File dir = client.getDir(archive);
+        File dir = dockerAdapter.getDir(archive);
         try (GitAdapter git = GitAdapter.cloneRepository(dir, configuration.getGitRepository(true)).prepare("deployments/" + name)) {
-            client.exportAsZip(new File(dir, "deployments"), archive, name);
+            dockerAdapter.exportAsZip(new File(dir, "deployments"), archive, name);
 
             CredentialsProvider cp;
             if (configuration.isNetRC()) {

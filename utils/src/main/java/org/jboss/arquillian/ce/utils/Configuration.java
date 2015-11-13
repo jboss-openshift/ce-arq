@@ -71,6 +71,8 @@ public abstract class Configuration implements ContainerConfiguration, Configura
     private String probeHookType = getSystemPropertyOrEnvVar("kubernetes.readiness.probe.hook-type", HookType.EXEC.name());
     private String probeCommands = getSystemPropertyOrEnvVar("kubernetes.readiness.probe.commands");
 
+    private String templateName = getSystemPropertyOrEnvVar("docker.file.template", "Dockerfile_template");
+
     private String imageName = getSystemPropertyOrEnvVar("docker.test.image", "cetestimage");
     private String imageTag = getSystemPropertyOrEnvVar("docker.test.tag", "latest");
     private String imagePullPolicy = getSystemPropertyOrEnvVar("docker.test.pull.policy", "Always");
@@ -98,7 +100,13 @@ public abstract class Configuration implements ContainerConfiguration, Configura
         return builder.toString();
     }
 
-    public void apply(Properties properties) {
+    public Properties getProperties() {
+        Properties properties = new Properties();
+        apply(properties);
+        return properties;
+    }
+
+    protected void apply(Properties properties) {
         // namespace
         properties.put("kubernetes.namespace", getNamespace());
         properties.put("namespace", getNamespace());
@@ -291,6 +299,14 @@ public abstract class Configuration implements ContainerConfiguration, Configura
 
     public void setIgnorePreStop(boolean ignorePreStop) {
         this.ignorePreStop = ignorePreStop;
+    }
+
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
     }
 
     public String getImageName() {

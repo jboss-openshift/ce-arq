@@ -38,6 +38,7 @@ import org.jboss.arquillian.ce.api.OpenShiftResources;
 import org.jboss.arquillian.ce.api.RoleBinding;
 import org.jboss.arquillian.ce.api.RoleBindings;
 import org.jboss.arquillian.ce.utils.StringResolver;
+import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.shrinkwrap.api.Archive;
 
 /**
@@ -49,9 +50,9 @@ public class OpenShiftResourceFactory {
     private static final OSRFinder OSR_FINDER = new OSRFinder();
     private static final RBFinder RB_FINDER = new RBFinder();
 
-    public static void createResources(String resourcesKey, OpenShiftAdapter adapter, Archive<?> archive, Class<?> testClass) {
+    public static void createResources(String resourcesKey, OpenShiftAdapter adapter, Archive<?> archive, Class<?> testClass, Properties properties) {
         try {
-            final StringResolver resolver = adapter.createStringResolver(new Properties());
+            final StringResolver resolver = Strings.createStringResolver(properties);
 
             List<OpenShiftResource> openShiftResources = new ArrayList<>();
             OSR_FINDER.findAnnotations(openShiftResources, testClass);

@@ -32,6 +32,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import org.jboss.arquillian.ce.adapter.DockerAdapter;
+import org.jboss.arquillian.ce.adapter.DockerAdapterImpl;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapterFactory;
 import org.jboss.arquillian.ce.api.ConfigurationHandle;
@@ -87,6 +89,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected T configuration;
     protected OpenShiftAdapter client;
+    protected DockerAdapter dockerAdapter;
     protected Proxy proxy;
 
     protected RunInPodUtils runInPodUtils;
@@ -112,6 +115,14 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     public void start() throws LifecycleException {
         this.client = OpenShiftAdapterFactory.getOpenShiftAdapter(configuration);
         this.proxy = client.createProxy();
+
+        RegistryLookup lookup;
+        if ("static".equalsIgnoreCase(configuration.getRegistryType())) {
+            lookup = new StaticRegistryLookup(configuration);
+        } else {
+            lookup = client;
+        }
+        this.dockerAdapter = new DockerAdapterImpl(configuration, lookup);
 
         String namespace = configuration.getNamespace();
         log.info("Using Kubernetes namespace / project: " + namespace);
@@ -171,12 +182,12 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     private void handleResources(Archive<?> archive) {
         if (!isSPI()) {
-            OpenShiftResourceFactory.createResources(archive.getName(), client, archive, tc.get().getJavaClass());
+            OpenShiftResourceFactory.createResources(archive.getName(), client, archive, tc.get().getJavaClass(), configuration.getProperties());
         }
     }
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
-        client.prepare(archive);
+        dockerAdapter.prepare(archive);
 
         handleResources(archive);
 
@@ -224,7 +235,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     protected String buildImage(Archive<?> archive, String parent, String dir) throws IOException {
-        Properties properties = new Properties();
+        Properties properties = configuration.getProperties();
 
         String from = Strings.toValue(configuration.getFromParent(), parent);
         properties.put("from.name", from);
@@ -233,8 +244,8 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         log.info(String.format("FROM %s [%s]", from, deployment));
 
-        InputStream dockerfileTemplate = getClass().getClassLoader().getResourceAsStream("Dockerfile_template");
-        return client.buildAndPushImage(this, dockerfileTemplate, archive, properties);
+        InputStream dockerfileTemplate = getClass().getClassLoader().getResourceAsStream(configuration.getTemplateName());
+        return dockerAdapter.buildAndPushImage(this, dockerfileTemplate, archive, properties);
     }
 
     protected String deployResourceContext(RCContext context) throws Exception {
@@ -352,7 +363,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
                     log.info("Ignore Kubernetes cleanup -- test config is still available.");
                 }
 
-                client.reset(archive);
+                dockerAdapter.reset(archive);
             }
         }
     }

@@ -23,14 +23,12 @@
 
 package org.jboss.arquillian.ce.utils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.LineIterator;
+import org.jboss.dmr.ValueExpression;
+import org.jboss.dmr.ValueExpressionResolver;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -108,36 +106,18 @@ public class Strings {
         return labels;
     }
 
-    // ---
-
-    static String toString(InputStream stream) {
-        try {
-            StringWriter writer = new StringWriter();
-            LineIterator itr = IOUtils.lineIterator(stream, "UTF-8");
-            while (itr.hasNext()) {
-                String line = itr.next();
-                writer.write(line);
-                if (itr.hasNext()) writer.write("\n");
+    public static StringResolver createStringResolver(Properties properties) {
+        final ValueExpressionResolver resolver = createValueExpressionResolver(properties);
+        return new StringResolver() {
+            public String resolve(String value) {
+                return new ValueExpression(value).resolveString(resolver);
             }
-            return writer.toString();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            IOUtils.closeQuietly(stream);
-        }
+        };
     }
 
-    static String substringBetween(String str, String open, String close) {
-        if (str == null || open == null || close == null) {
-            return null;
-        }
-        int start = str.indexOf(open);
-        if (start != INDEX_NOT_FOUND) {
-            int end = str.indexOf(close, start + open.length());
-            if (end != INDEX_NOT_FOUND) {
-                return str.substring(start + open.length(), end);
-            }
-        }
-        return null;
+    // ---
+
+    static ValueExpressionResolver createValueExpressionResolver(Properties properties) {
+        return new CustomValueExpressionResolver(properties);
     }
 }
