@@ -37,8 +37,7 @@ import org.jboss.arquillian.ce.api.OpenShiftResource;
 import org.jboss.arquillian.ce.api.OpenShiftResources;
 import org.jboss.arquillian.ce.api.RoleBinding;
 import org.jboss.arquillian.ce.api.RoleBindings;
-import org.jboss.dmr.ValueExpression;
-import org.jboss.dmr.ValueExpressionResolver;
+import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.shrinkwrap.api.Archive;
 
 /**
@@ -52,13 +51,12 @@ public class OpenShiftResourceFactory {
 
     public static void createResources(String resourcesKey, OpenShiftAdapter adapter, Archive<?> archive, Class<?> testClass) {
         try {
-            final ValueExpressionResolver resolver = adapter.createValueExpressionResolver(new Properties());
+            final StringResolver resolver = adapter.createStringResolver(new Properties());
 
             List<OpenShiftResource> openShiftResources = new ArrayList<>();
             OSR_FINDER.findAnnotations(openShiftResources, testClass);
             for (OpenShiftResource osr : openShiftResources) {
-                ValueExpression ve = new ValueExpression(osr.value());
-                String file = ve.resolveString(resolver);
+                String file = resolver.resolve(osr.value());
 
                 InputStream stream;
                 if (file.startsWith("http")) {
@@ -78,8 +76,8 @@ public class OpenShiftResourceFactory {
             List<RoleBinding> roleBindings = new ArrayList<>();
             RB_FINDER.findAnnotations(roleBindings, testClass);
             for (RoleBinding rb : roleBindings) {
-                String roleRefName = new ValueExpression(rb.roleRefName()).resolveString(resolver);
-                String userName = new ValueExpression(rb.userName()).resolveString(resolver);
+                String roleRefName = resolver.resolve(rb.roleRefName());
+                String userName = resolver.resolve(rb.userName());
                 log.info(String.format("Adding new role binding: %s / %s", roleRefName, userName));
                 adapter.addRoleBinding(resourcesKey, roleRefName, userName);
             }

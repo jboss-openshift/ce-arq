@@ -36,7 +36,7 @@ import org.jboss.arquillian.ce.utils.DockerFileTemplateHandler;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.ce.utils.RegistryLookup;
-import org.jboss.dmr.ValueExpressionResolver;
+import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.shrinkwrap.api.Archive;
 
 /**
@@ -55,7 +55,7 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup {
 
     File exportAsZip(File dir, Archive<?> deployment, String name);
 
-    ValueExpressionResolver createValueExpressionResolver(Properties properties);
+    StringResolver createStringResolver(Properties properties);
 
     String buildAndPushImage(DockerFileTemplateHandler dth, InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException;
 

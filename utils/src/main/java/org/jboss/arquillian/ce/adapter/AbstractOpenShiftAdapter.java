@@ -55,6 +55,7 @@ import org.jboss.arquillian.ce.utils.CustomValueExpressionResolver;
 import org.jboss.arquillian.ce.utils.DockerFileTemplateHandler;
 import org.jboss.arquillian.ce.utils.RegistryLookup;
 import org.jboss.arquillian.ce.utils.StaticRegistryLookup;
+import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.arquillian.ce.utils.Timer;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
@@ -143,7 +144,16 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         return target;
     }
 
-    public ValueExpressionResolver createValueExpressionResolver(Properties properties) {
+    public StringResolver createStringResolver(Properties properties) {
+        final ValueExpressionResolver resolver = createValueExpressionResolver(properties);
+        return new StringResolver() {
+            public String resolve(String value) {
+                return new ValueExpression(value).resolveString(resolver);
+            }
+        };
+    }
+
+    protected ValueExpressionResolver createValueExpressionResolver(Properties properties) {
         configuration.apply(properties);
         return new CustomValueExpressionResolver(properties);
     }
@@ -166,9 +176,8 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
 
         final File dir = getDir(deployment);
 
-        final ValueExpressionResolver resolver = createValueExpressionResolver(properties);
-        ValueExpression expression = new ValueExpression(baos.toString());
-        String df = expression.resolveString(resolver);
+        final StringResolver resolver = createStringResolver(properties);
+        String df = resolver.resolve(baos.toString());
         log.info(String.format("Docker file:\n---\n%s---", df));
         ByteArrayInputStream bais = new ByteArrayInputStream(df.getBytes());
         try (FileOutputStream fos = new FileOutputStream(new File(dir, "Dockerfile"))) {
