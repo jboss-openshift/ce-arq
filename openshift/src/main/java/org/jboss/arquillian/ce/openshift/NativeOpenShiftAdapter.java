@@ -113,7 +113,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         } finally {
             stream.close();
         }
-        return new NativeOpenShiftResourceHandle(client.create(resource));
+        return new NativeOpenShiftResourceHandle(client.create(resource, configuration.getNamespace()));
     }
 
     <T extends IResource> T createResource(String json, Properties properties) {
