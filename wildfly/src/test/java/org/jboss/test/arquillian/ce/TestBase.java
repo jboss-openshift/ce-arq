@@ -21,28 +21,25 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.utils;
+package org.jboss.test.arquillian.ce;
 
-import java.util.Properties;
-
-import org.jboss.dmr.ValueExpressionResolver;
+import org.jboss.arquillian.ce.api.ConfigurationHandle;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class CustomValueExpressionResolver extends ValueExpressionResolver {
-    private final Properties properties;
-
-    public CustomValueExpressionResolver(Properties properties) {
-        this.properties = properties;
-    }
-
-    @Override
-    protected String resolvePart(String name) {
-        String value = (String) properties.get(name);
-        if (value != null) {
-            return value;
-        }
-        return super.resolvePart(name);
+public abstract class TestBase {
+    @Deployment
+    public static WebArchive getDeployment() throws Exception {
+        WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
+        war.setWebXML("web.xml");
+        war.add(new StringAsset("<html><body>Smoke!</body></html>"), "index.html");
+        war.addClass(TestBase.class);
+        war.addClass(ConfigurationHandle.class);
+        return war;
     }
 }

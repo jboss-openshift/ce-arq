@@ -21,28 +21,30 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.utils;
+package org.jboss.test.arquillian.ce;
 
-import java.util.Properties;
+import java.util.logging.Logger;
 
-import org.jboss.dmr.ValueExpressionResolver;
+import org.jboss.arquillian.ce.api.OpenShiftResource;
+import org.jboss.arquillian.ce.api.OpenShiftResources;
+import org.jboss.arquillian.ce.api.RoleBinding;
+import org.jboss.arquillian.ce.api.RoleBindings;
+import org.jboss.arquillian.junit.Arquillian;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class CustomValueExpressionResolver extends ValueExpressionResolver {
-    private final Properties properties;
+@RunWith(Arquillian.class)
+@OpenShiftResources({@OpenShiftResource("https://raw.githubusercontent.com/alesj/template-testing/master/some-app-secret.json")})
+@RoleBindings({@RoleBinding(roleRefName = "view", userName = "system:serviceaccount:${kubernetes.namespace}:test-service-account")})
+public class ResourcesTest extends TestBase {
+    private static Logger log = Logger.getLogger(ResourcesTest.class.getName());
 
-    public CustomValueExpressionResolver(Properties properties) {
-        this.properties = properties;
+    @Test
+    public void testBasic() throws Exception {
+        log.info("Poke!!");
     }
 
-    @Override
-    protected String resolvePart(String name) {
-        String value = (String) properties.get(name);
-        if (value != null) {
-            return value;
-        }
-        return super.resolvePart(name);
-    }
 }

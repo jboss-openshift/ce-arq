@@ -99,7 +99,12 @@ public abstract class Configuration implements ContainerConfiguration, Configura
     }
 
     public void apply(Properties properties) {
+        // namespace
+        properties.put("kubernetes.namespace", getNamespace());
         properties.put("namespace", getNamespace());
+        // api version
+        properties.put("version", getApiVersion());
+        properties.put("kubernetes.api.version", getApiVersion());
     }
 
     public void validate() throws ConfigurationException {

@@ -29,13 +29,14 @@ import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.api.OpenShiftResource;
 import org.jboss.arquillian.ce.api.OpenShiftResources;
 import org.jboss.arquillian.ce.api.RoleBinding;
 import org.jboss.arquillian.ce.api.RoleBindings;
-import org.jboss.arquillian.ce.utils.CustomValueExpressionResolver;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
 import org.jboss.shrinkwrap.api.Archive;
@@ -44,12 +45,14 @@ import org.jboss.shrinkwrap.api.Archive;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class OpenShiftResourceFactory {
+    private static final Logger log = Logger.getLogger(OpenShiftResourceFactory.class.getName());
+
     private static final OSRFinder OSR_FINDER = new OSRFinder();
     private static final RBFinder RB_FINDER = new RBFinder();
 
     public static void createResources(String resourcesKey, OpenShiftAdapter adapter, Archive<?> archive, Class<?> testClass) {
         try {
-            final ValueExpressionResolver resolver = new CustomValueExpressionResolver();
+            final ValueExpressionResolver resolver = adapter.createValueExpressionResolver(new Properties());
 
             List<OpenShiftResource> openShiftResources = new ArrayList<>();
             OSR_FINDER.findAnnotations(openShiftResources, testClass);
@@ -68,6 +71,7 @@ public class OpenShiftResourceFactory {
                     stream = new ByteArrayInputStream(file.getBytes());
                 }
 
+                log.info(String.format("Creating new OpenShift resource: %s", file));
                 adapter.createResource(resourcesKey, stream);
             }
             
@@ -76,6 +80,7 @@ public class OpenShiftResourceFactory {
             for (RoleBinding rb : roleBindings) {
                 String roleRefName = new ValueExpression(rb.roleRefName()).resolveString(resolver);
                 String userName = new ValueExpression(rb.userName()).resolveString(resolver);
+                log.info(String.format("Adding new role binding: %s / %s", roleRefName, userName));
                 adapter.addRoleBinding(resourcesKey, roleRefName, userName);
             }
         } catch (Exception e) {

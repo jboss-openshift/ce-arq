@@ -274,7 +274,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     private OpenShiftResourceHandle createResourceFromJson(String kind, ModelNode json) {
-        String content = json.asString();
+        String content = json.toJSONString(true);
         if ("List".equalsIgnoreCase(kind)) {
             return new ListOpenShiftResourceHandle(content);
         } else if ("Secret".equalsIgnoreCase(kind)) {
@@ -302,8 +302,8 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             .roleBindings()
             .inNamespace(configuration.getNamespace())
             .createNew()
-            .editMetadata().withName(roleRefName).endMetadata()
-            .withNewRoleRef().withName(roleRefName).endRoleRef()
+            .withNewMetadata().withName(roleRefName).endMetadata()
+            .withNewRoleRef(). withName(roleRefName).endRoleRef()
             .addToUserNames(userName)
             .addNewSubject().withKind("ServiceAccount").withNamespace(configuration.getNamespace()).withName(subjectName).endSubject()
             .done();

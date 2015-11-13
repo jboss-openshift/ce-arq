@@ -26,12 +26,8 @@ package org.jboss.test.arquillian.ce;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.ConfigurationHandle;
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,20 +36,11 @@ import org.junit.runner.RunWith;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 @RunWith(Arquillian.class)
-public class SmokeTest {
+public class SmokeTest extends TestBase {
     private static Logger log = Logger.getLogger(SmokeTest.class.getName());
 
     @ArquillianResource
     private ConfigurationHandle configuration;
-
-    @Deployment
-    public static WebArchive getDeployment() throws Exception {
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
-        war.setWebXML("web.xml");
-        war.add(new StringAsset("<html><body>Smoke!</body></html>"), "index.html");
-        war.addClass(ConfigurationHandle.class);
-        return war;
-    }
 
     @Test
     public void testBasic() throws Exception {

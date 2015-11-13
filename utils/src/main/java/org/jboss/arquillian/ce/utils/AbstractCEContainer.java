@@ -230,7 +230,6 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         properties.put("from.name", from);
         String deployment = Strings.toValue(configuration.getDeploymentDir(), dir);
         properties.put("deployment.dir", deployment);
-        configuration.apply(properties);
 
         log.info(String.format("FROM %s [%s]", from, deployment));
 

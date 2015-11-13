@@ -143,6 +143,11 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         return target;
     }
 
+    public ValueExpressionResolver createValueExpressionResolver(Properties properties) {
+        configuration.apply(properties);
+        return new CustomValueExpressionResolver(properties);
+    }
+
     public String buildAndPushImage(DockerFileTemplateHandler dth, InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
         // Create Dockerfile
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -161,7 +166,7 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
 
         final File dir = getDir(deployment);
 
-        final ValueExpressionResolver resolver = new CustomValueExpressionResolver(properties);
+        final ValueExpressionResolver resolver = createValueExpressionResolver(properties);
         ValueExpression expression = new ValueExpression(baos.toString());
         String df = expression.resolveString(resolver);
         log.info(String.format("Docker file:\n---\n%s---", df));
