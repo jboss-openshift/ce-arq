@@ -42,7 +42,8 @@ public class ConfigurationResourceProvider implements ResourceProvider {
     public static String toProperties(ConfigurationHandle configuration) {
         try {
             Properties properties = new Properties();
-            properties.put("docker.url", configuration.getDockerUrl());
+            String dockerUrl = configuration.getDockerUrl();
+            properties.put("docker.url", dockerUrl != null ? dockerUrl : "<NONE_CONFIGURED>");
             properties.put("kubernetes.master", configuration.getKubernetesMaster());
             properties.put("kubernetes.api.version", configuration.getApiVersion());
             properties.put("kubernetes.namespace", configuration.getNamespace());
