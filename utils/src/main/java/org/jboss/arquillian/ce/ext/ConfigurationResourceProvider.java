@@ -39,14 +39,17 @@ import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 public class ConfigurationResourceProvider implements ResourceProvider {
     public static final String FILE_NAME = "ce-arq-configuration.properties";
 
+    private static String check(String value) {
+        return (value != null) ? value : "<NONE_CONFIGURED>";
+    }
+
     public static String toProperties(ConfigurationHandle configuration) {
         try {
             Properties properties = new Properties();
-            String dockerUrl = configuration.getDockerUrl();
-            properties.put("docker.url", dockerUrl != null ? dockerUrl : "<NONE_CONFIGURED>");
-            properties.put("kubernetes.master", configuration.getKubernetesMaster());
-            properties.put("kubernetes.api.version", configuration.getApiVersion());
-            properties.put("kubernetes.namespace", configuration.getNamespace());
+            properties.put("docker.url", check(configuration.getDockerUrl()));
+            properties.put("kubernetes.master", check(configuration.getKubernetesMaster()));
+            properties.put("kubernetes.api.version", check(configuration.getApiVersion()));
+            properties.put("kubernetes.namespace", check(configuration.getNamespace()));
             StringWriter writer = new StringWriter();
             properties.store(writer, "CE Arquillian Configuration");
             return writer.toString();
