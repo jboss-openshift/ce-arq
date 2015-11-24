@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>15</version>
+        <version>19</version>
     </parent>
 
     <!-- Model Version -->
@@ -34,7 +34,9 @@
         <version.junit>4.10</version.junit>
         <version.surefire.plugin>2.12.1</version.surefire.plugin>
         <version.dmr>1.2.0.Final</version.dmr>
-    </properties>
+        <!-- Override from parent - use 1.8 -->
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>    </properties>
 
     <modules>
         <module>api</module>
