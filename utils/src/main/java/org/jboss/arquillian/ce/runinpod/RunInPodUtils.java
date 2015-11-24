@@ -247,11 +247,15 @@ public class RunInPodUtils {
 
         Method[] methods = clazz.getMethods();
         for (Method m : methods) {
-            if (Modifier.isStatic(m.getModifiers()) && m.isAnnotationPresent(annotationClass) && m.getParameterCount() == 0) {
+            if (Modifier.isStatic(m.getModifiers()) && m.isAnnotationPresent(annotationClass) && getParameterCount(m) == 0) {
                 return m;
             }
         }
 
         return findDeploymentMethodInternal(clazz.getSuperclass(), annotationClass);
+    }
+
+    private static int getParameterCount(Method method) {
+        return method.getParameterTypes().length; // use method.getParameterCount() on Java8
     }
 }

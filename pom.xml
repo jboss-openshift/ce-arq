@@ -34,9 +34,7 @@
         <version.junit>4.10</version.junit>
         <version.surefire.plugin>2.12.1</version.surefire.plugin>
         <version.dmr>1.2.0.Final</version.dmr>
-        <!-- Override from parent - use 1.8 -->
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>    </properties>
+    </properties>
 
     <modules>
         <module>api</module>

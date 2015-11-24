@@ -38,6 +38,7 @@ public class CEExtension implements LoadableExtension {
         // handle client
         builder.service(ResourceProvider.class, ClientProvider.class);
         // override url
+        @SuppressWarnings("unchecked")
         Class<ResourceProvider> urpClass = (Class<ResourceProvider>) loadClass("org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider");
         builder.override(ResourceProvider.class, urpClass, ProxyURLProvider.class);
     }
