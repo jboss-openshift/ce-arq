@@ -41,6 +41,7 @@ import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.ce.utils.ParamValue;
+import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -161,10 +162,13 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     private Map<String, String> readParameters() {
         Template template = readTemplate();
         if (template != null) {
+            StringResolver resolver = Strings.createStringResolver(configuration.getProperties());
             TemplateParameter[] parameters = template.parameters();
             Map<String, String> map = new HashMap<>();
             for (TemplateParameter parameter : parameters) {
-                map.put(parameter.name(), parameter.value());
+                String name = resolver.resolve(parameter.name());
+                String value = resolver.resolve(parameter.value());
+                map.put(name, value);
             }
             return map;
         }
