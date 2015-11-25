@@ -43,9 +43,14 @@ import org.jboss.shrinkwrap.api.Archive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
+ * @author <a href="mailto:mluksa@redhat.com">Marko Luksa</a>
  */
 public class OpenShiftResourceFactory {
     private static final Logger log = Logger.getLogger(OpenShiftResourceFactory.class.getName());
+
+    public static final String CLASSPATH_PREFIX = "classpath:";
+    public static final String ARCHIVE_PREFIX = "archive:";
+    public static final String URL_PREFIX = "http";
 
     private static final OSRFinder OSR_FINDER = new OSRFinder();
     private static final RBFinder RB_FINDER = new RBFinder();
@@ -60,12 +65,17 @@ public class OpenShiftResourceFactory {
                 String file = resolver.resolve(osr.value());
 
                 InputStream stream;
-                if (file.startsWith("http")) {
+                if (file.startsWith(URL_PREFIX)) {
                     stream = new URL(file).openStream();
-                } else if (file.startsWith("classpath:")) {
-                    stream = testClass.getClassLoader().getResourceAsStream(file);
-                } else if (file.startsWith("archive:")) {
-                    stream = archive.get(file).getAsset().openStream();
+                } else if (file.startsWith(CLASSPATH_PREFIX)) {
+                    String resourceName = file.substring(CLASSPATH_PREFIX.length());
+                    stream = testClass.getClassLoader().getResourceAsStream(resourceName);
+                    if (stream == null) {
+                        throw new IllegalArgumentException("Could not find resource on classpath: " + resourceName);
+                    }
+                } else if (file.startsWith(ARCHIVE_PREFIX)) {
+                    String archiveName = file.substring(ARCHIVE_PREFIX.length());
+                    stream = archive.get(archiveName).getAsset().openStream();
                 } else {
                     stream = new ByteArrayInputStream(file.getBytes());
                 }
