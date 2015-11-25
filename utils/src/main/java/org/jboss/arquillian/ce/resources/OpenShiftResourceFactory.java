@@ -42,6 +42,7 @@ import org.jboss.arquillian.ce.api.RoleBindings;
 import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.Node;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -77,8 +78,12 @@ public class OpenShiftResourceFactory {
                         throw new IllegalArgumentException("Could not find resource on classpath: " + resourceName);
                     }
                 } else if (file.startsWith(ARCHIVE_PREFIX)) {
-                    String archiveName = file.substring(ARCHIVE_PREFIX.length());
-                    stream = archive.get(archiveName).getAsset().openStream();
+                    String resourceName = file.substring(ARCHIVE_PREFIX.length());
+                    Node node = archive.get(resourceName);
+                    if (node == null) {
+                        throw new IllegalArgumentException("Could not find resource in Arquillian archive: " + resourceName);
+                    }
+                    stream = node.getAsset().openStream();
                 } else {
                     stream = new ByteArrayInputStream(file.getBytes());
                 }
