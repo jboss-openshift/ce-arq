@@ -33,6 +33,8 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
+import org.jboss.arquillian.ce.api.AddRoleToServiceAccount;
+import org.jboss.arquillian.ce.api.AddRoleToServiceAccountWrapper;
 import org.jboss.arquillian.ce.api.OpenShiftResource;
 import org.jboss.arquillian.ce.api.OpenShiftResources;
 import org.jboss.arquillian.ce.api.RoleBinding;
@@ -54,6 +56,7 @@ public class OpenShiftResourceFactory {
 
     private static final OSRFinder OSR_FINDER = new OSRFinder();
     private static final RBFinder RB_FINDER = new RBFinder();
+    private static final ARSAFinder ARSA_FINDER = new ARSAFinder();
 
     public static void createResources(String resourcesKey, OpenShiftAdapter adapter, Archive<?> archive, Class<?> testClass, Properties properties) {
         try {
@@ -91,6 +94,16 @@ public class OpenShiftResourceFactory {
                 String userName = resolver.resolve(rb.userName());
                 log.info(String.format("Adding new role binding: %s / %s", roleRefName, userName));
                 adapter.addRoleBinding(resourcesKey, roleRefName, userName);
+            }
+
+            List<AddRoleToServiceAccount> arsaBindings = new ArrayList<>();
+            ARSA_FINDER.findAnnotations(arsaBindings, testClass);
+            for (AddRoleToServiceAccount arsa : arsaBindings) {
+                String role = resolver.resolve(arsa.role());
+                String saPattern = String.format("system:serviceaccount:${kubernetes.namespace}:%s", arsa.serviceAccount());
+                String serviceAccount = resolver.resolve(saPattern);
+                log.info(String.format("Adding role %s to service account %s", role, serviceAccount));
+                adapter.addRoleBinding(resourcesKey, role, serviceAccount);
             }
         } catch (Exception e) {
             throw new IllegalStateException(e);
@@ -152,6 +165,20 @@ public class OpenShiftResourceFactory {
         }
 
         protected RoleBinding[] toSingles(RoleBindings roleBindings) {
+            return roleBindings.value();
+        }
+    }
+
+    private static class ARSAFinder extends Finder<AddRoleToServiceAccountWrapper, AddRoleToServiceAccount> {
+        protected Class<AddRoleToServiceAccountWrapper> getWrapperType() {
+            return AddRoleToServiceAccountWrapper.class;
+        }
+
+        protected Class<AddRoleToServiceAccount> getSingleType() {
+            return AddRoleToServiceAccount.class;
+        }
+
+        protected AddRoleToServiceAccount[] toSingles(AddRoleToServiceAccountWrapper roleBindings) {
             return roleBindings.value();
         }
     }
