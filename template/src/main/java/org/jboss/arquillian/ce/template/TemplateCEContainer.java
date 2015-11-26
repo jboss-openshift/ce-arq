@@ -82,7 +82,8 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     }
 
     public ProtocolMetaData doDeploy(final Archive<?> archive) throws DeploymentException {
-        final String templateURL = readTemplateUrl();
+        final StringResolver resolver = Strings.createStringResolver(configuration.getProperties());
+        final String templateURL = readTemplateUrl(resolver);
         try {
             final String newArchiveName;
             boolean externalDeployment = Archives.isExternalDeployment(tc.get().getJavaClass());
@@ -97,7 +98,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             Archive<?> proxy = Archives.toProxy(archive, newArchiveName);
 
             int replicas = readReplicas();
-            Map<String, String> labels = readLabels();
+            Map<String, String> labels = readLabels(resolver);
             if (labels.isEmpty()) {
                 log.warning(String.format("Empty labels for template: %s, namespace: %s", templateURL, configuration.getNamespace()));
             }
@@ -106,10 +107,10 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
                 List<ParamValue> values = new ArrayList<>();
                 addParameterValues(values, System.getenv(), true);
                 addParameterValues(values, System.getProperties(), true);
-                addParameterValues(values, readParameters(), false);
+                addParameterValues(values, readParameters(resolver), false);
                 values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
                 if (externalDeployment == false || (configuration.getGitRepository(false) != null)) {
-                    values.add(new ParamValue("SOURCE_REPOSITORY_URL", configuration.getGitRepository(true)));
+                    values.add(new ParamValue("SOURCE_REPOSITORY_URL", resolver.resolve(configuration.getGitRepository(true))));
                 }
 
                 log.info(String.format("Applying OpenShift template: %s", templateURL));
@@ -129,11 +130,11 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         return tc.get().getAnnotation(Template.class);
     }
 
-    protected String readTemplateUrl() {
+    protected String readTemplateUrl(StringResolver resolver) {
         Template template = readTemplate();
         String templateUrl = template == null ? null : template.url();
         if (templateUrl == null || templateUrl.length() == 0) {
-            templateUrl = configuration.getTemplateURL();
+            templateUrl = resolver.resolve(configuration.getTemplateURL());
         }
 
         if (templateUrl == null) {
@@ -143,12 +144,17 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         return templateUrl;
     }
 
-    private Map<String, String> readLabels() {
+    private Map<String, String> readLabels(StringResolver resolver) {
         Template template = readTemplate();
         if (template != null) {
             String string = template.labels();
             if (string != null && string.length() > 0) {
-                return Strings.splitKeyValueList(string);
+                Map<String, String> map = Strings.splitKeyValueList(string);
+                Map<String, String> resolved = new HashMap<>();
+                for (Map.Entry<String, String> entry : map.entrySet()) {
+                    resolved.put(resolver.resolve(entry.getKey()), resolver.resolve(entry.getValue()));
+                }
+                return resolved;
             }
         }
         return configuration.getTemplateLabels();
@@ -159,10 +165,9 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
         return (template == null || template.process()) && configuration.isTemplateProcess();
     }
 
-    private Map<String, String> readParameters() {
+    private Map<String, String> readParameters(StringResolver resolver) {
         Template template = readTemplate();
         if (template != null) {
-            StringResolver resolver = Strings.createStringResolver(configuration.getProperties());
             TemplateParameter[] parameters = template.parameters();
             Map<String, String> map = new HashMap<>();
             for (TemplateParameter parameter : parameters) {
