@@ -66,8 +66,15 @@ public class ConfigurationResourceProvider implements ResourceProvider {
     public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
         final Properties properties = new Properties();
         try {
-            try (InputStream stream = ConfigurationResourceProvider.class.getClassLoader().getResourceAsStream(FILE_NAME)) {
+            ClassLoader cl = ConfigurationResourceProvider.class.getClassLoader();
+            InputStream stream = cl.getResourceAsStream(FILE_NAME);
+            if (stream == null) {
+                throw new IllegalArgumentException(String.format("Missing %s file (%s) ...", FILE_NAME, cl));
+            }
+            try {
                 properties.load(stream);
+            } finally {
+                stream.close();
             }
         } catch (IOException e) {
             throw new IllegalStateException(e);
