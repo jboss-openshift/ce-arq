@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.ConfigurationHandle;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -37,6 +38,8 @@ import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class ConfigurationResourceProvider implements ResourceProvider {
+    private static final Logger log = Logger.getLogger(ConfigurationResourceProvider.class.getName());
+
     public static final String FILE_NAME = "ce-arq-configuration.properties";
 
     private static String check(String value) {
@@ -52,6 +55,7 @@ public class ConfigurationResourceProvider implements ResourceProvider {
             properties.put("kubernetes.namespace", check(configuration.getNamespace()));
             StringWriter writer = new StringWriter();
             properties.store(writer, "CE Arquillian Configuration");
+            log.info(String.format("Stored configuration %s ...", properties));
             return writer.toString();
         } catch (IOException e) {
             throw new IllegalStateException(e);
