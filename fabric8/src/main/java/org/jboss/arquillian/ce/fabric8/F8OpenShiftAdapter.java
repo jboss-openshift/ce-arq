@@ -489,7 +489,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
 
         protected KubernetesList createResource(InputStream stream) {
-            return client.lists().inNamespace(configuration.getNamespace()).load(stream).createNew().done();
+            return client.lists().inNamespace(configuration.getNamespace()).load(stream).create();
         }
 
         public void delete() {
@@ -503,7 +503,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
 
         protected Secret createResource(InputStream stream) {
-            return client.secrets().inNamespace(configuration.getNamespace()).load(stream).createNew().done();
+            return client.secrets().inNamespace(configuration.getNamespace()).load(stream).create();
         }
 
         public void delete() {
@@ -517,7 +517,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
 
         protected ImageStream createResource(InputStream stream) {
-            return client.imageStreams().inNamespace(configuration.getNamespace()).load(stream).createNew().done();
+            return client.imageStreams().inNamespace(configuration.getNamespace()).load(stream).create();
         }
 
         public void delete() {
@@ -531,7 +531,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
 
         protected ServiceAccount createResource(InputStream stream) {
-            return client.serviceAccounts().inNamespace(configuration.getNamespace()).load(stream).createNew().done();
+            return client.serviceAccounts().inNamespace(configuration.getNamespace()).load(stream).create();
         }
 
         public void delete() {
