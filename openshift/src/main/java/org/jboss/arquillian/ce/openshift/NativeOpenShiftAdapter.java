@@ -39,6 +39,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.openshift.internal.restclient.model.KubernetesResource;
+import com.openshift.internal.restclient.model.properties.ResourcePropertyKeys;
 import com.openshift.internal.restclient.model.template.Parameter;
 import com.openshift.restclient.ClientFactory;
 import com.openshift.restclient.IClient;
@@ -118,8 +119,9 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         if (ResourceKind.LIST.equals(resource.getKind())) {
             KubernetesResource kr = (KubernetesResource) resource;
             ModelNode node = kr.getNode();
+            String key = node.has(ResourcePropertyKeys.OBJECTS) ? ResourcePropertyKeys.OBJECTS : "items";
             List<IResource> items = new ArrayList<>();
-            for (ModelNode item : node.get("items").asList()) {
+            for (ModelNode item : node.get(key).asList()) {
                 IResource ir = client.getResourceFactory().create(item.toJSONString(true));
                 items.add(client.create(ir, configuration.getNamespace()));
             }
