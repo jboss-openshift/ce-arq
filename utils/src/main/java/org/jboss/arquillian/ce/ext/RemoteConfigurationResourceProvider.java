@@ -37,8 +37,8 @@ import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class ConfigurationResourceProvider implements ResourceProvider {
-    private static final Logger log = Logger.getLogger(ConfigurationResourceProvider.class.getName());
+public class RemoteConfigurationResourceProvider implements ResourceProvider {
+    private static final Logger log = Logger.getLogger(RemoteConfigurationResourceProvider.class.getName());
 
     public static final String FILE_NAME = "ce-arq-configuration.properties";
 
@@ -70,7 +70,7 @@ public class ConfigurationResourceProvider implements ResourceProvider {
     public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
         final Properties properties = new Properties();
         try {
-            ClassLoader cl = ConfigurationResourceProvider.class.getClassLoader();
+            ClassLoader cl = RemoteConfigurationResourceProvider.class.getClassLoader();
             InputStream stream = cl.getResourceAsStream(FILE_NAME);
             if (stream == null) {
                 throw new IllegalArgumentException(String.format("Missing %s file (%s) ...", FILE_NAME, cl));

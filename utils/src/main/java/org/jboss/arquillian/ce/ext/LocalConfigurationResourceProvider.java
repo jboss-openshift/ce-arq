@@ -23,30 +23,27 @@
 
 package org.jboss.arquillian.ce.ext;
 
+import java.lang.annotation.Annotation;
+
 import org.jboss.arquillian.ce.api.ConfigurationHandle;
-import org.jboss.arquillian.container.test.spi.RemoteLoadableExtension;
-import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class UtilsArchiveAppender implements AuxiliaryArchiveAppender {
+public class LocalConfigurationResourceProvider implements ResourceProvider {
     @Inject
     private Instance<ConfigurationHandle> configurationInstance;
 
-    public Archive<?> createAuxiliaryArchive() {
-        return ShrinkWrap.create(JavaArchive.class)
-            .add(new StringAsset(RemoteConfigurationResourceProvider.toProperties(configurationInstance.get())), RemoteConfigurationResourceProvider.FILE_NAME)
-            .addClass(ConfigurationHandle.class)
-            .addClass(UtilsCEExtensionContainer.class)
-            .addClass(RemoteConfigurationResourceProvider.class)
-            .addAsServiceProviderAndClasses(RemoteLoadableExtension.class, UtilsCEExtensionContainer.class);
+    public boolean canProvide(Class<?> type) {
+        return ConfigurationHandle.class.isAssignableFrom(type);
     }
 
+    @Override
+    public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
+        return configurationInstance.get();
+    }
 }

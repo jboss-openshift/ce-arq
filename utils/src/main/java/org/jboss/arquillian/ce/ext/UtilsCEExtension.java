@@ -34,7 +34,7 @@ import org.kohsuke.MetaInfServices;
 @MetaInfServices
 public class UtilsCEExtension implements LoadableExtension {
     public void register(ExtensionBuilder builder) {
-        builder.service(ResourceProvider.class, ConfigurationResourceProvider.class);
+        builder.service(ResourceProvider.class, LocalConfigurationResourceProvider.class);
         builder.service(AuxiliaryArchiveAppender.class, UtilsArchiveAppender.class);
     }
 }

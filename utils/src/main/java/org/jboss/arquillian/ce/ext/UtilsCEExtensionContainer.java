@@ -31,6 +31,6 @@ import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
  */
 public class UtilsCEExtensionContainer implements RemoteLoadableExtension {
     public void register(ExtensionBuilder builder) {
-        builder.service(ResourceProvider.class, ConfigurationResourceProvider.class);
+        builder.service(ResourceProvider.class, RemoteConfigurationResourceProvider.class);
     }
 }
