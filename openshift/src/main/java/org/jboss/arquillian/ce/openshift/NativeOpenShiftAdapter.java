@@ -26,6 +26,7 @@ package org.jboss.arquillian.ce.openshift;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.openshift.internal.restclient.model.KubernetesResource;
 import com.openshift.internal.restclient.model.template.Parameter;
 import com.openshift.restclient.ClientFactory;
 import com.openshift.restclient.IClient;
@@ -113,7 +115,18 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         } finally {
             stream.close();
         }
-        return new NativeOpenShiftResourceHandle(client.create(resource, configuration.getNamespace()));
+        if (ResourceKind.LIST.equals(resource.getKind())) {
+            KubernetesResource kr = (KubernetesResource) resource;
+            ModelNode node = kr.getNode();
+            List<IResource> items = new ArrayList<>();
+            for (ModelNode item : node.get("items").asList()) {
+                IResource ir = client.getResourceFactory().create(item.toJSONString(true));
+                items.add(client.create(ir, configuration.getNamespace()));
+            }
+            return new NativeListOpenShiftResourceHandle(items);
+        } else {
+            return new NativeOpenShiftResourceHandle(client.create(resource, configuration.getNamespace()));
+        }
     }
 
     <T extends IResource> T createResource(String json, Properties properties) {
@@ -319,6 +332,28 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
 
         public void delete() {
             client.delete(resource);
+        }
+    }
+
+    private class NativeListOpenShiftResourceHandle implements OpenShiftResourceHandle {
+        private List<IResource> resources;
+
+        public NativeListOpenShiftResourceHandle(List<IResource> resources) {
+            this.resources = resources;
+        }
+
+        public void delete() {
+            List<RuntimeException> res = new ArrayList<>();
+            for (IResource resource : resources) {
+                try {
+                    client.delete(resource);
+                } catch (RuntimeException re) {
+                    res.add(re);
+                }
+            }
+            if (res.size() > 0) {
+                throw new RuntimeException("Exceptions: " + res);
+            }
         }
     }
 
