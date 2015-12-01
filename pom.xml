@@ -25,8 +25,8 @@
         <version.dockerjava>2.1.1</version.dockerjava>
         <version.http-client>2.5.0</version.http-client>
         <version.openshift.client>3.0.1.Final</version.openshift.client>
-        <version.fabric8>2.2.68</version.fabric8>
-        <version.fabric8.client>1.3.60</version.fabric8.client>
+        <version.fabric8>2.2.70</version.fabric8>
+        <version.fabric8.client>1.3.61</version.fabric8.client>
         <version.jgit>4.1.0.201509280440-r</version.jgit>
         <version.jackson>2.6.1</version.jackson>
         <version.meta-inf>1.6</version.meta-inf>
