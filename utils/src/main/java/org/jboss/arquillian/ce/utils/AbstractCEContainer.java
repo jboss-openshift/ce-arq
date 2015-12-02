@@ -139,7 +139,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             }
         } finally {
             try {
-                if (configuration.isGeneratedNS()) {
+                if (configuration.isGeneratedNS() && performCleanup()) {
                     client.deleteProject();
                 }
             } finally {
@@ -350,22 +350,25 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
                 runInPodContainer.undeploy();
             }
         } finally {
-            try {
-                cleanupResources(archive);
-            } finally {
-                // do we keep test config around for some more?
-                if (configuration.isIgnoreCleanup() == false) {
+            // do we keep test config around for some more?
+            if (performCleanup()) {
+                try {
+                    cleanupResources(archive);
+                } finally {
                     try {
                         cleanup(archive);
                     } catch (Exception ignored) {
                     }
-                } else {
-                    log.info("Ignore Kubernetes cleanup -- test config is still available.");
                 }
-
-                dockerAdapter.reset(archive);
+            } else {
+                log.info("Ignore Kubernetes cleanup -- test config is still available.");
             }
+            dockerAdapter.reset(archive);
         }
+    }
+
+    protected boolean performCleanup() {
+        return (configuration.isIgnoreCleanup() == false); // dup negative ;-)
     }
 
     public void deploy(Descriptor descriptor) throws DeploymentException {
