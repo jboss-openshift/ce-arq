@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.ext;
 
 import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
+import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 import org.kohsuke.MetaInfServices;
@@ -34,6 +35,7 @@ import org.kohsuke.MetaInfServices;
 @MetaInfServices
 public class UtilsCEExtension implements LoadableExtension {
     public void register(ExtensionBuilder builder) {
+        builder.service(DeploymentScenarioGenerator.class, ExternalDeploymentScenarioGenerator.class);
         builder.service(ResourceProvider.class, LocalConfigurationResourceProvider.class);
         builder.service(AuxiliaryArchiveAppender.class, UtilsArchiveAppender.class);
     }

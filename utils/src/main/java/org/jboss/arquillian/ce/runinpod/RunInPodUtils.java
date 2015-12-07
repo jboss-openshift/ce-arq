@@ -23,9 +23,7 @@
 
 package org.jboss.arquillian.ce.runinpod;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -39,11 +37,11 @@ import org.jboss.arquillian.ce.spi.WildFlySPIConfiguration;
 import org.jboss.arquillian.ce.spi.WildFlySPIContainer;
 import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.ReflectionUtils;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.impl.domain.ProtocolDefinition;
 import org.jboss.arquillian.container.test.impl.domain.ProtocolRegistry;
 import org.jboss.arquillian.container.test.spi.TestDeployment;
@@ -226,12 +224,12 @@ public class RunInPodUtils {
     }
 
     private static Method findRunInContainerDeploymentMethod(Class<?> clazz) {
-        Method m = findDeploymentMethodInternal(clazz, RunInPodDeployment.class);
+        Method m = ReflectionUtils.findAnnotatedMethod(clazz, RunInPodDeployment.class);
         if (m != null) {
             return m;
         }
 
-        m = findDeploymentMethodInternal(clazz, Deployment.class);
+        m = ReflectionUtils.findDeploymentMethod(clazz);
         if (m != null) {
             return m;
         }
@@ -240,22 +238,4 @@ public class RunInPodUtils {
         return null;
     }
 
-    private static Method findDeploymentMethodInternal(Class<?> clazz, Class<? extends Annotation> annotationClass) {
-        if (clazz == Object.class) {
-            return null;
-        }
-
-        Method[] methods = clazz.getMethods();
-        for (Method m : methods) {
-            if (Modifier.isStatic(m.getModifiers()) && m.isAnnotationPresent(annotationClass) && getParameterCount(m) == 0) {
-                return m;
-            }
-        }
-
-        return findDeploymentMethodInternal(clazz.getSuperclass(), annotationClass);
-    }
-
-    private static int getParameterCount(Method method) {
-        return method.getParameterTypes().length; // use method.getParameterCount() on Java8
-    }
 }

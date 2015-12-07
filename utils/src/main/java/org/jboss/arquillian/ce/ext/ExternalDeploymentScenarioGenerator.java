@@ -35,18 +35,13 @@ import org.jboss.arquillian.test.spi.TestClass;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class ExternalDeploymentScenarioGenerator implements DeploymentScenarioGenerator {
-    private final static String DELEGATE_CLASS = "org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator";
+    private final static DeploymentScenarioGenerator DELEGATE = new LegacyDeploymentScenarioGenerator();
 
     public List<DeploymentDescription> generate(TestClass testClass) {
         if (Archives.isExternalDeployment(testClass.getJavaClass())) {
             return Collections.singletonList(Archives.generateDummyDeployment("ROOT.war"));
         } else {
-            try {
-                DeploymentScenarioGenerator delegate = (DeploymentScenarioGenerator) Class.forName(DELEGATE_CLASS).newInstance();
-                return delegate.generate(testClass);
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
+            return DELEGATE.generate(testClass);
         }
     }
 }
