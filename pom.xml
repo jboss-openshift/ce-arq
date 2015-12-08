@@ -34,6 +34,7 @@
         <version.junit>4.10</version.junit>
         <version.surefire.plugin>2.12.1</version.surefire.plugin>
         <version.dmr>1.2.0.Final</version.dmr>
+        <version.javax.ejb>1.0.0.Final</version.javax.ejb>
     </properties>
 
     <modules>
@@ -199,6 +200,13 @@
                 <groupId>javax.servlet</groupId>
                 <artifactId>servlet-api</artifactId>
                 <version>${version.servlet-api}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.spec.javax.ejb</groupId>
+                <artifactId>jboss-ejb-api_3.2_spec</artifactId>
+                <version>${version.javax.ejb}</version>
+                <scope>test</scope>
             </dependency>
 
             <!-- ARQ -->

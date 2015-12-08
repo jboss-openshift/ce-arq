@@ -29,10 +29,10 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.logging.Logger;
 
+import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.runinpod.RunInPodUtils;
 import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.ce.utils.DeploymentContext;
-import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
@@ -120,7 +120,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
     }
 
     private String findRunInPod() {
-        Archive<?> dummy = Archives.generateDummyArchive("runinpod.war");
+        Archive<?> dummy = Archives.generateDummyWebArchive("runinpod.war");
         Map<String, String> labels = DeploymentContext.getDeploymentLabels(dummy);
         return proxy.findPod(labels);
     }

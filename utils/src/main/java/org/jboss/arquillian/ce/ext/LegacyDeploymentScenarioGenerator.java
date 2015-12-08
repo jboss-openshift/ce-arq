@@ -26,11 +26,11 @@ package org.jboss.arquillian.ce.ext;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
@@ -58,8 +58,7 @@ public class LegacyDeploymentScenarioGenerator implements DeploymentScenarioGene
     }
 
     private WebArchive toWar(JavaArchive jar) {
-        WebArchive war = ShrinkWrap.create(WebArchive.class);
-        war.setWebXML("<web-app/>");
+        WebArchive war = Archives.generateDummyWebArchive();
         merge(war, jar);
         return war;
     }

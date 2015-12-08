@@ -215,7 +215,7 @@ public class RunInPodUtils {
 
     private Archive<?> getRunInPodArchive(Method m) {
         try {
-            Archive<?> archive = (m != null) ? ((Archive<?>) m.invoke(null)) : Archives.generateDummyArchive();
+            Archive<?> archive = (m != null) ? ((Archive<?>) m.invoke(null)) : Archives.generateDummyWebArchive();
             applyProcessors(archive);
             return Archives.toProxy(archive, DEFAULT_NAME);
         } catch (Exception e) {

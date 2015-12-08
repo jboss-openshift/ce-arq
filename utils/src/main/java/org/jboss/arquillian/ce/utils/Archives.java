@@ -51,18 +51,18 @@ public class Archives {
         return clazz.isAnnotationPresent(ExternalDeployment.class);
     }
 
-    public static Archive<?> generateDummyArchive() {
-        return generateDummyArchive(null);
+    public static WebArchive generateDummyWebArchive() {
+        return generateDummyWebArchive(null);
     }
 
-    public static Archive<?> generateDummyArchive(String name) {
+    public static WebArchive generateDummyWebArchive(String name) {
         WebArchive war = (name == null) ? ShrinkWrap.create(WebArchive.class) : ShrinkWrap.create(WebArchive.class, name);
         war.setWebXML(new StringAsset(WEB_XML));
         return war;
     }
 
     public static DeploymentDescription generateDummyDeployment(String name) {
-        return new DeploymentDescription("_DEFAULT_", generateDummyArchive(name));
+        return new DeploymentDescription("_DEFAULT_", generateDummyWebArchive(name));
     }
 
     public static Archive<?> toProxy(final Archive<?> archive, final String newArchiveName) {
