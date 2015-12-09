@@ -28,6 +28,7 @@ import static org.jboss.arquillian.protocol.servlet.ServletUtil.WEB_XML_PATH;
 import java.util.Collection;
 import java.util.Map;
 
+import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.container.test.spi.TestDeployment;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentPackager;
 import org.jboss.arquillian.container.test.spi.client.deployment.ProtocolArchiveProcessor;
@@ -41,6 +42,7 @@ import org.jboss.shrinkwrap.api.Filters;
 import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptors;
 
@@ -67,15 +69,21 @@ public class CEProtocolDeploymentPackager implements DeploymentPackager {
             addLibrariesToEar(ear, auxiliaryArchives);
         } else if (archive instanceof WebArchive) {
             final WebArchive war = (WebArchive) archive;
-
-            handleWar(war, protocol, processor);
-
-            war.addAsLibraries(auxiliaryArchives);
+            handleWar(war, protocol, processor, auxiliaryArchives);
+        } else if (archive instanceof JavaArchive) {
+            final WebArchive war = Archives.generateDummyWebArchive().addAsLibraries(archive); // add jar as lib
+            handleWar(war, protocol, processor, auxiliaryArchives);
         } else {
-            throw new IllegalArgumentException("Can only handle .war or .ear: " + archive);
+            throw new IllegalArgumentException("Cannot handle the type of deployment: " + archive);
         }
 
         return archive;
+    }
+
+    private Archive<?> handleWar(WebArchive war, WebArchive protocol, Processor processor, Collection<Archive<?>> auxiliaryArchives) {
+        handleWar(war, protocol, processor);
+        war.addAsLibraries(auxiliaryArchives);
+        return war;
     }
 
     protected void addLibrariesToEar(EnterpriseArchive ear, Collection<Archive<?>> libs) {
