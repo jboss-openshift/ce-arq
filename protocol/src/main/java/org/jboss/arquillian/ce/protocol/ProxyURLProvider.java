@@ -83,9 +83,9 @@ public class ProxyURLProvider implements ResourceProvider {
             Proxy proxy = deploymentContext.getProxy();
             proxy.setDefaultSSLContext(); // URL instance needs this
 
-            String podName = proxy.findPod(labels);
+            String podName = proxy.findPod(labels, 0);
 
-            String spec = proxy.url(podName, context, null);
+            String spec = proxy.url(podName, 8080, context, null);
             return new URL(spec);
         } catch (Exception e) {
             throw new IllegalStateException(e);

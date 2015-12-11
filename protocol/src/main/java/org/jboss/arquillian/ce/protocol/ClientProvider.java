@@ -64,7 +64,7 @@ public class ClientProvider implements ResourceProvider {
             Map<String, String> labels = context.getLabels();
             Proxy proxy = context.getProxy();
 
-            return proxy.post(labels, pod, path);
+            return proxy.post(labels, pod, 8080, path);
         }
     }
 }

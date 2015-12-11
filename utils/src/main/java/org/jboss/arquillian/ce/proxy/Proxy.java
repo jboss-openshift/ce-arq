@@ -27,31 +27,27 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.arquillian.ce.api.AuthHandle;
+import org.jboss.arquillian.ce.api.ManagementHandle;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public interface Proxy {
-    AuthHandle createAuthHandle();
+    ManagementHandle createManagementHandle(Map<String, String> labels);
 
     void setDefaultSSLContext();
 
-    String url(String podName, String path, String parameters);
+    String url(String podName, int port, String path, String parameters);
 
-    String url(Map<String, String> labels, String path, String parameters);
-
-    String url(Map<String, String> labels, int index, String path, String parameters);
+    String url(Map<String, String> labels, int index, int port, String path, String parameters);
 
     Set<String> getReadyPods(Map<String, String> labels);
 
     <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
 
-    InputStream post(Map<String, String> labels, int pod, String path) throws Exception;
+    InputStream post(Map<String, String> labels, int index, int port, String path) throws Exception;
 
     int status(String url);
-
-    String findPod(Map<String, String> labels);
 
     String findPod(Map<String, String> labels, int index);
 }

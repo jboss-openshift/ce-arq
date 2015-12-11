@@ -21,19 +21,48 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.api;
+package org.jboss.arquillian.ce.utils;
+
+import java.util.Map;
 
 import javax.net.ssl.SSLContext;
+
+import org.jboss.arquillian.ce.api.ManagementHandle;
+import org.jboss.arquillian.ce.proxy.Proxy;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface AuthHandle {
-    String getOpenShiftUsername();
+public class ManagementHandleImpl implements ManagementHandle {
+    private final Proxy proxy;
+    private final Map<String, String> labels;
+    private final Configuration configuration;
+    private final SSLContext sslContext;
 
-    String getOpenShiftPassword();
+    public ManagementHandleImpl(Proxy proxy, Map<String, String> labels, Configuration configuration, SSLContext sslContext) {
+        this.proxy = proxy;
+        this.labels = labels;
+        this.configuration = configuration;
+        this.sslContext = sslContext;
+    }
 
-    String getOAuthToken();
+    public String getOpenShiftUsername() {
+        return configuration.getOpenshiftUsername();
+    }
 
-    SSLContext getSslContext();
+    public String getOpenShiftPassword() {
+        return configuration.getOpenshiftPassword();
+    }
+
+    public String getOAuthToken() {
+        return configuration.getToken();
+    }
+
+    public String getManagementUrl(int port) {
+        return proxy.url(labels, 0, port, "", null); // take first pod?
+    }
+
+    public SSLContext getSslContext() {
+        return sslContext;
+    }
 }

@@ -40,15 +40,15 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
-import org.jboss.arquillian.ce.api.AuthHandle;
-import org.jboss.arquillian.ce.utils.AuthHandleImpl;
+import org.jboss.arquillian.ce.api.ManagementHandle;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.ManagementHandleImpl;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public abstract class AbstractProxy<P> implements Proxy {
-    private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s:8080/proxy%s";
+    private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s:%s/proxy%s";
 
     private boolean sslContextSet;
     protected final Configuration configuration;
@@ -58,8 +58,8 @@ public abstract class AbstractProxy<P> implements Proxy {
         this.configuration = configuration;
     }
 
-    public AuthHandle createAuthHandle() {
-        return new AuthHandleImpl(configuration, getSSLContext());
+    public ManagementHandle createManagementHandle(Map<String, String> labels) {
+        return new ManagementHandleImpl(this, labels, configuration, getSSLContext());
     }
 
     public synchronized void setDefaultSSLContext() {
@@ -71,8 +71,8 @@ public abstract class AbstractProxy<P> implements Proxy {
 
     protected abstract SSLContext getSSLContext();
 
-    public String url(String podName, String path, String parameters) {
-        String url = String.format(PROXY_URL, configuration.getKubernetesMaster(), configuration.getApiVersion(), configuration.getNamespace(), podName, path);
+    public String url(String podName, int port, String path, String parameters) {
+        String url = String.format(PROXY_URL, configuration.getKubernetesMaster(), configuration.getApiVersion(), configuration.getNamespace(), podName, port, path);
         return (parameters != null && parameters.length() > 0) ? url + "?" + parameters : url;
     }
 
@@ -82,18 +82,14 @@ public abstract class AbstractProxy<P> implements Proxy {
 
     protected abstract boolean isReady(P pod);
 
-    public String url(Map<String, String> labels, String path, String parameters) {
-        return url(labels, 0, path, parameters);
-    }
-
-    public String url(Map<String, String> labels, int index, String path, String parameters) {
+    public String url(Map<String, String> labels, int index, int port, String path, String parameters) {
         List<P> items = getPods(labels);
         if (index >= items.size()) {
             throw new IllegalStateException(String.format("Not enough pods (%s) to invoke pod index %s!", items.size(), index));
         }
         String pod = getName(items.get(index));
 
-        return url(pod, path, parameters);
+        return url(pod, port, path, parameters);
     }
 
     public Set<String> getReadyPods(Map<String, String> labels) {
@@ -105,10 +101,6 @@ public abstract class AbstractProxy<P> implements Proxy {
             }
         }
         return names;
-    }
-
-    public String findPod(Map<String, String> labels) {
-        return findPod(labels, 0);
     }
 
     public String findPod(Map<String, String> labels, int index) {
@@ -165,9 +157,11 @@ public abstract class AbstractProxy<P> implements Proxy {
         return null; // TODO
     }
 
-    public synchronized InputStream post(Map<String, String> labels, int pod, String path) throws Exception {
+    public synchronized InputStream post(Map<String, String> labels, int index, int port, String path) throws Exception {
         String url = url(
             labels,
+            index,
+            port,
             path,
             null
         );

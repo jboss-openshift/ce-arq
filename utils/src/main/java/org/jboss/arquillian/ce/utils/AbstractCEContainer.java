@@ -38,7 +38,6 @@ import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapterFactory;
 import org.jboss.arquillian.ce.api.ConfigurationHandle;
 import org.jboss.arquillian.ce.api.Replicas;
-import org.jboss.arquillian.ce.api.SetupCallback;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceFactory;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
@@ -88,9 +87,6 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     @Inject
     private Instance<ProtocolRegistry> protocolRegistry;
 
-    @Inject
-    private Instance<SetupCallback> setupCallback;
-
     protected T configuration;
     protected OpenShiftAdapter client;
     protected DockerAdapter dockerAdapter;
@@ -133,13 +129,6 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         if (configuration.isGeneratedNS()) {
             client.createProject();
-        }
-
-        if (setupCallback != null) {
-            SetupCallback callback = setupCallback.get();
-            if (callback != null) {
-                callback.callback(configuration, proxy.createAuthHandle());
-            }
         }
     }
 
@@ -297,6 +286,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         // we need original configuration instance; due to generated values
         pmd.addContext(new DeploymentContext(archive, labels, proxy));
         pmd.addContext(context);
+        pmd.addContext(proxy.createManagementHandle(labels));
         return pmd;
     }
 

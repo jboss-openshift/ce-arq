@@ -94,9 +94,9 @@ public class CEServletExecutor extends ServletMethodExecutor {
             podName = locatePodName(testMethodExecutor);
         }
 
-        String url = proxy.url(podName, context + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
+        String url = proxy.url(podName, 8080, context + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName());
         log.info(String.format("Invoking test, url: %s", url));
-        String eventUrl = proxy.url(podName, context + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
+        String eventUrl = proxy.url(podName, 8080, context + ARQUILLIAN_SERVLET_MAPPING, "outputMode=serializedObject&className=" + testClass.getName() + "&methodName=" + testMethodExecutor.getMethod().getName() + "&cmd=event");
 
         Timer eventTimer = null;
         try {
@@ -122,7 +122,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
     private String findRunInPod() {
         Archive<?> dummy = Archives.generateDummyWebArchive("runinpod.war");
         Map<String, String> labels = DeploymentContext.getDeploymentLabels(dummy);
-        return proxy.findPod(labels);
+        return proxy.findPod(labels, 0);
     }
 
     private String locatePodName(TestMethodExecutor testMethodExecutor) {
@@ -143,7 +143,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
     }
 
     private String findDeploymentsPod(Map<String, String> labels) {
-        return proxy.findPod(labels);
+        return proxy.findPod(labels, 0);
     }
 
 }

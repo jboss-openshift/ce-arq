@@ -23,11 +23,19 @@
 
 package org.jboss.arquillian.ce.api;
 
+import javax.net.ssl.SSLContext;
+
 /**
- * This setup callback is invoked once deployable container is started.
- *
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface SetupCallback {
-    void callback(ConfigurationHandle configurationHandle, AuthHandle authHandle);
+public interface ManagementHandle {
+    String getOpenShiftUsername();
+
+    String getOpenShiftPassword();
+
+    String getOAuthToken();
+
+    String getManagementUrl(int port);
+
+    SSLContext getSslContext();
 }
