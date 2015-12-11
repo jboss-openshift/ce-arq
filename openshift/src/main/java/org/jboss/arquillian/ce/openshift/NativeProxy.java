@@ -49,7 +49,7 @@ public class NativeProxy extends AbstractProxy<IPod> {
         this.httpClient = HttpClientCreator.createHttpClient(configuration);
     }
 
-    protected SSLContext getSSLContext() {
+    public SSLContext getSSLContext() {
         return httpClient.getSslContext();
     }
 

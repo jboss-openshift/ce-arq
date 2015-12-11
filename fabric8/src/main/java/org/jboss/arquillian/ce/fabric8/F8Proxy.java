@@ -49,7 +49,7 @@ public class F8Proxy extends AbstractProxy<Pod> {
         this.client = client;
     }
 
-    protected SSLContext getSSLContext() {
+    public SSLContext getSSLContext() {
         try {
             return SSLUtils.sslContext(client.getConfiguration());
         } catch (Throwable t) {

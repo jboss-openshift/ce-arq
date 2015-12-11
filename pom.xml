@@ -228,6 +228,36 @@
         </dependencies>
     </dependencyManagement>
 
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <skipTests>true</skipTests>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>eap6</id>
+
+            <activation>
+                <property>
+                    <name>eap6</name>
+                </property>
+            </activation>
+
+            <properties>
+                <skipTests>true</skipTests>
+            </properties>
+
+            <modules>
+                <module>eap6</module>
+            </modules>
+        </profile>
+    </profiles>
+
 </project>
 
 

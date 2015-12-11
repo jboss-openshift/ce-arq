@@ -21,36 +21,21 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.utils;
+package org.jboss.arquillian.ce.eap6;
+
+import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
+import org.jboss.arquillian.core.spi.LoadableExtension;
+import org.jboss.as.arquillian.container.CommonContainerExtension;
+import org.kohsuke.MetaInfServices;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class Port {
-    private String name;
-    private int containerPort;
-
-    public Port() {
-    }
-
-    public Port(String name, int containerPort) {
-        this.name = name;
-        this.containerPort = containerPort;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getContainerPort() {
-        return containerPort;
-    }
-
-    public void setContainerPort(int containerPort) {
-        this.containerPort = containerPort;
+@MetaInfServices(LoadableExtension.class)
+public class Eap6ContainerExtension extends CommonContainerExtension {
+    @Override
+    public void register(ExtensionBuilder builder) {
+        super.register(builder);
+        builder.service(DeployableContainer.class, CEDeployableContainer.class);
     }
 }

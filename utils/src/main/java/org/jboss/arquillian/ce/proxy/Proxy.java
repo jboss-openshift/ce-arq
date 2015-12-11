@@ -27,6 +27,8 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
 
+import javax.net.ssl.SSLContext;
+
 import org.jboss.arquillian.ce.api.ManagementHandle;
 
 /**
@@ -34,6 +36,8 @@ import org.jboss.arquillian.ce.api.ManagementHandle;
  */
 public interface Proxy {
     ManagementHandle createManagementHandle(Map<String, String> labels);
+
+    SSLContext getSSLContext();
 
     void setDefaultSSLContext();
 

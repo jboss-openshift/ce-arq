@@ -21,36 +21,40 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.utils;
+package org.jboss.arquillian.ce.eap6;
+
+import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.Strings;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class Port {
-    private String name;
-    private int containerPort;
+public class CEConfiguration extends Configuration {
+    private String eapImageName = Strings.getSystemPropertyOrEnvVar("container.image.name", "ce-registry.usersys.redhat.com/jboss-eap-6/eap64-openshift:1.2");
+    private String label = Strings.getSystemPropertyOrEnvVar("container.image.label", "eap6bare");
+    private int mgmtPort = Integer.parseInt(Strings.getSystemPropertyOrEnvVar("container.mgmt.port", "9990"));
 
-    public Port() {
+    public String getEapImageName() {
+        return eapImageName;
     }
 
-    public Port(String name, int containerPort) {
-        this.name = name;
-        this.containerPort = containerPort;
+    public void setEapImageName(String eapImageName) {
+        this.eapImageName = eapImageName;
     }
 
-    public String getName() {
-        return name;
+    public String getLabel() {
+        return label;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setLabel(String label) {
+        this.label = label;
     }
 
-    public int getContainerPort() {
-        return containerPort;
+    public int getMgmtPort() {
+        return mgmtPort;
     }
 
-    public void setContainerPort(int containerPort) {
-        this.containerPort = containerPort;
+    public void setMgmtPort(int mgmtPort) {
+        this.mgmtPort = mgmtPort;
     }
 }

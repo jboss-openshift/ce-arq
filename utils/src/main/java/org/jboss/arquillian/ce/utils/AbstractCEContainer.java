@@ -263,6 +263,20 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final Map<String, String> labels, final int replicas) throws Exception {
         log.info("Creating ProtocolMetaData ...");
 
+        delay(labels, replicas);
+
+        HTTPContext context = new HTTPContext("<DUMMY>", 80); // we don't use the host, as we use proxy
+        addServlets(context, archive);
+
+        ProtocolMetaData pmd = new ProtocolMetaData();
+        // we need original configuration instance; due to generated values
+        pmd.addContext(new DeploymentContext(archive, labels, proxy));
+        pmd.addContext(context);
+        pmd.addContext(proxy.createManagementHandle(labels));
+        return pmd;
+    }
+
+    protected void delay(final Map<String, String> labels, final int replicas) throws Exception {
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {
                 Set<String> pods = proxy.getReadyPods(labels);
@@ -278,16 +292,6 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
                 return String.format("(Required pods: %s)", replicas);
             }
         });
-
-        HTTPContext context = new HTTPContext("<DUMMY>", 80); // we don't use the host, as we use proxy
-        addServlets(context, archive);
-
-        ProtocolMetaData pmd = new ProtocolMetaData();
-        // we need original configuration instance; due to generated values
-        pmd.addContext(new DeploymentContext(archive, labels, proxy));
-        pmd.addContext(context);
-        pmd.addContext(proxy.createManagementHandle(labels));
-        return pmd;
     }
 
     protected void addServlets(HTTPContext context, Archive<?> archive) throws Exception {

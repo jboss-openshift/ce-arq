@@ -69,8 +69,6 @@ public abstract class AbstractProxy<P> implements Proxy {
         }
     }
 
-    protected abstract SSLContext getSSLContext();
-
     public String url(String podName, int port, String path, String parameters) {
         String url = String.format(PROXY_URL, configuration.getKubernetesMaster(), configuration.getApiVersion(), configuration.getNamespace(), podName, port, path);
         return (parameters != null && parameters.length() > 0) ? url + "?" + parameters : url;
