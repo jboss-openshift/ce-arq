@@ -49,8 +49,8 @@ public class NativeProxy extends AbstractProxy<IPod> {
         this.httpClient = HttpClientCreator.createHttpClient(configuration);
     }
 
-    public void setDefaultSSLContextInternal() {
-        SSLContext.setDefault(httpClient.getSslContext());
+    protected SSLContext getSSLContext() {
+        return httpClient.getSslContext();
     }
 
     protected OkHttpClient getHttpClient() {

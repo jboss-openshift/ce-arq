@@ -21,37 +21,37 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.proxy;
+package org.jboss.arquillian.ce.utils;
 
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Set;
+import javax.net.ssl.SSLContext;
 
 import org.jboss.arquillian.ce.api.AuthHandle;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface Proxy {
-    AuthHandle createAuthHandle();
+public class AuthHandleImpl implements AuthHandle {
+    private final Configuration configuration;
+    private final SSLContext sslContext;
 
-    void setDefaultSSLContext();
+    public AuthHandleImpl(Configuration configuration, SSLContext sslContext) {
+        this.configuration = configuration;
+        this.sslContext = sslContext;
+    }
 
-    String url(String podName, String path, String parameters);
+    public String getOpenShiftUsername() {
+        return configuration.getOpenshiftUsername();
+    }
 
-    String url(Map<String, String> labels, String path, String parameters);
+    public String getOpenShiftPassword() {
+        return configuration.getOpenshiftPassword();
+    }
 
-    String url(Map<String, String> labels, int index, String path, String parameters);
+    public String getOAuthToken() {
+        return configuration.getToken();
+    }
 
-    Set<String> getReadyPods(Map<String, String> labels);
-
-    <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
-
-    InputStream post(Map<String, String> labels, int pod, String path) throws Exception;
-
-    int status(String url);
-
-    String findPod(Map<String, String> labels);
-
-    String findPod(Map<String, String> labels, int index);
+    public SSLContext getSslContext() {
+        return sslContext;
+    }
 }

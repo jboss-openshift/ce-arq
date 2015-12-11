@@ -21,37 +21,13 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.proxy;
-
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Set;
-
-import org.jboss.arquillian.ce.api.AuthHandle;
+package org.jboss.arquillian.ce.api;
 
 /**
+ * This setup callback is invoked once deployable container is started.
+ *
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface Proxy {
-    AuthHandle createAuthHandle();
-
-    void setDefaultSSLContext();
-
-    String url(String podName, String path, String parameters);
-
-    String url(Map<String, String> labels, String path, String parameters);
-
-    String url(Map<String, String> labels, int index, String path, String parameters);
-
-    Set<String> getReadyPods(Map<String, String> labels);
-
-    <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
-
-    InputStream post(Map<String, String> labels, int pod, String path) throws Exception;
-
-    int status(String url);
-
-    String findPod(Map<String, String> labels);
-
-    String findPod(Map<String, String> labels, int index);
+public interface SetupCallback {
+    void callback(ConfigurationHandle configurationHandle, AuthHandle authHandle);
 }

@@ -33,11 +33,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.net.ssl.SSLContext;
+
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
+import org.jboss.arquillian.ce.api.AuthHandle;
+import org.jboss.arquillian.ce.utils.AuthHandleImpl;
 import org.jboss.arquillian.ce.utils.Configuration;
 
 /**
@@ -54,19 +58,18 @@ public abstract class AbstractProxy<P> implements Proxy {
         this.configuration = configuration;
     }
 
+    public AuthHandle createAuthHandle() {
+        return new AuthHandleImpl(configuration, getSSLContext());
+    }
+
     public synchronized void setDefaultSSLContext() {
         if (sslContextSet == false) {
             sslContextSet = true;
-            setDefaultSSLContextInternal();
+            SSLContext.setDefault(getSSLContext());
         }
     }
 
-    protected abstract void setDefaultSSLContextInternal();
-
-    private String url(String host, String version, String namespace, String podName, String path, String parameters) {
-        String url = String.format(PROXY_URL, host, version, namespace, podName, path);
-        return (parameters != null && parameters.length() > 0) ? url + "?" + parameters : url;
-    }
+    protected abstract SSLContext getSSLContext();
 
     public String url(String podName, String path, String parameters) {
         String url = String.format(PROXY_URL, configuration.getKubernetesMaster(), configuration.getApiVersion(), configuration.getNamespace(), podName, path);

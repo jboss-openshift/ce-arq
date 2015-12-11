@@ -49,9 +49,9 @@ public class F8Proxy extends AbstractProxy<Pod> {
         this.client = client;
     }
 
-    public void setDefaultSSLContextInternal() {
+    protected SSLContext getSSLContext() {
         try {
-            SSLContext.setDefault(SSLUtils.sslContext(client.getConfiguration()));
+            return SSLUtils.sslContext(client.getConfiguration());
         } catch (Throwable t) {
             throw new IllegalStateException(t);
         }
