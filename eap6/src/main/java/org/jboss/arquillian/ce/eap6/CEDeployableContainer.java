@@ -25,15 +25,11 @@ package org.jboss.arquillian.ce.eap6;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
+import org.jboss.arquillian.ce.spi.WildFlySPIContainer;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.Archives;
-import org.jboss.arquillian.ce.utils.DeploymentContext;
-import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -109,51 +105,14 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
     }
 
     protected Map<String, String> deployEapPods(int replicas) throws Exception {
-        // add new k8s config
-
-        List<Port> ports = new ArrayList<>();
-        // http
-        Port http = new Port();
-        http.setName("http");
-        http.setContainerPort(8080);
-        ports.add(http);
-        // https / ssl
-        Port https = new Port();
-        https.setName("https");
-        https.setContainerPort(8443);
-        ports.add(https);
-        // DMR / management
-        Port mgmt = new Port();
-        mgmt.setName("mgmt");
-        mgmt.setContainerPort(configuration.getMgmtPort());
-        ports.add(mgmt);
-        // jgroups / ping
-        Port ping = new Port();
-        ping.setName("ping");
-        ping.setContainerPort(8888);
-        ports.add(ping);
-
         // hack to create label
         Archive<?> archive = Archives.generateDummyWebArchive(configuration.getLabel() + ".war");
 
-        Map<String, String> labels = DeploymentContext.getDeploymentLabels(archive);
-
-        RCContext context = new RCContext(archive, configuration.getEapImageName(), ports, labels, replicas);
-
-        context.setLifecycleHook(configuration.getPreStopHookType());
-        context.setPreStopPath(configuration.getPreStopPath());
-        context.setIgnorePreStop(configuration.isIgnorePreStop());
-
-        context.setProbeHook(configuration.getProbeHookType());
-        List<String> probeCommands = configuration.getProbeCommands();
-        if (probeCommands == null) {
-            probeCommands = Arrays.asList("/bin/bash", "-c", "/opt/eap/bin/readinessProbe.sh");
-        }
-        context.setProbeCommands(probeCommands);
+        RCContext context = WildFlySPIContainer.context(configuration, archive, replicas, configuration.getEapImageName());
 
         String rc = deployResourceContext(context);
         log.info(String.format("Deployed k8s resource [%s]: %s", replicas, rc));
-        return labels;
+        return context.getLabels();
     }
 
     @Override

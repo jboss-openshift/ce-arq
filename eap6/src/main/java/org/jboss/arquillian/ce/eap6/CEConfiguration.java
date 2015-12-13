@@ -23,16 +23,15 @@
 
 package org.jboss.arquillian.ce.eap6;
 
-import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.spi.WildFlySPIConfiguration;
 import org.jboss.arquillian.ce.utils.Strings;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class CEConfiguration extends Configuration {
+public class CEConfiguration extends WildFlySPIConfiguration {
     private String eapImageName = Strings.getSystemPropertyOrEnvVar("container.image.name", "ce-registry.usersys.redhat.com/jboss-eap-6/eap64-openshift:1.2");
     private String label = Strings.getSystemPropertyOrEnvVar("container.image.label", "eap6bare");
-    private int mgmtPort = Integer.parseInt(Strings.getSystemPropertyOrEnvVar("container.mgmt.port", "9990"));
 
     public String getEapImageName() {
         return eapImageName;
@@ -48,13 +47,5 @@ public class CEConfiguration extends Configuration {
 
     public void setLabel(String label) {
         this.label = label;
-    }
-
-    public int getMgmtPort() {
-        return mgmtPort;
-    }
-
-    public void setMgmtPort(int mgmtPort) {
-        this.mgmtPort = mgmtPort;
     }
 }

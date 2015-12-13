@@ -44,24 +44,8 @@ import org.jboss.shrinkwrap.api.Archive;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class WildFlySPIContainer extends AbstractCEContainer<WildFlySPIConfiguration> {
-    public Class<WildFlySPIConfiguration> getConfigurationClass() {
-        return WildFlySPIConfiguration.class;
-    }
-
-    public void apply(OutputStream outputStream) throws IOException {
-        String hqEnv = String.format("ENV HORNETQ_CLUSTER_PASSWORD %s", configuration.getHornetQClusterPassword());
-        outputStream.write(("\n" + hqEnv + "\n").getBytes());
-    }
-
-    public ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException {
+    public static RCContext context(WildFlySPIConfiguration configuration, Archive<?> archive, int replicas, String imageName) throws DeploymentException {
         try {
-            String imageName = buildImage(archive, "ce-registry.usersys.redhat.com/jboss-eap-6/eap64-openshift:1.2", "/opt/eap/standalone/deployments/");
-
-            // clean old k8s stuff
-            cleanup(archive);
-
-            // add new k8s config
-
             List<Port> ports = new ArrayList<>();
             // http
             Port http = new Port();
@@ -85,7 +69,6 @@ public class WildFlySPIContainer extends AbstractCEContainer<WildFlySPIConfigura
             ports.add(ping);
 
             Map<String, String> labels = DeploymentContext.getDeploymentLabels(archive);
-            int replicas = readReplicas();
 
             RCContext context = new RCContext(archive, imageName, ports, labels, replicas);
 
@@ -100,10 +83,36 @@ public class WildFlySPIContainer extends AbstractCEContainer<WildFlySPIConfigura
             }
             context.setProbeCommands(probeCommands);
 
-            String rc = deployResourceContext(context);
-            log.info(String.format("Deployed k8s resource [%s]: %s", replicas, rc));
+            return context;
+        } catch (Throwable t) {
+            throw new DeploymentException("Cannot deploy in CE env.", t);
+        }
+    }
 
-            return getProtocolMetaData(archive, labels, replicas);
+    public Class<WildFlySPIConfiguration> getConfigurationClass() {
+        return WildFlySPIConfiguration.class;
+    }
+
+    public void apply(OutputStream outputStream) throws IOException {
+        String hqEnv = String.format("ENV HORNETQ_CLUSTER_PASSWORD %s", configuration.getHornetQClusterPassword());
+        outputStream.write(("\n" + hqEnv + "\n").getBytes());
+    }
+
+    public ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException {
+        try {
+            String imageName = buildImage(archive, "ce-registry.usersys.redhat.com/jboss-eap-6/eap64-openshift:1.2", "/opt/eap/standalone/deployments/");
+
+            // clean old k8s stuff
+            cleanup(archive);
+
+            // add new k8s config
+
+            RCContext context = context(configuration, archive, readReplicas(), imageName);
+
+            String rc = deployResourceContext(context);
+            log.info(String.format("Deployed k8s resource [%s]: %s", context.getReplicas(), rc));
+
+            return getProtocolMetaData(archive, context.getLabels(), context.getReplicas());
         } catch (Throwable t) {
             throw new DeploymentException("Cannot deploy in CE env.", t);
         }
