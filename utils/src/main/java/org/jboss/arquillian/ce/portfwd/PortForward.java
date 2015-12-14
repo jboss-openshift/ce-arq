@@ -26,6 +26,8 @@ package org.jboss.arquillian.ce.portfwd;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -50,7 +52,7 @@ public class PortForward {
         this.client = client;
     }
 
-    public synchronized Closeable run(PortForwardContext context) throws Exception {
+    public synchronized PortForward.Handle run(PortForwardContext context) throws Exception {
         Request.Builder builder = new Request.Builder();
         builder.url(String.format(PORT_FWD, context.getKubernetesMaster(), context.getNodeName(), context.getNamespace(), context.getPodName()));
         // https://github.com/kubernetes/kubernetes/blob/149ca1ec4971c4e5850d61d54d93b3ba315261a2/pkg/api/types.go#L1986
@@ -66,18 +68,43 @@ public class PortForward {
             interceptors.remove(interceptor);
         }
 
-        final ServerSocket server = new ServerSocket(context.getPort());
+        final ServerSocket server = new ServerSocket(context.getPort(), 0, InetAddress.getLocalHost());
 
         Runnable runnable = new Runnable() {
             public void run() {
                 while (server.isClosed() == false) {
                     try {
-                        Socket socket = server.accept();
-                        InputStream stream = socket.getInputStream();
-                        int x;
-                        while ((x = stream.read()) != -1) {
-                            interceptor.getConnection().getSocket().getOutputStream().write(x);
-                        }
+                        final Socket socket = server.accept();
+                        final Socket osSocket = interceptor.getConnection().getSocket();
+
+                        Runnable writer = new Runnable() {
+                            public void run() {
+                                int x;
+                                // write to OpenShift
+                                try (InputStream input = socket.getInputStream()) {
+                                    while ((x = input.read()) != -1) {
+                                        osSocket.getOutputStream().write(x);
+                                    }
+                                } catch (IOException ignored) {
+                                }
+                            }
+                        };
+                        new Thread(writer).start();
+
+                        Runnable reader = new Runnable() {
+                            public void run() {
+                                int x;
+                                // read from OpenShift
+                                try (OutputStream output = socket.getOutputStream()) {
+                                    InputStream osInput = osSocket.getInputStream();
+                                    while ((x = osInput.read()) != -1) {
+                                        output.write(x);
+                                    }
+                                } catch (IOException ignored) {
+                                }
+                            }
+                        };
+                        new Thread(reader).start();
                     } catch (IOException e) {
                         log.warning("Error: " + e.getMessage());
                     }
@@ -87,12 +114,20 @@ public class PortForward {
 
         new Thread(runnable).start();
 
-        return new Closeable() {
+        return new Handle() {
+            public InetAddress getInetAddress() {
+                return server.getInetAddress();
+            }
+
             public void close() throws IOException {
                 doClose(server);
                 doClose(interceptor.getConnection().getSocket());
             }
         };
+    }
+
+    public interface Handle extends Closeable {
+        InetAddress getInetAddress();
     }
 
     private static void doClose(Closeable closeable) {

@@ -23,7 +23,6 @@
 
 package org.jboss.arquillian.ce.eap6;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
@@ -64,7 +63,7 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
     private InstanceProducer<ArchiveDeployer> archiveDeployer;
 
     private Map<String, String> labels;
-    private Closeable portFwd;
+    private PortForward.Handle portFwd;
 
     public Class<CEConfiguration> getConfigurationClass() {
         return CEConfiguration.class;
@@ -98,7 +97,7 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
             PortForward pf = proxy.createPortForward();
             portFwd = pf.run(context);
 
-            String address = "localhost"; // we abuse k8s port forwarding
+            String address = portFwd.getInetAddress().getHostAddress(); // we abuse k8s port forwarding
             int port = configuration.getMgmtPort();
 
             ModelControllerClient modelControllerClient = ModelControllerClient.Factory.create(address, port);
