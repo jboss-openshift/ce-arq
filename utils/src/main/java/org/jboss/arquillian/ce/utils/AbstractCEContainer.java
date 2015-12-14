@@ -265,6 +265,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         delay(labels, replicas);
 
+        return getProtocolMetaData(archive, labels);
+    }
+
+    protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final Map<String, String> labels) throws Exception {
         HTTPContext context = new HTTPContext("<DUMMY>", 80); // we don't use the host, as we use proxy
         addServlets(context, archive);
 

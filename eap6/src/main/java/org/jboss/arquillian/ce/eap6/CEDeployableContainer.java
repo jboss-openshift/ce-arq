@@ -43,7 +43,10 @@ import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.as.arquillian.container.ArchiveDeployer;
 import org.jboss.as.arquillian.container.ManagementClient;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.Archive;
 import org.kohsuke.MetaInfServices;
 
@@ -60,6 +63,7 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
     @ContainerScoped
     private InstanceProducer<ArchiveDeployer> archiveDeployer;
 
+    private Map<String, String> labels;
     private Closeable portFwd;
 
     public Class<CEConfiguration> getConfigurationClass() {
@@ -87,7 +91,7 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
 
         try {
             int replicas = 1; // single pod
-            Map<String, String> labels = deployEapPods(replicas);
+            labels = deployEapPods(replicas);
             delay(labels, replicas);
 
             PortForwardContext context = client.createPortForwardContext(labels, configuration.getMgmtPort());
@@ -99,14 +103,23 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
 
             ModelControllerClient modelControllerClient = ModelControllerClient.Factory.create(address, port);
 
-            ManagementClient client = new ManagementClient(modelControllerClient, address, port);
-            managementClient.set(client);
+            ManagementClient mgmtClient = new ManagementClient(modelControllerClient, address, port);
+            managementClient.set(mgmtClient);
+
+            checkEnv(mgmtClient);
 
             ArchiveDeployer deployer = new ArchiveDeployer(modelControllerClient);
             archiveDeployer.set(deployer);
         } catch (Exception e) {
             throw new LifecycleException("Error setting up EAP6 pod.", e);
         }
+    }
+
+    protected void checkEnv(ManagementClient mgmtClient) throws IOException {
+        ModelNode op = Util.createOperation("read-resource", PathAddress.pathAddress("core-service", "server-environment"));
+        op.get("include-runtime").set(true);
+        ModelNode result = mgmtClient.getControllerClient().execute(op);
+        log.info(String.format("Env info: %s", result));
     }
 
     protected Map<String, String> deployEapPods(int replicas) throws Exception {
@@ -137,8 +150,13 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
     }
 
     protected ProtocolMetaData doDeploy(Archive<?> archive) throws DeploymentException {
-        String runtimeName = getArchiveDeployer().deploy(archive);
-        return getManagementClient().getProtocolMetaData(runtimeName);
+        try {
+            String depoymentName = getArchiveDeployer().deploy(archive);
+            log.info(String.format("EAP6 deployment: %s", depoymentName));
+            return getProtocolMetaData(archive, labels);
+        } catch (Exception e) {
+            throw new DeploymentException("Cannot deploy in CE env.", e);
+        }
     }
 
     @Override

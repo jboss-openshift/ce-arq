@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+import java.util.logging.Logger;
 
 import com.squareup.okhttp.Connection;
 import com.squareup.okhttp.Interceptor;
@@ -40,7 +41,9 @@ import com.squareup.okhttp.Response;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class PortForward {
+    private static final Logger log = Logger.getLogger(PortForward.class.getName());
     private static final String PORT_FWD = "%s/proxy/minions/%s/portForward/%s/%s";
+
     private final OkHttpClient client;
 
     public PortForward(OkHttpClient client) {
@@ -50,6 +53,8 @@ public class PortForward {
     public synchronized Closeable run(PortForwardContext context) throws Exception {
         Request.Builder builder = new Request.Builder();
         builder.url(String.format(PORT_FWD, context.getKubernetesMaster(), context.getNodeName(), context.getNamespace(), context.getPodName()));
+        // https://github.com/kubernetes/kubernetes/blob/149ca1ec4971c4e5850d61d54d93b3ba315261a2/pkg/api/types.go#L1986
+        builder.addHeader("port", String.valueOf(context.getPort()));
         Request request = builder.build();
 
         List<Interceptor> interceptors = client.networkInterceptors();
@@ -74,7 +79,7 @@ public class PortForward {
                             interceptor.getConnection().getSocket().getOutputStream().write(x);
                         }
                     } catch (IOException e) {
-                        throw new IllegalStateException(e);
+                        log.warning("Error: " + e.getMessage());
                     }
                 }
             }
