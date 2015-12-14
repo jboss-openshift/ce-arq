@@ -37,7 +37,7 @@ import org.jboss.arquillian.ce.utils.Strings;
 public class WildFlySPIConfiguration extends Configuration implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private int mgmtPort = Integer.parseInt(Strings.getSystemPropertyOrEnvVar("container.mgmt.port", "9990"));
+    private int mgmtPort = Integer.parseInt(Strings.getSystemPropertyOrEnvVar("container.mgmt.port", "9999"));
     private String hornetQClusterPassword = Strings.getSystemPropertyOrEnvVar("hornetq.cluster.password", UUID.randomUUID().toString());
 
     public int getMgmtPort() {

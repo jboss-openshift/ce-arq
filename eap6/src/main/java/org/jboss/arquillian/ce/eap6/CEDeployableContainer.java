@@ -23,10 +23,13 @@
 
 package org.jboss.arquillian.ce.eap6;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 
+import org.jboss.arquillian.ce.portfwd.PortForward;
+import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.spi.WildFlySPIContainer;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.Archives;
@@ -57,6 +60,8 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
     @ContainerScoped
     private InstanceProducer<ArchiveDeployer> archiveDeployer;
 
+    private Closeable portFwd;
+
     public Class<CEConfiguration> getConfigurationClass() {
         return CEConfiguration.class;
     }
@@ -85,14 +90,14 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
             Map<String, String> labels = deployEapPods(replicas);
             delay(labels, replicas);
 
-            String address = proxy.url(labels, 0, configuration.getMgmtPort(), "", null);
+            PortForwardContext context = client.createPortForwardContext(labels, configuration.getMgmtPort());
+            PortForward pf = proxy.createPortForward();
+            portFwd = pf.run(context);
+
+            String address = "localhost"; // we abuse k8s port forwarding
             int port = configuration.getMgmtPort();
 
-            ModelControllerClient modelControllerClient = ModelControllerClient.Factory.create(
-                address,
-                port,
-                null,
-                proxy.getSSLContext());
+            ModelControllerClient modelControllerClient = ModelControllerClient.Factory.create(address, port);
 
             ManagementClient client = new ManagementClient(modelControllerClient, address, port);
             managementClient.set(client);
@@ -118,7 +123,14 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
     @Override
     public void stop() throws LifecycleException {
         try {
-            getManagementClient().close();
+            try {
+                getManagementClient().close();
+            } finally {
+                try {
+                    portFwd.close();
+                } catch (IOException ignored) {
+                }
+            }
         } finally {
             super.stop();
         }

@@ -66,6 +66,7 @@ import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
 import org.jboss.arquillian.ce.utils.Configuration;
@@ -110,6 +111,16 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     public Proxy createProxy() {
         return new F8Proxy(configuration, client);
+    }
+
+    public PortForwardContext createPortForwardContext(Map<String, String> labels, int port) {
+        List<Pod> pods = client.pods().inNamespace(configuration.getNamespace()).withLabels(labels).list().getItems();
+        if (pods.isEmpty()) {
+            throw new IllegalStateException("No such pods: " + labels);
+        }
+        Pod pod = pods.get(0);
+        String nodeName = pod.getStatus().getHostIP();
+        return new PortForwardContext(configuration.getKubernetesMaster(), nodeName, configuration.getNamespace(), pod.getMetadata().getName(), port);
     }
 
     public RegistryLookupEntry lookup() {

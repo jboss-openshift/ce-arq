@@ -21,40 +21,43 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.proxy;
-
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Set;
-
-import javax.net.ssl.SSLContext;
-
-import org.jboss.arquillian.ce.api.ManagementHandle;
-import org.jboss.arquillian.ce.portfwd.PortForward;
+package org.jboss.arquillian.ce.portfwd;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface Proxy {
-    ManagementHandle createManagementHandle(Map<String, String> labels);
+public class PortForwardContext {
+    private final String kubernetesMaster;
+    private final String nodeName;
+    private final String namespace;
+    private final String podName;
+    private final int port;
 
-    SSLContext getSSLContext();
+    public PortForwardContext(String kubernetesMaster, String nodeName, String namespace, String podName, int port) {
+        this.kubernetesMaster = kubernetesMaster;
+        this.nodeName = nodeName;
+        this.namespace = namespace;
+        this.podName = podName;
+        this.port = port;
+    }
 
-    void setDefaultSSLContext();
+    public String getKubernetesMaster() {
+        return kubernetesMaster;
+    }
 
-    PortForward createPortForward();
+    public String getNodeName() {
+        return nodeName;
+    }
 
-    String url(String podName, int port, String path, String parameters);
+    public String getNamespace() {
+        return namespace;
+    }
 
-    String url(Map<String, String> labels, int index, int port, String path, String parameters);
+    public String getPodName() {
+        return podName;
+    }
 
-    Set<String> getReadyPods(Map<String, String> labels);
-
-    <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
-
-    InputStream post(Map<String, String> labels, int index, int port, String path) throws Exception;
-
-    int status(String url);
-
-    String findPod(Map<String, String> labels, int index);
+    public int getPort() {
+        return port;
+    }
 }

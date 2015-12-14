@@ -41,6 +41,7 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import org.jboss.arquillian.ce.api.ManagementHandle;
+import org.jboss.arquillian.ce.portfwd.PortForward;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.ManagementHandleImpl;
 
@@ -67,6 +68,10 @@ public abstract class AbstractProxy<P> implements Proxy {
             sslContextSet = true;
             SSLContext.setDefault(getSSLContext());
         }
+    }
+
+    public PortForward createPortForward() {
+        return new PortForward(getHttpClient());
     }
 
     public String url(String podName, int port, String path, String parameters) {

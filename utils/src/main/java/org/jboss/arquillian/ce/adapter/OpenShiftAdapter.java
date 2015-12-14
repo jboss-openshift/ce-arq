@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.RCContext;
@@ -39,6 +40,8 @@ import org.jboss.arquillian.ce.utils.RegistryLookup;
  */
 public interface OpenShiftAdapter extends Closeable, RegistryLookup {
     Proxy createProxy();
+
+    PortForwardContext createPortForwardContext(Map<String, String> labels, int port);
 
     Object createProject();
 

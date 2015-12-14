@@ -61,6 +61,7 @@ import com.openshift.restclient.model.project.IProjectRequest;
 import com.openshift.restclient.model.template.IParameter;
 import com.openshift.restclient.model.template.ITemplate;
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
 import org.jboss.arquillian.ce.utils.Configuration;
@@ -149,6 +150,16 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     public Proxy createProxy() {
         return new NativeProxy(configuration, client);
+    }
+
+    public PortForwardContext createPortForwardContext(Map<String, String> labels, int port) {
+        final List<IPod> pods = client.list(ResourceKind.POD, configuration.getNamespace(), labels);
+        if (pods.isEmpty()) {
+            throw new IllegalStateException("No such pods: " + labels);
+        }
+        IPod pod = pods.get(0);
+        String nodeName = pod.getHost(); // TODO -- right value?
+        return new PortForwardContext(configuration.getKubernetesMaster(), nodeName, configuration.getNamespace(), pod.getName(), port);
     }
 
     public RegistryLookupEntry lookup() {
