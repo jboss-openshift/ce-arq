@@ -26,6 +26,7 @@ package org.jboss.arquillian.ce.utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -59,6 +60,8 @@ import org.jboss.arquillian.core.spi.ServiceLoader;
 import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.ArchivePath;
+import org.jboss.shrinkwrap.api.Filter;
 import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -306,7 +309,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         }
     }
 
-    private void handleWebArchive(HTTPContext context, WebArchive war) {
+    protected String toContextRoot(WebArchive war) {
         String name = war.getName();
         String contextRoot = "";
         // ROOT --> "/"
@@ -314,7 +317,11 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             int p = name.lastIndexOf("."); // drop .war
             contextRoot = name.substring(0, p);
         }
-        handleWebArchive(context, war, contextRoot);
+        return contextRoot;
+    }
+
+    private void handleWebArchive(HTTPContext context, WebArchive war) {
+        handleWebArchive(context, war, toContextRoot(war));
     }
 
     private void handleEAR(HTTPContext context, EnterpriseArchive ear) throws IOException {
@@ -331,6 +338,16 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
                         handleWebArchive(context, war, web.getContextRoot());
                     }
                 }
+            }
+        } else {
+            Collection<WebArchive> wars = ear.getAsType(WebArchive.class, new Filter<ArchivePath>() {
+                @Override
+                public boolean include(ArchivePath path) {
+                    return path.get().endsWith(".war");
+                }
+            });
+            for (WebArchive war : wars) {
+                handleWebArchive(context, war);
             }
         }
     }
