@@ -18,8 +18,10 @@
         ],
         ${PROBE}
         ${LIFECYCLE}
-        "imagePullPolicy": "${IMAGE_PULL_POLICY}"
+        "imagePullPolicy": "${IMAGE_PULL_POLICY}",
+        "volumeMounts": ${VOLUME_MOUNTS}
       }
     ]
-  }
+  },
+  "volumes" : ${VOLUMES}
 }

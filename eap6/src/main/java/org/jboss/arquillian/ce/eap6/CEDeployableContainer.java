@@ -125,7 +125,7 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
         // hack to create label
         Archive<?> archive = Archives.generateDummyWebArchive(configuration.getLabel() + ".war");
 
-        RCContext context = WildFlySPIContainer.context(configuration, archive, replicas, configuration.getEapImageName());
+        RCContext context = WildFlySPIContainer.context(configuration, archive, replicas, readMountSecret(), configuration.getEapImageName());
 
         String rc = deployResourceContext(context);
         log.info(String.format("Deployed k8s resource [%s]: %s", replicas, rc));

@@ -61,6 +61,7 @@ import com.openshift.restclient.model.project.IProjectRequest;
 import com.openshift.restclient.model.template.IParameter;
 import com.openshift.restclient.model.template.ITemplate;
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
@@ -213,6 +214,10 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         properties.put("PROBE", createProbe(env, context.getProbeHook(), context.getProbeCommands()));
         properties.put("LIFECYCLE", createLifecycle(env, context.getLifecycleHook(), context.getPreStopPath(), context.isIgnorePreStop()));
         properties.put("PORTS", toPorts(context.getPorts()));
+        // mount secret
+        MountSecret ms = context.getMountSecret();
+        properties.put("VOLUMES", ms != null ? String.format(Templates.VOLUMES, ms.volumeName(), ms.secretName()) : "[]");
+        properties.put("VOLUME_MOUNTS", ms != null ? String.format(Templates.VOLUME_MOUNTS, ms.volumeName(), ms.mountPath()) : "[]");
         return properties;
     }
 

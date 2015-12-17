@@ -54,10 +54,12 @@ import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.ReplicationControllerSpec;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.RoleBinding;
@@ -66,6 +68,7 @@ import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
@@ -158,6 +161,8 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         metadata.setName(name + "-pod");
         metadata.setLabels(podLabels);
 
+        mountSecret(podSpec, context.getMountSecret());
+
         Pod pod = new Pod();
         pod.setApiVersion(Pod.ApiVersion.fromValue(configuration.getApiVersion()));
         pod.setMetadata(metadata);
@@ -172,7 +177,8 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         Map<String, String> podLabels = new HashMap<>();
         podLabels.put("name", name + "-pod");
         podLabels.putAll(context.getLabels());
-        PodTemplateSpec podTemplate = createPodTemplateSpec(podLabels, containers);
+        // TODO -- @MountSecret volume
+        PodTemplateSpec podTemplate = createPodTemplateSpec(podLabels, containers, context.getMountSecret());
 
         Map<String, String> selector = Collections.singletonMap("name", name + "-pod");
         Map<String, String> labels = Collections.singletonMap("name", name + "Controller");
@@ -192,7 +198,16 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             cps.add(cp);
         }
 
-        List<VolumeMount> volumes = Collections.emptyList();
+        List<VolumeMount> volumeMounts;
+        MountSecret mountSecret = context.getMountSecret();
+        if (mountSecret != null) {
+            VolumeMount volumeMount = new VolumeMount();
+            volumeMount.setName(mountSecret.volumeName());
+            volumeMount.setMountPath(mountSecret.mountPath());
+            volumeMounts = Collections.singletonList(volumeMount);
+        } else {
+            volumeMounts = Collections.emptyList();
+        }
 
         Lifecycle lifecycle = null;
         if (!context.isIgnorePreStop() && context.getLifecycleHook() != null && context.getPreStopPath() != null) {
@@ -207,7 +222,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             handleProbe(probe, context.getProbeHook(), context.getProbeCommands(), cps);
         }
 
-        Container container = createContainer(context.getImageName(), name + "-container", envVars, cps, volumes, lifecycle, probe, configuration.getImagePullPolicy());
+        Container container = createContainer(context.getImageName(), name + "-container", envVars, cps, volumeMounts, lifecycle, probe, configuration.getImagePullPolicy());
 
         return Collections.singletonList(container);
     }
@@ -365,7 +380,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return container;
     }
 
-    private PodTemplateSpec createPodTemplateSpec(Map<String, String> labels, List<Container> containers) throws Exception {
+    private PodTemplateSpec createPodTemplateSpec(Map<String, String> labels, List<Container> containers, MountSecret mountSecret) throws Exception {
         PodTemplateSpec pts = new PodTemplateSpec();
 
         ObjectMeta objectMeta = new ObjectMeta();
@@ -376,7 +391,18 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         pts.setSpec(ps);
         ps.setContainers(containers);
 
+        mountSecret(ps, mountSecret);
+
         return pts;
+    }
+
+    private static void mountSecret(PodSpec ps, MountSecret mountSecret) {
+        if (mountSecret != null) {
+            Volume volume = new Volume();
+            volume.setName(mountSecret.volumeName());
+            volume.setSecret(new SecretVolumeSource(mountSecret.secretName()));
+            ps.setVolumes(Collections.singletonList(volume));
+        }
     }
 
     private ReplicationController createReplicationController(String name, String apiVersion, Map<String, String> labels, int replicas, Map<String, String> selector, PodTemplateSpec podTemplate) throws Exception {

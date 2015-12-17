@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.api.RunInPod;
 import org.jboss.arquillian.ce.api.RunInPodDeployment;
 import org.jboss.arquillian.ce.spi.WebSPIConfiguration;
@@ -99,6 +100,10 @@ public class RunInPodUtils {
     }
 
     //---
+
+    public MountSecret readMountSecret() {
+        return testClass.getAnnotation(MountSecret.class);
+    }
 
     public RunInPodContainer createContainer(Configuration orignal) {
         Method method = findRunInContainerDeploymentMethod(testClass.getJavaClass());
@@ -237,5 +242,4 @@ public class RunInPodUtils {
         log.info("No RunInPod deployment method found: " + clazz.getName());
         return null;
     }
-
 }

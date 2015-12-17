@@ -26,6 +26,7 @@ package org.jboss.arquillian.ce.utils;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.shrinkwrap.api.Archive;
 
 /**
@@ -42,16 +43,18 @@ public class RCContext {
     private boolean ignorePreStop;
     private HookType probeHook;
     private List<String> probeCommands;
+    private MountSecret mountSecret;
 
     public RCContext() {
     }
 
-    public RCContext(Archive<?> archive, String imageName, List<Port> ports, Map<String, String> labels, int replicas) {
+    public RCContext(Archive<?> archive, String imageName, List<Port> ports, Map<String, String> labels, int replicas, MountSecret mountSecret) {
         this.archive = archive;
         this.imageName = imageName;
         this.ports = ports;
         this.labels = labels;
         this.replicas = replicas;
+        this.mountSecret = mountSecret;
     }
 
     public Archive<?> getArchive() {
@@ -132,5 +135,13 @@ public class RCContext {
 
     public void setProbeCommands(List<String> probeCommands) {
         this.probeCommands = probeCommands;
+    }
+
+    public MountSecret getMountSecret() {
+        return mountSecret;
+    }
+
+    public void setMountSecret(MountSecret mountSecret) {
+        this.mountSecret = mountSecret;
     }
 }

@@ -38,6 +38,7 @@ import org.jboss.arquillian.ce.adapter.DockerAdapterImpl;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapterFactory;
 import org.jboss.arquillian.ce.api.ConfigurationHandle;
+import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.api.Replicas;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceFactory;
@@ -163,7 +164,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     protected boolean isSPI() {
-        // not injected by ARQ, or this is its own runaspod container
+        // not injected by ARQ, or this is its own runinpod container
         return (tc == null) || (runInPodContainer != null && runInPodContainer.isSame(this));
     }
 
@@ -234,6 +235,18 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             return max + 1;
         } else {
             return r;
+        }
+    }
+
+    protected MountSecret readMountSecret() {
+        if (tc == null) {
+            if (runInPodUtils == null) {
+                return null;
+            } else {
+                return runInPodUtils.readMountSecret();
+            }
+        } else {
+            return tc.get().getAnnotation(MountSecret.class);
         }
     }
 

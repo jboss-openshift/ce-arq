@@ -38,6 +38,9 @@ final class Templates {
     static final String LIFECYCLE = "lifecycle";
     static final String ROLE_BINDING = "rolebinding";
 
+    static final String VOLUMES = "[{\"name\":\"%s\",\"secret\":{\"secretName\":\"%s\"}}]";
+    static final String VOLUME_MOUNTS = "[{\"name\":\"%s\",\"mountPath\":\"%s\",\"readOnly\":true}]";
+
     static String readJson(String apiVersion, String json) {
         return readJson(apiVersion, json, null);
     }

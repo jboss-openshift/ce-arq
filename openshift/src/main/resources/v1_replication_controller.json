@@ -33,11 +33,11 @@
             "ports": [
               ${PORTS}
             ],
-            "volumeMounts": []
+            "volumeMounts": ${VOLUME_MOUNTS}
           }
         ],
         "imagePullSecrets": [],
-        "volumes": []
+        "volumes": ${VOLUMES}
       }
     }
   }

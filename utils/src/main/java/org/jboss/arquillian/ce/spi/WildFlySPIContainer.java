@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.utils.Port;
@@ -44,7 +45,7 @@ import org.jboss.shrinkwrap.api.Archive;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class WildFlySPIContainer extends AbstractCEContainer<WildFlySPIConfiguration> {
-    public static RCContext context(WildFlySPIConfiguration configuration, Archive<?> archive, int replicas, String imageName) throws DeploymentException {
+    public static RCContext context(WildFlySPIConfiguration configuration, Archive<?> archive, int replicas, MountSecret mountSecret, String imageName) throws DeploymentException {
         try {
             List<Port> ports = new ArrayList<>();
             // http
@@ -70,7 +71,7 @@ public class WildFlySPIContainer extends AbstractCEContainer<WildFlySPIConfigura
 
             Map<String, String> labels = DeploymentContext.getDeploymentLabels(archive);
 
-            RCContext context = new RCContext(archive, imageName, ports, labels, replicas);
+            RCContext context = new RCContext(archive, imageName, ports, labels, replicas, mountSecret);
 
             context.setLifecycleHook(configuration.getPreStopHookType());
             context.setPreStopPath(configuration.getPreStopPath());
@@ -107,7 +108,7 @@ public class WildFlySPIContainer extends AbstractCEContainer<WildFlySPIConfigura
 
             // add new k8s config
 
-            RCContext context = context(configuration, archive, readReplicas(), imageName);
+            RCContext context = context(configuration, archive, readReplicas(), readMountSecret(), imageName);
 
             String rc = deployResourceContext(context);
             log.info(String.format("Deployed k8s resource [%s]: %s", context.getReplicas(), rc));

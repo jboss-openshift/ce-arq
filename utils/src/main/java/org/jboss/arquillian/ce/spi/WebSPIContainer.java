@@ -67,7 +67,7 @@ public class WebSPIContainer extends AbstractCEContainer<WebSPIConfiguration> {
 
             Map<String, String> labels = DeploymentContext.getDeploymentLabels(archive);
 
-            RCContext context = new RCContext(archive, imageName, ports, labels, 1);
+            RCContext context = new RCContext(archive, imageName, ports, labels, 1, readMountSecret());
 
             context.setProbeHook(configuration.getProbeHookType());
             context.setProbeCommands(configuration.getProbeCommands());
