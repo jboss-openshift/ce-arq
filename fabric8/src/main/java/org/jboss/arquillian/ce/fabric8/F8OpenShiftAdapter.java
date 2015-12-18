@@ -177,7 +177,6 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         Map<String, String> podLabels = new HashMap<>();
         podLabels.put("name", name + "-pod");
         podLabels.putAll(context.getLabels());
-        // TODO -- @MountSecret volume
         PodTemplateSpec podTemplate = createPodTemplateSpec(podLabels, containers, context.getMountSecret());
 
         Map<String, String> selector = Collections.singletonMap("name", name + "-pod");
