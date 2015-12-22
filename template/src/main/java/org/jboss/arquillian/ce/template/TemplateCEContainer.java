@@ -55,7 +55,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfiguration> {
     @Override
     protected RunInPodContainer create() {
-        RunInPodContext context = new RunInPodContext(configuration, parallelHandle);
+        RunInPodContext context = new RunInPodContext(configuration, parallelHandler);
         return runInPodUtils.createContainer(context);
     }
 

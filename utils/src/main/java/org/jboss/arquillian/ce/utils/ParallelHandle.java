@@ -30,7 +30,7 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class ParallelHandle {
+class ParallelHandle {
     private static final Logger log = Logger.getLogger(ParallelHandle.class.getName());
 
     private enum State {
@@ -42,13 +42,17 @@ public class ParallelHandle {
     private volatile State state;
 
     synchronized void init() {
-        state = State.IN_PROGRESS;
+        if (state == null) {
+            state = State.IN_PROGRESS;
+        }
     }
 
     synchronized void doNotify(String info) {
         if (state == State.WAITING) {
             log.info(String.format("Notifying builds waiting on %s ...", info));
             notifyAll();
+        } else {
+            log.info(String.format("Build %s already done [%s].", info, state != null ? state : State.DONE));
         }
         state = State.DONE;
     }

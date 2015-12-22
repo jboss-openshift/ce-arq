@@ -99,14 +99,14 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected RunInPodUtils runInPodUtils;
     protected RunInPodContainer runInPodContainer;
-    protected final ParallelHandle parallelHandle;
+    protected final ParallelHandler parallelHandler;
 
     public AbstractCEContainer() {
-        this(new ParallelHandle());
+        this(new ParallelHandler());
     }
 
-    protected AbstractCEContainer(ParallelHandle parallelHandle) {
-        this.parallelHandle = parallelHandle;
+    protected AbstractCEContainer(ParallelHandler parallelHandler) {
+        this.parallelHandler = parallelHandler;
     }
 
     protected String getName(String prefix, Archive<?> archive) {
@@ -210,19 +210,22 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         handleRunInPod();
         if (runInPodContainer != null && !isSPI()) {
-            parallelHandle.init();
+            parallelHandler.resetMain();
             runInPodUtils.parallelize(runInPodContainer);
         }
 
-        ProtocolMetaData protocolMetaData = doDeploy(archive);
-        // notify dependents
-        parallelHandle.doNotify(isSPI() ? "RunInPod" : "Main");
+        final ProtocolMetaData protocolMetaData = doDeploy(archive);
+
+        if (isSPI()) {
+            // notify Main that SPI is ready
+            parallelHandler.notifySPI();
+        }
 
         if (runInPodContainer != null && !isSPI()) {
             // reset
-            parallelHandle.init();
+            parallelHandler.resetSPI();
             // wait for runinpod to finish
-            parallelHandle.doWait("RunInPod");
+            parallelHandler.waitOnSPI();
         }
 
         return protocolMetaData;
@@ -296,7 +299,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected String deployResourceContext(RCContext context) throws Exception {
         // wait for original to finish, if we're @RunInPod container
-        parallelHandle.doWait(isSPI() ? "Main" : "RunInPod");
+        parallelHandler.waitOnMain();
 
         String name = getName(getPrefix(), context.getArchive());
         int replicas = context.getReplicas();
@@ -311,6 +314,11 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected ProtocolMetaData getProtocolMetaData(Archive<?> archive, final Map<String, String> labels, final int replicas) throws Exception {
         log.info("Creating ProtocolMetaData ...");
+
+        if (!isSPI()) {
+            // notify after Main already pushed k8s/ose config
+            parallelHandler.notifyMain();
+        }
 
         delay(labels, replicas);
 

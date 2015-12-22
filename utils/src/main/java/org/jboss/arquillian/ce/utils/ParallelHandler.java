@@ -21,28 +21,38 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.runinpod;
-
-import org.jboss.arquillian.ce.utils.Configuration;
-import org.jboss.arquillian.ce.utils.ParallelHandler;
+package org.jboss.arquillian.ce.utils;
 
 /**
+ * Parallel handle.
+ *
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class RunInPodContext {
-    private Configuration configuration;
-    private ParallelHandler parallelHandler;
+public class ParallelHandler {
+    private volatile ParallelHandle main = new ParallelHandle();
+    private volatile ParallelHandle spi = new ParallelHandle();
 
-    public RunInPodContext(Configuration configuration, ParallelHandler parallelHandler) {
-        this.configuration = configuration;
-        this.parallelHandler = parallelHandler;
+    void resetMain() {
+        main.init();
     }
 
-    public Configuration getConfiguration() {
-        return configuration;
+    void notifyMain() {
+        main.doNotify("Main");
     }
 
-    public ParallelHandler getParallelHandle() {
-        return parallelHandler;
+    void waitOnMain() {
+        main.doWait("Main");
+    }
+
+    void resetSPI() {
+        spi.init();
+    }
+
+    void notifySPI() {
+        spi.doNotify("RunInPod");
+    }
+
+    void waitOnSPI() {
+        spi.doWait("RunInPod");
     }
 }

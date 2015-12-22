@@ -30,7 +30,7 @@ import java.util.Map;
 
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.DeploymentContext;
-import org.jboss.arquillian.ce.utils.ParallelHandle;
+import org.jboss.arquillian.ce.utils.ParallelHandler;
 import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -47,8 +47,8 @@ public class WebSPIContainer extends AbstractCEContainer<WebSPIConfiguration> {
     public WebSPIContainer() {
     }
 
-    public WebSPIContainer(ParallelHandle parallelHandle) {
-        super(parallelHandle);
+    public WebSPIContainer(ParallelHandler parallelHandler) {
+        super(parallelHandler);
     }
 
     public Class<WebSPIConfiguration> getConfigurationClass() {
