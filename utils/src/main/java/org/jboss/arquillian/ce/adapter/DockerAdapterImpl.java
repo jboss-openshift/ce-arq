@@ -32,10 +32,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.github.dockerjava.api.DockerClient;
@@ -70,7 +70,7 @@ public class DockerAdapterImpl implements DockerAdapter {
     private final Configuration configuration;
     private final RegistryLookup lookup;
 
-    private Map<String, File> dirs = new HashMap<>();
+    private Map<String, File> dirs = new ConcurrentHashMap<>();
 
     protected static File getTempRoot() {
         return AccessController.doPrivileged(new PrivilegedAction<File>() {

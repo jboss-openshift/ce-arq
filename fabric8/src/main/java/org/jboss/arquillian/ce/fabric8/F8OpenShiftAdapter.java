@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -86,7 +87,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     private final static Logger log = Logger.getLogger(F8OpenShiftAdapter.class.getName());
 
     private final CeOpenShiftClient client;
-    private Map<String, KubernetesList> templates = new HashMap<>();
+    private Map<String, KubernetesList> templates = new ConcurrentHashMap<>();
 
     static OpenShiftConfig toOpenShiftConfig(Configuration configuration) {
         OpenShiftConfigBuilder builder = new OpenShiftConfigBuilder()

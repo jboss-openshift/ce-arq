@@ -53,7 +53,6 @@ public abstract class AbstractProxy<P> implements Proxy {
 
     private boolean sslContextSet;
     protected final Configuration configuration;
-//    private final Map<String, Cookie> cookieMap = new HashMap<>();
 
     public AbstractProxy(Configuration configuration) {
         this.configuration = configuration;
@@ -173,34 +172,8 @@ public abstract class AbstractProxy<P> implements Proxy {
         Request.Builder builder = new Request.Builder();
         builder.url(url);
 
-/*
-        Cookie match = null;
-        for (Map.Entry<String, Cookie> entry : cookieMap.entrySet()) {
-            if (path.startsWith(entry.getKey())) {
-                match = entry.getValue();
-                break;
-            }
-        }
-        if (match != null) {
-            CookieHandler cookieHandler = httpClient.getCookieHandler();
-            cookieHandler.put(URI.create(url), match);
-        }
-*/
-
         Request request = builder.build();
         Response response = httpClient.newCall(request).execute();
-
-        // handle cookies
-/*
-        List<Cookie> cookies = response.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (cookie.getName().equalsIgnoreCase("JSESSIONID")) {
-                    cookieMap.put(cookie.getPath(), cookie);
-                }
-            }
-        }
-*/
 
         return response.body().byteStream();
     }

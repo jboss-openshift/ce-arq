@@ -26,9 +26,9 @@ package org.jboss.arquillian.ce.adapter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
 import org.jboss.arquillian.ce.utils.Configuration;
@@ -38,7 +38,7 @@ import org.jboss.arquillian.ce.utils.Configuration;
  */
 public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
     protected final Configuration configuration;
-    private Map<String, List<OpenShiftResourceHandle>> resourcesMap = new HashMap<>();
+    private Map<String, List<OpenShiftResourceHandle>> resourcesMap = new ConcurrentHashMap<>();
 
     protected AbstractOpenShiftAdapter(Configuration configuration) {
         this.configuration = configuration;

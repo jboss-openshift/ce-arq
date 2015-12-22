@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -83,7 +84,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     private final IClient client;
 
-    private Map<String, Collection<IResource>> templates = new HashMap<>();
+    private Map<String, Collection<IResource>> templates = new ConcurrentHashMap<>();
 
     public NativeOpenShiftAdapter(Configuration configuration) {
         super(configuration);

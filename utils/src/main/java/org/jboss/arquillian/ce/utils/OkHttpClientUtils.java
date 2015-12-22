@@ -29,9 +29,9 @@ import java.net.HttpCookie;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.squareup.okhttp.OkHttpClient;
 
@@ -53,7 +53,7 @@ public class OkHttpClientUtils {
      */
     private static class SimpleCookieHandler extends CookieHandler {
         private static final String _PROXY = "/proxy";
-        private Map<String, List<HttpCookie>> cookiesMap = new HashMap<>();
+        private Map<String, List<HttpCookie>> cookiesMap = new ConcurrentHashMap<>();
 
         private void clear() {
             cookiesMap.clear();
