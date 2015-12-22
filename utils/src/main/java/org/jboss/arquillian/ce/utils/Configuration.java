@@ -50,6 +50,7 @@ public abstract class Configuration implements ContainerConfiguration, Configura
     private String openshiftPassword = getSystemPropertyOrEnvVar("openshift.password", "admin");
 
     private String apiVersion = getSystemPropertyOrEnvVar("kubernetes.api.version", "v1");
+    private String namespacePrefix = getSystemPropertyOrEnvVar("kubernetes.namespace.prefix");
     private String namespace = getSystemPropertyOrEnvVar("kubernetes.namespace");
     private String token = getSystemPropertyOrEnvVar("kubernetes.auth.token");
     private boolean trustCerts = Boolean.valueOf(getSystemPropertyOrEnvVar("kubernetes.trust.certs", "true"));
@@ -88,6 +89,9 @@ public abstract class Configuration implements ContainerConfiguration, Configura
 
     protected String generateNS() {
         StringBuilder builder = new StringBuilder();
+        if (getNamespacePrefix() != null) {
+            builder.append(getNamespacePrefix()).append("-");
+        }
         Random random = new Random();
         int N = 8;
         while (N > 0) {
@@ -147,6 +151,14 @@ public abstract class Configuration implements ContainerConfiguration, Configura
 
     public void setApiVersion(String apiVersion) {
         this.apiVersion = apiVersion;
+    }
+
+    public String getNamespacePrefix() {
+        return namespacePrefix;
+    }
+
+    public void setNamespacePrefix(String namespacePrefix) {
+        this.namespacePrefix = namespacePrefix;
     }
 
     public String getNamespace() {
