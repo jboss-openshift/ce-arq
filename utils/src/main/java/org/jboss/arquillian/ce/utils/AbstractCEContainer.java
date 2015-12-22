@@ -98,6 +98,15 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected RunInPodUtils runInPodUtils;
     protected RunInPodContainer runInPodContainer;
+    protected final ParallelHandle parallelHandle;
+
+    public AbstractCEContainer() {
+        this(new ParallelHandle());
+    }
+
+    protected AbstractCEContainer(ParallelHandle parallelHandle) {
+        this.parallelHandle = parallelHandle;
+    }
 
     protected String getName(String prefix, Archive<?> archive) {
         String name = archive.getName();
@@ -195,13 +204,14 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         handleResources(archive);
 
-        ProtocolMetaData protocolMetaData = doDeploy(archive);
-
         handleRunInPod();
         if (runInPodContainer != null) {
-            runInPodContainer.deploy();
+            parallelHandle.init();
+            runInPodUtils.parallelize(runInPodContainer);
         }
 
+        ProtocolMetaData protocolMetaData = doDeploy(archive);
+        parallelHandle.doNotify();
         return protocolMetaData;
     }
 
@@ -265,6 +275,9 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     protected String deployResourceContext(RCContext context) throws Exception {
+        // wait for original to finish, if we're @RunInPod container
+        parallelHandle.doWait();
+
         String name = getName(getPrefix(), context.getArchive());
         int replicas = context.getReplicas();
         if (replicas <= 0) {

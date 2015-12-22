@@ -33,6 +33,7 @@ import java.util.Map;
 import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.DeploymentContext;
+import org.jboss.arquillian.ce.utils.ParallelHandle;
 import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -45,6 +46,14 @@ import org.jboss.shrinkwrap.api.Archive;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class WildFlySPIContainer extends AbstractCEContainer<WildFlySPIConfiguration> {
+
+    public WildFlySPIContainer() {
+    }
+
+    public WildFlySPIContainer(ParallelHandle parallelHandle) {
+        super(parallelHandle);
+    }
+
     public static RCContext context(WildFlySPIConfiguration configuration, Archive<?> archive, int replicas, MountSecret mountSecret, String imageName) throws DeploymentException {
         try {
             List<Port> ports = new ArrayList<>();

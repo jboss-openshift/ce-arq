@@ -27,6 +27,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.api.MountSecret;
@@ -41,6 +43,7 @@ import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.ReflectionUtils;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
+import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.test.impl.domain.ProtocolDefinition;
@@ -70,6 +73,8 @@ public class RunInPodUtils {
     private final ServiceLoader serviceLoader;
     private final ProtocolRegistry protocolRegistry;
     private final TestClass testClass;
+
+    private final Executor executor = Executors.newSingleThreadExecutor();
 
     public RunInPodUtils(DeployableContainer<?> container, ServiceLoader serviceLoader, ProtocolRegistry protocolRegistry, TestClass testClass) {
         this.container = container;
@@ -101,11 +106,24 @@ public class RunInPodUtils {
 
     //---
 
+    public void parallelize(final RunInPodContainer container) {
+        Runnable runnable = new Runnable() {
+            public void run() {
+                try {
+                    container.deploy();
+                } catch (DeploymentException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        };
+        executor.execute(runnable);
+    }
+
     public MountSecret readMountSecret() {
         return testClass.getAnnotation(MountSecret.class);
     }
 
-    public RunInPodContainer createContainer(Configuration orignal) {
+    public RunInPodContainer createContainer(RunInPodContext context) {
         Method method = findRunInContainerDeploymentMethod(testClass.getJavaClass());
 
         String env = DEFAULT_ENV;
@@ -117,16 +135,16 @@ public class RunInPodUtils {
         DeployableContainer<? extends Configuration> container;
         switch (env) {
             case "eap" :
-                WildFlySPIContainer wfc = new WildFlySPIContainer();
+                WildFlySPIContainer wfc = new WildFlySPIContainer(context.getParallelHandle());
                 WildFlySPIConfiguration wfConfiguration = new WildFlySPIConfiguration();
-                merge(wfConfiguration, orignal);
+                merge(wfConfiguration, context.getConfiguration());
                 wfc.setup(wfConfiguration);
                 container = wfc;
                 break;
             case "jws" :
-                WebSPIContainer webc = new WebSPIContainer();
+                WebSPIContainer webc = new WebSPIContainer(context.getParallelHandle());
                 WebSPIConfiguration webConfiguration = new WebSPIConfiguration();
-                merge(webConfiguration, orignal);
+                merge(webConfiguration, context.getConfiguration());
                 webc.setup(webConfiguration);
                 container = webc;
                 break;
