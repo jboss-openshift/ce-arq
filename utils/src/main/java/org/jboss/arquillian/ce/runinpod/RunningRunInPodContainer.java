@@ -36,9 +36,9 @@ public class RunningRunInPodContainer extends RunInPodContainer {
         super(delegate, archive);
     }
 
-    public void start() throws LifecycleException {
+    public void doStart() throws LifecycleException {
     }
 
-    public void stop() throws LifecycleException {
+    public void doStop() throws LifecycleException {
     }
 }

@@ -173,9 +173,12 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return runInPodUtils.createContainer(this);
     }
 
+    /**
+     * Are we the container for @RunInPod handling?
+     */
     protected boolean isSPI() {
-        // not injected by ARQ, or this is its own runinpod container
-        return (tc == null) || (runInPodContainer != null && runInPodContainer.isSame(this));
+        // not injected by ARQ, or we're in progress in RunInPod
+        return (tc == null) || (runInPodContainer != null && runInPodContainer.inProgress());
     }
 
     /**
@@ -206,7 +209,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         handleResources(archive);
 
         handleRunInPod();
-        if (runInPodContainer != null) {
+        if (runInPodContainer != null && !isSPI()) {
             parallelHandle.init();
             runInPodUtils.parallelize(runInPodContainer);
         }
@@ -259,14 +262,15 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     protected MountSecret readMountSecret() {
-        if (tc == null) {
+        if (isSPI()) {
             if (runInPodUtils == null) {
                 return null;
             } else {
                 return runInPodUtils.readMountSecret();
             }
         } else {
-            return tc.get().getAnnotation(MountSecret.class);
+            TestClass testClass = tc.get();
+            return (testClass != null) ? testClass.getAnnotation(MountSecret.class) : null;
         }
     }
 

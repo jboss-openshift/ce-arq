@@ -36,11 +36,11 @@ public class NewRunInPodContainer extends RunInPodContainer {
         super(delegate, archive);
     }
 
-    public void start() throws LifecycleException {
+    public void doStart() throws LifecycleException {
         delegate.start();
     }
 
-    public void stop() throws LifecycleException {
+    public void doStop() throws LifecycleException {
         delegate.stop();
     }
 }

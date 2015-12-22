@@ -23,9 +23,12 @@
 
 package org.jboss.arquillian.ce.runinpod;
 
+import java.util.concurrent.Callable;
+
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
+import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.shrinkwrap.api.Archive;
@@ -35,7 +38,7 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptor;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public abstract class RunInPodContainer implements DeployableContainer<RunInPodConfiguration> {
-    private final static ThreadLocal<Boolean> check = new ThreadLocal<>();
+    private final static ThreadLocal<Object> check = new ThreadLocal<>();
 
     protected final DeployableContainer<? extends Configuration> delegate;
     protected final Archive<?> archive;
@@ -45,30 +48,55 @@ public abstract class RunInPodContainer implements DeployableContainer<RunInPodC
         this.archive = archive;
     }
 
-    public boolean isSame(DeployableContainer<? extends Configuration> container) {
-        return (delegate == container);
+    protected abstract void doStart() throws LifecycleException;
+
+    protected abstract void doStop() throws LifecycleException;
+
+    public boolean inProgress() {
+        return (check.get() != null);
+    }
+
+    private <T> T execute(Callable<T> callable) {
+        if (check.get() == null) {
+            check.set(RunInPodContainer.class);
+            try {
+                try {
+                    return callable.call();
+                } catch (Exception e) {
+                    throw new IllegalStateException(e);
+                }
+            } finally {
+                check.remove();
+            }
+        } else {
+            return null;
+        }
     }
 
     public void deploy() throws DeploymentException {
-        if (check.get() == null) {
-            check.set(true);
-            try {
-                deploy(archive);
-            } finally {
-                check.remove();
-            }
-        }
+        deploy(archive);
     }
 
     public void undeploy() throws DeploymentException {
-        if (check.get() == null) {
-            check.set(true);
-            try {
-                undeploy(archive);
-            } finally {
-                check.remove();
+        undeploy(archive);
+    }
+
+    public void start() throws LifecycleException {
+        execute(new Callable<Void>() {
+            public Void call() throws Exception {
+                doStart();
+                return null;
             }
-        }
+        });
+    }
+
+    public void stop() throws LifecycleException {
+        execute(new Callable<Void>() {
+            public Void call() throws Exception {
+                doStop();
+                return null;
+            }
+        });
     }
 
     public Class<RunInPodConfiguration> getConfigurationClass() {
@@ -83,19 +111,38 @@ public abstract class RunInPodContainer implements DeployableContainer<RunInPodC
         return delegate.getDefaultProtocol();
     }
 
-    public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
-        return delegate.deploy(archive);
+    public ProtocolMetaData deploy(final Archive<?> archive) throws DeploymentException {
+        return execute(new Callable<ProtocolMetaData>() {
+            public ProtocolMetaData call() throws Exception {
+                return delegate.deploy(archive);
+            }
+        });
     }
 
-    public void undeploy(Archive<?> archive) throws DeploymentException {
-        delegate.undeploy(archive);
+    public void undeploy(final Archive<?> archive) throws DeploymentException {
+        execute(new Callable<Void>() {
+            public Void call() throws Exception {
+                delegate.undeploy(archive);
+                return null;
+            }
+        });
     }
 
-    public void deploy(Descriptor descriptor) throws DeploymentException {
-        delegate.deploy(descriptor);
+    public void deploy(final Descriptor descriptor) throws DeploymentException {
+        execute(new Callable<Void>() {
+            public Void call() throws Exception {
+                delegate.deploy(descriptor);
+                return null;
+            }
+        });
     }
 
-    public void undeploy(Descriptor descriptor) throws DeploymentException {
-        delegate.undeploy(descriptor);
+    public void undeploy(final Descriptor descriptor) throws DeploymentException {
+        execute(new Callable<Void>() {
+            public Void call() throws Exception {
+                delegate.undeploy(descriptor);
+                return null;
+            }
+        });
     }
 }
