@@ -211,7 +211,16 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         }
 
         ProtocolMetaData protocolMetaData = doDeploy(archive);
-        parallelHandle.doNotify();
+        // notify dependents
+        parallelHandle.doNotify(isSPI() ? "RunInPod" : "Main");
+
+        if (runInPodContainer != null && !isSPI()) {
+            // reset
+            parallelHandle.init();
+            // wait for runinpod to finish
+            parallelHandle.doWait("RunInPod");
+        }
+
         return protocolMetaData;
     }
 
@@ -276,7 +285,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected String deployResourceContext(RCContext context) throws Exception {
         // wait for original to finish, if we're @RunInPod container
-        parallelHandle.doWait();
+        parallelHandle.doWait(isSPI() ? "Main" : "RunInPod");
 
         String name = getName(getPrefix(), context.getArchive());
         int replicas = context.getReplicas();

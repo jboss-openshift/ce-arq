@@ -45,17 +45,17 @@ public class ParallelHandle {
         state = State.IN_PROGRESS;
     }
 
-    synchronized void doNotify() {
+    synchronized void doNotify(String info) {
         if (state == State.WAITING) {
-            log.info("Notifying dependent waiting builds ...");
+            log.info(String.format("Notifying builds waiting on %s ...", info));
             notifyAll();
         }
         state = State.DONE;
     }
 
-    synchronized void doWait() {
+    synchronized void doWait(String info) {
         if (state == State.IN_PROGRESS) {
-            log.info("Waiting for main build to finish ...");
+            log.info(String.format("Waiting for %s build to finish ...", info));
             state = State.WAITING;
             try {
                 wait();
