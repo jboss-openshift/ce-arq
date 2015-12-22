@@ -131,13 +131,15 @@ public class DockerAdapterImpl implements DockerAdapter {
         return target;
     }
 
-    public String buildAndPushImage(DockerFileTemplateHandler dth, InputStream dockerfileTemplate, Archive deployment, Properties properties) throws IOException {
+    public String buildAndPushImage(DockerAdapterContext context) throws IOException {
+        final DockerFileTemplateHandler dth = context.getHandler();
+        final Archive deployment = context.getDeployment();
+        final Properties properties = context.getProperties();
+
         // Create Dockerfile
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            copy(dockerfileTemplate, baos);
-        } finally {
-            dockerfileTemplate.close();
+        try (InputStream stream = context.getDockerfileTemplate()) {
+            copy(stream, baos);
         }
 
         properties.put("deployment.name", deployment.getName());
@@ -164,12 +166,13 @@ public class DockerAdapterImpl implements DockerAdapter {
         RegistryLookup.RegistryLookupEntry rle = lookup.lookup();
 
         String port = rle.getPort();
+        String iName = context.getImageNamePrefix() + configuration.getImageName();
         // our Docker image name
         String imageName;
         if (port != null) {
-            imageName = String.format("%s:%s/%s/%s", rle.getIp(), rle.getPort(), configuration.getNamespace(), configuration.getImageName());
+            imageName = String.format("%s:%s/%s/%s", rle.getIp(), port, configuration.getNamespace(), iName);
         } else {
-            imageName = String.format("%s/%s/%s", rle.getIp(), configuration.getNamespace(), configuration.getImageName());
+            imageName = String.format("%s/%s/%s", rle.getIp(), configuration.getNamespace(), iName);
         }
         log.info(String.format("Docker image name: %s", imageName));
 

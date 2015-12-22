@@ -23,24 +23,47 @@
 
 package org.jboss.arquillian.ce.adapter;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
+import org.jboss.arquillian.ce.utils.DockerFileTemplateHandler;
 import org.jboss.shrinkwrap.api.Archive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface DockerAdapter {
-    void prepare(Archive<?> archive);
+public class DockerAdapterContext {
+    private DockerFileTemplateHandler handler;
+    private InputStream dockerfileTemplate;
+    private Archive deployment;
+    private Properties properties;
+    private String imageNamePrefix;
 
-    void reset(Archive<?> archive);
+    public DockerAdapterContext(DockerFileTemplateHandler handler, InputStream dockerfileTemplate, Archive deployment, Properties properties, String imageNamePrefix) {
+        this.handler = handler;
+        this.dockerfileTemplate = dockerfileTemplate;
+        this.deployment = deployment;
+        this.properties = properties;
+        this.imageNamePrefix = imageNamePrefix;
+    }
 
-    File getDir(Archive<?> archive);
+    public DockerFileTemplateHandler getHandler() {
+        return handler;
+    }
 
-    File exportAsZip(File dir, Archive<?> deployment);
+    public InputStream getDockerfileTemplate() {
+        return dockerfileTemplate;
+    }
 
-    File exportAsZip(File dir, Archive<?> deployment, String name);
+    public Archive getDeployment() {
+        return deployment;
+    }
 
-    String buildAndPushImage(DockerAdapterContext context) throws IOException;
+    public Properties getProperties() {
+        return properties;
+    }
+
+    public String getImageNamePrefix() {
+        return imageNamePrefix;
+    }
 }

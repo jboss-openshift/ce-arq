@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.adapter.DockerAdapter;
+import org.jboss.arquillian.ce.adapter.DockerAdapterContext;
 import org.jboss.arquillian.ce.adapter.DockerAdapterImpl;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapterFactory;
@@ -269,6 +270,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         }
     }
 
+    protected InputStream getDockerTemplate() {
+        return getClass().getClassLoader().getResourceAsStream(configuration.getTemplateName());
+    }
+
     protected String buildImage(Archive<?> archive, String parent, String dir) throws IOException {
         Properties properties = configuration.getProperties();
 
@@ -279,8 +284,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         log.info(String.format("FROM %s [%s]", from, deployment));
 
-        InputStream dockerfileTemplate = getClass().getClassLoader().getResourceAsStream(configuration.getTemplateName());
-        return dockerAdapter.buildAndPushImage(this, dockerfileTemplate, archive, properties);
+        InputStream dockerfileTemplate = getDockerTemplate();
+
+        DockerAdapterContext context = new DockerAdapterContext(this, dockerfileTemplate, archive, properties, isSPI() ? "spi-" : "");
+        return dockerAdapter.buildAndPushImage(context);
     }
 
     protected String deployResourceContext(RCContext context) throws Exception {
