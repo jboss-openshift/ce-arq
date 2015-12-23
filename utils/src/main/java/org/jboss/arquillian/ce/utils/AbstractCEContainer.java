@@ -299,7 +299,9 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected String deployResourceContext(RCContext context) throws Exception {
         // wait for original to finish, if we're @RunInPod container
-        parallelHandler.waitOnMain();
+        if (isSPI()) {
+            parallelHandler.waitOnMain();
+        }
 
         String name = getName(getPrefix(), context.getArchive());
         int replicas = context.getReplicas();
