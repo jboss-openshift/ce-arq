@@ -112,7 +112,16 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected String getName(String prefix, Archive<?> archive) {
         String name = archive.getName();
         int p = name.lastIndexOf(".");
-        return (prefix + name.substring(0, p) + name.substring(p + 1)).toLowerCase();
+        String mid = name.substring(0, p) + name.substring(p + 1);
+        return toK8sName(prefix, mid);
+    }
+
+    /**
+     * Return k8s compatible name.
+     */
+    protected static String toK8sName(String prefix, String name) {
+        name = name.replace("_", "-");
+        return (prefix + name).toLowerCase();
     }
 
     protected abstract String getPrefix();
