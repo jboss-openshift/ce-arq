@@ -25,10 +25,9 @@ package org.jboss.arquillian.ce.eap6;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.util.Map;
 
-import org.jboss.arquillian.ce.portfwd.PortForward;
-import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.spi.WildFlySPIContainer;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.Archives;
@@ -63,7 +62,7 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
     private InstanceProducer<ArchiveDeployer> archiveDeployer;
 
     private Map<String, String> labels;
-    private PortForward.Handle portFwd;
+//    private PortForward.Handle portFwd;
 
     public Class<CEConfiguration> getConfigurationClass() {
         return CEConfiguration.class;
@@ -93,11 +92,14 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
             labels = deployEapPods(replicas);
             delay(labels, replicas);
 
+/*
             PortForwardContext context = client.createPortForwardContext(labels, configuration.getMgmtPort());
             PortForward pf = proxy.createPortForward();
             portFwd = pf.run(context);
 
             String address = portFwd.getInetAddress().getHostAddress(); // we abuse k8s port forwarding
+*/
+            String address = InetAddress.getLocalHost().getHostAddress();
             int port = configuration.getMgmtPort();
 
             ModelControllerClient modelControllerClient = ModelControllerClient.Factory.create(address, port);
@@ -135,14 +137,14 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
     @Override
     public void stop() throws LifecycleException {
         try {
-            try {
+//            try {
                 getManagementClient().close();
-            } finally {
-                try {
-                    portFwd.close();
-                } catch (IOException ignored) {
-                }
-            }
+//            } finally {
+//                try {
+//                    portFwd.close();
+//                } catch (IOException ignored) {
+//                }
+//            }
         } finally {
             super.stop();
         }

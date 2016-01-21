@@ -34,8 +34,6 @@ import org.jboss.dmr.ValueExpressionResolver;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class Strings {
-    private static final int INDEX_NOT_FOUND = -1;
-
     private static String checkForNone(String value) {
         return "__none".equalsIgnoreCase(value) ? null : value;
     }

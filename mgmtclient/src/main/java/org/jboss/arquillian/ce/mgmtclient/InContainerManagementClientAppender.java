@@ -21,32 +21,40 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.ext;
+package org.jboss.arquillian.ce.mgmtclient;
 
-import org.jboss.arquillian.ce.api.ConfigurationHandle;
+import org.jboss.arquillian.ce.utils.ArchiveHolder;
 import org.jboss.arquillian.container.test.spi.RemoteLoadableExtension;
 import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
-import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
+import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
+import org.jboss.as.arquillian.api.ServerSetup;
+import org.jboss.as.arquillian.api.ServerSetupTask;
+import org.jboss.as.arquillian.container.Authentication;
+import org.jboss.as.arquillian.container.ManagementClient;
+import org.jboss.as.arquillian.container.NetworkUtils;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class UtilsArchiveAppender implements AuxiliaryArchiveAppender {
+public class InContainerManagementClientAppender implements AuxiliaryArchiveAppender {
     @Inject
-    private Instance<ConfigurationHandle> configurationInstance;
+    @SuiteScoped
+    private InstanceProducer<ArchiveHolder> archiveHolderInstance;
 
     public Archive<?> createAuxiliaryArchive() {
-        return ShrinkWrap.create(JavaArchive.class, "ce-arq-utils.jar")
-            .add(new StringAsset(RemoteConfigurationResourceProvider.toProperties(configurationInstance.get())), RemoteConfigurationResourceProvider.FILE_NAME)
-            .addClass(ConfigurationHandle.class)
-            .addClass(UtilsCEExtensionContainer.class)
-            .addClass(RemoteConfigurationResourceProvider.class)
-            .addAsServiceProviderAndClasses(RemoteLoadableExtension.class, UtilsCEExtensionContainer.class);
-    }
+        JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "incontainermgmtclient.jar")
+            .addClasses(ServerSetup.class, ServerSetupTask.class, ManagementClient.class, Authentication.class, NetworkUtils.class)
+            .addClass(InContainerManagementClientProvider.class)
+            .addClass(InContainerManagementClientExtension.class)
+            .addAsServiceProviderAndClasses(RemoteLoadableExtension.class, InContainerManagementClientExtension.class);
 
+        archiveHolderInstance.set(new ArchiveHolder(jar));
+
+        return jar;
+    }
 }

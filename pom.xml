@@ -254,6 +254,7 @@
 
             <modules>
                 <module>eap6</module>
+                <module>mgmtclient</module>
             </modules>
         </profile>
     </profiles>

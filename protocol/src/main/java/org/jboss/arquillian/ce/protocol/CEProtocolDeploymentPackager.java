@@ -50,6 +50,7 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptors;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class CEProtocolDeploymentPackager implements DeploymentPackager {
+
     public Archive<?> generateDeployment(TestDeployment testDeployment, Collection<ProtocolArchiveProcessor> processors) {
         Archive<?> archive = testDeployment.getApplicationArchive();
 
