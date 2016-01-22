@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.mgmtclient;
 
 import org.jboss.arquillian.ce.utils.ArchiveHolder;
+import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.container.test.spi.RemoteLoadableExtension;
 import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
 import org.jboss.arquillian.core.api.InstanceProducer;
@@ -47,7 +48,7 @@ public class InContainerManagementClientAppender implements AuxiliaryArchiveAppe
     private InstanceProducer<ArchiveHolder> archiveHolderInstance;
 
     public Archive<?> createAuxiliaryArchive() {
-        JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "incontainermgmtclient.jar")
+        JavaArchive jar = ShrinkWrap.create(JavaArchive.class, Archives.MGMT_CLIENT_JAR_NAME)
             .addClasses(ServerSetup.class, ServerSetupTask.class, ManagementClient.class, Authentication.class, NetworkUtils.class)
             .addClass(InContainerManagementClientProvider.class)
             .addClass(InContainerManagementClientExtension.class)

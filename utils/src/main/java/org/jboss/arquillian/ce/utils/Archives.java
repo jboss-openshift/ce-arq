@@ -23,14 +23,26 @@
 
 package org.jboss.arquillian.ce.utils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import javassist.util.proxy.MethodHandler;
 import org.jboss.arquillian.ce.api.ExternalDeployment;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.ArchivePath;
+import org.jboss.shrinkwrap.api.ArchivePaths;
+import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.container.ManifestContainer;
 import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
@@ -38,6 +50,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class Archives {
+    public static final String MGMT_CLIENT_JAR_NAME = "incontainermgmtclient.jar";
 
     private final static String WEB_XML =
         "<web-app version=\"3.0\"\n" +
@@ -46,6 +59,20 @@ public class Archives {
             "         xsi:schemaLocation=\"http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd\"\n" +
             "         metadata-complete=\"false\">\n" +
             "</web-app>";
+
+    private static final String[] defaultDependencies = {
+        "org.jboss.as.server",
+        "org.jboss.as.controller-client",
+        "org.jboss.jandex",
+        "org.jboss.logging",
+        "org.jboss.modules",
+        "org.jboss.dmr",
+        "org.jboss.msc"
+    };
+
+    public static boolean isMgmtClientJar(Archive<?> archive) {
+        return MGMT_CLIENT_JAR_NAME.equals(archive.getName());
+    }
 
     public static boolean isExternalDeployment(Class<?> clazz) {
         return clazz.isAnnotationPresent(ExternalDeployment.class);
@@ -78,4 +105,57 @@ public class Archives {
         });
     }
 
+    public static void handleDependencies(Archive<?> archive) {
+        if (archive instanceof ManifestContainer<?> == false) {
+            throw new IllegalArgumentException("ManifestContainer expected: " + archive);
+        }
+
+        final Manifest manifest = getOrCreateManifest(archive);
+        ManifestContainer manifestContainer = ManifestContainer.class.cast(archive);
+
+        Attributes attributes = manifest.getMainAttributes();
+        if (attributes.getValue(Attributes.Name.MANIFEST_VERSION.toString()) == null) {
+            attributes.putValue(Attributes.Name.MANIFEST_VERSION.toString(), "1.0");
+        }
+        String value = attributes.getValue("Dependencies");
+        StringBuilder moduleDeps = new StringBuilder(value != null && value.trim().length() > 0 ? value : "");
+        moduleDeps.append(defaultDependencies[0]);
+        for (int i = 1; i < defaultDependencies.length; i++) {
+            moduleDeps.append(",").append(defaultDependencies[i]);
+        }
+
+        attributes.putValue("Dependencies", moduleDeps.toString());
+
+        // Add the manifest to the archive
+        ArchivePath manifestPath = ArchivePaths.create(JarFile.MANIFEST_NAME);
+        archive.delete(manifestPath);
+        manifestContainer.addAsManifestResource(new Asset() {
+            public InputStream openStream() {
+                try {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    manifest.write(baos);
+                    return new ByteArrayInputStream(baos.toByteArray());
+                } catch (IOException ex) {
+                    throw new IllegalStateException("Cannot write manifest", ex);
+                }
+            }
+        }, "MANIFEST.MF");
+    }
+
+    private static Manifest getOrCreateManifest(Archive<?> archive) {
+        Manifest manifest;
+        try {
+            Node node = archive.get(JarFile.MANIFEST_NAME);
+            if (node == null) {
+                manifest = new Manifest();
+                Attributes attributes = manifest.getMainAttributes();
+                attributes.putValue(Attributes.Name.MANIFEST_VERSION.toString(), "1.0");
+            } else {
+                manifest = new Manifest(node.getAsset().openStream());
+            }
+            return manifest;
+        } catch (Exception ex) {
+            throw new IllegalStateException("Cannot obtain manifest", ex);
+        }
+    }
 }

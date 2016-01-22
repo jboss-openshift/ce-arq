@@ -78,6 +78,13 @@ public class CEProtocolDeploymentPackager implements DeploymentPackager {
             throw new IllegalArgumentException("Cannot handle the type of deployment: " + archive);
         }
 
+        for (Archive<?> lib : auxiliaryArchives) {
+            if (Archives.isMgmtClientJar(lib)) {
+                Archives.handleDependencies(archive);
+                break;
+            }
+        }
+
         return archive;
     }
 
