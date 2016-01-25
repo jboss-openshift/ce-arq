@@ -66,6 +66,7 @@ import org.jboss.shrinkwrap.api.ArchivePath;
 import org.jboss.shrinkwrap.api.Filter;
 import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.jboss.shrinkwrap.descriptor.api.Descriptors;
@@ -422,8 +423,39 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     @SuppressWarnings("UnusedParameters")
     private void handleWebArchive(HTTPContext context, WebArchive war, String contextRoot) {
-        Servlet arqServlet = new Servlet(ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME, contextRoot);
-        context.add(arqServlet);
+        String info = "Adding Arquillian servlet for .war: " + war.getName();
+        boolean add = true;
+        if (tc != null && tc.get() != null) {
+            String classPath = tc.get().getName().replace(".", "/") + ".class";
+            add = findTestClass(war, classPath);
+            info = String.format("%s [%s]", info, classPath);
+        }
+        if (add) {
+            log.info(info);
+            Servlet arqServlet = new Servlet(ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME, contextRoot);
+            context.add(arqServlet);
+        }
+    }
+
+    protected boolean findTestClass(WebArchive war, String classPath) {
+        Node inClasses = war.get("WEB-INF/classes/" + classPath);
+        if (inClasses != null) {
+            return true;
+        }
+        Node lib = war.get("WEB-INF/lib");
+        if (lib != null) {
+            for (Node child : lib.getChildren()) {
+                ArchivePath path = child.getPath();
+                if (path.get().endsWith(".jar")) {
+                    JavaArchive jar = war.getAsType(JavaArchive.class, path);
+                    Node inJar = jar.get(classPath);
+                    if (inJar != null) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     protected void cleanup(Archive<?> archive) throws Exception {
