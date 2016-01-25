@@ -121,7 +121,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
      */
     protected static String toK8sName(String prefix, String name) {
         name = name.replace("_", "-");
-        return (prefix + name).toLowerCase();
+        name = (prefix + name);
+        // limit to 50, as full is 63
+        int min = Math.min(name.length(), 50);
+        return name.substring(0, min).toLowerCase();
     }
 
     protected abstract String getPrefix();
