@@ -27,14 +27,11 @@ import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.util.Map;
 
-import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
-import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
+import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
-import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.arquillian.protocol.servlet.ServletMethodExecutor;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 import org.jboss.shrinkwrap.api.Archive;
@@ -56,14 +53,7 @@ public class ProxyURLProvider implements ResourceProvider {
             return "";
         }
 
-        for (HTTPContext httpContext : pmd.getContexts(HTTPContext.class)) {
-            for (Servlet servlet : httpContext.getServlets()) {
-                if (ServletMethodExecutor.ARQUILLIAN_SERVLET_NAME.equals(servlet.getName())) {
-                    return servlet.getContextRoot();
-                }
-            }
-        }
-        throw new IllegalStateException("Cannot read servlet context!");
+        return CEServletExecutor.readContextRoot(pmd);
     }
 
     public boolean canProvide(Class<?> type) {

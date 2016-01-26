@@ -66,7 +66,7 @@ public class CEServletExecutor extends ServletMethodExecutor {
         this.proxy = deploymentContext.getProxy();
     }
 
-    private String readContextRoot(ProtocolMetaData protocolMetaData) {
+    static String readContextRoot(ProtocolMetaData protocolMetaData) {
         Collection<HTTPContext> contexts = protocolMetaData.getContexts(HTTPContext.class);
         for (HTTPContext context : contexts) {
             Servlet arqServlet = context.getServletByName(ARQUILLIAN_SERVLET_NAME);
