@@ -372,7 +372,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     protected void addServlets(HTTPContext context, Archive<?> archive) throws Exception {
         if (archive instanceof WebArchive) {
-            handleWebArchive(context, WebArchive.class.cast(archive));
+            handleWebArchive(context, WebArchive.class.cast(archive), false);
         } else if (archive instanceof EnterpriseArchive) {
             handleEAR(context, EnterpriseArchive.class.cast(archive));
         }
@@ -389,8 +389,8 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return contextRoot;
     }
 
-    private void handleWebArchive(HTTPContext context, WebArchive war) {
-        handleWebArchive(context, war, toContextRoot(war));
+    private void handleWebArchive(HTTPContext context, WebArchive war, boolean check) {
+        handleWebArchive(context, war, toContextRoot(war), check);
     }
 
     private void handleEAR(HTTPContext context, EnterpriseArchive ear) throws IOException {
@@ -404,7 +404,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
                     String uri = web.getWebUri();
                     if (uri != null) {
                         WebArchive war = ear.getAsType(WebArchive.class, uri);
-                        handleWebArchive(context, war, web.getContextRoot());
+                        handleWebArchive(context, war, web.getContextRoot(), true);
                     }
                 }
             }
@@ -416,16 +416,16 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
                 }
             });
             for (WebArchive war : wars) {
-                handleWebArchive(context, war);
+                handleWebArchive(context, war, true);
             }
         }
     }
 
     @SuppressWarnings("UnusedParameters")
-    private void handleWebArchive(HTTPContext context, WebArchive war, String contextRoot) {
+    private void handleWebArchive(HTTPContext context, WebArchive war, String contextRoot, boolean check) {
         String info = "Adding Arquillian servlet for .war: " + war.getName();
         boolean add = true;
-        if (tc != null && tc.get() != null) {
+        if (check && tc != null && tc.get() != null) {
             String classPath = tc.get().getName().replace(".", "/") + ".class";
             add = findTestClass(war, classPath);
             info = String.format("%s [%s]", info, classPath);
