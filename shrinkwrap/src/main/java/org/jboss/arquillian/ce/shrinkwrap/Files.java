@@ -41,7 +41,7 @@ public class Files {
         container.addAsResource(new StringAsset(writer.toString()), fileName);
     }
 
-    public static Properties readProperties(Class<?> clazz, String fileName) throws IOException {
+    public static Properties loadProperties(Class<?> clazz, String fileName) throws IOException {
         Properties properties = new Properties();
         try (InputStream is = clazz.getClassLoader().getResourceAsStream(fileName)) {
             properties.load(is);
