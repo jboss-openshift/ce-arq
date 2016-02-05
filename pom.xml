@@ -39,6 +39,7 @@
 
     <modules>
         <module>api</module>
+        <module>shrinkwrap</module>
         <module>utils</module>
         <module>openshift</module>
         <module>fabric8</module>
