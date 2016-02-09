@@ -392,4 +392,8 @@ public abstract class Configuration implements ContainerConfiguration, Configura
     public void setIgnoreCleanup(boolean ignoreCleanup) {
         this.ignoreCleanup = ignoreCleanup;
     }
+
+    public boolean performCleanup() {
+        return (isIgnoreCleanup() == false); // dup negative ;-)
+    }
 }

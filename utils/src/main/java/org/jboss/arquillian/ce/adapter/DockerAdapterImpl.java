@@ -39,8 +39,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.PushImageCmd;
+import com.github.dockerjava.api.command.RemoveImageCmd;
 import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.api.model.PushResponseItem;
 import com.github.dockerjava.core.DockerClientBuilder;
@@ -69,8 +71,10 @@ public class DockerAdapterImpl implements DockerAdapter {
 
     private final Configuration configuration;
     private final RegistryLookup lookup;
+    private final DockerClient dockerClient;
 
     private Map<String, File> dirs = new ConcurrentHashMap<>();
+    private Map<String, String> images = new ConcurrentHashMap<>();
 
     protected static File getTempRoot() {
         return AccessController.doPrivileged(new PrivilegedAction<File>() {
@@ -82,9 +86,29 @@ public class DockerAdapterImpl implements DockerAdapter {
         });
     }
 
+    private static DockerClient createDockerClient(Configuration configuration) {
+        // Docker-java requires AuthConfig, hence this user/pass stuff
+        DockerClientConfig.DockerClientConfigBuilder builder = DockerClientConfig.createDefaultConfigBuilder();
+        builder.withUri(configuration.getDockerUrl());
+        builder.withUsername(configuration.getDockerUsername());
+        builder.withPassword(configuration.getDockerPassword());
+        builder.withEmail(configuration.getDockerEmail());
+        builder.withServerAddress(configuration.getDockerAddress());
+        final DockerClient dockerClient = DockerClientBuilder.getInstance(builder).build();
+        log.info(String.format("Docker client: %s", configuration.getDockerUrl()));
+        return dockerClient;
+    }
+
     public DockerAdapterImpl(Configuration configuration, RegistryLookup lookup) {
         this.configuration = configuration;
         this.lookup = lookup;
+        this.dockerClient = createDockerClient(configuration);
+    }
+
+    public void close() throws IOException {
+        if (dockerClient != null) {
+            dockerClient.close();
+        }
     }
 
     public File getDir(Archive<?> archive) {
@@ -104,8 +128,23 @@ public class DockerAdapterImpl implements DockerAdapter {
     }
 
     public void reset(Archive<?> archive) {
-        File dir = getDir(archive);
-        delete(dir);
+        try {
+            if (configuration.performCleanup()) {
+                String imageId = images.get(archive.getName());
+                if (imageId != null) {
+                    try {
+                        removeImage(imageId);
+                    } catch (NotFoundException ignore) {
+                        // could be already removed (e.g. same name)
+                    } catch (Exception e) {
+                        log.info(String.format("Error -- removing Docker image [%s] - %s",  imageId, e));
+                    }
+                }
+            }
+        } finally {
+            File dir = getDir(archive);
+            delete(dir);
+        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -142,7 +181,8 @@ public class DockerAdapterImpl implements DockerAdapter {
             copy(stream, baos);
         }
 
-        properties.put("deployment.name", deployment.getName());
+        final String deploymentName = deployment.getName();
+        properties.put("deployment.name", deploymentName);
 
         // apply custom DockerFile changes
         if (dth != null) {
@@ -181,16 +221,6 @@ public class DockerAdapterImpl implements DockerAdapter {
             throw new IllegalArgumentException("Missing Docker url / host!");
         }
 
-        // Docker-java requires AuthConfig, hence this user/pass stuff
-        DockerClientConfig.DockerClientConfigBuilder builder = DockerClientConfig.createDefaultConfigBuilder();
-        builder.withUri(dockerUrl);
-        builder.withUsername(configuration.getDockerUsername());
-        builder.withPassword(configuration.getDockerPassword());
-        builder.withEmail(configuration.getDockerEmail());
-        builder.withServerAddress(configuration.getDockerAddress());
-        final DockerClient dockerClient = DockerClientBuilder.getInstance(builder).build();
-        log.info(String.format("Docker client: %s", dockerUrl));
-
         final Timer timer = new Timer();
 
         // Build image on your Docker host
@@ -217,7 +247,18 @@ public class DockerAdapterImpl implements DockerAdapter {
         if (imageTag != null) {
             fullImageName.append(":").append(imageTag);
         }
-        return fullImageName.toString();
+        String result = fullImageName.toString();
+
+        images.put(deploymentName, result); // remember which images we built
+
+        return result;
+    }
+
+    public void removeImage(String imageId) {
+        log.info(String.format("Removing Docker image: %s", imageId));
+        RemoveImageCmd removeImageCmd = dockerClient.removeImageCmd(imageId);
+        removeImageCmd.exec();
+        log.info(String.format("Docker image %s removed.", imageId));
     }
 
     private static void copy(InputStream input, OutputStream output) throws IOException {

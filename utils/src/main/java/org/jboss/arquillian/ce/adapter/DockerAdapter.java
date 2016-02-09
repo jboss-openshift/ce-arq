@@ -23,6 +23,7 @@
 
 package org.jboss.arquillian.ce.adapter;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 
@@ -31,7 +32,7 @@ import org.jboss.shrinkwrap.api.Archive;
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface DockerAdapter {
+public interface DockerAdapter extends Closeable {
     void prepare(Archive<?> archive);
 
     void reset(Archive<?> archive);
@@ -43,4 +44,6 @@ public interface DockerAdapter {
     File exportAsZip(File dir, Archive<?> deployment, String name);
 
     String buildAndPushImage(DockerAdapterContext context) throws IOException;
+
+    void removeImage(String imageId);
 }

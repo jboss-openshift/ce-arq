@@ -166,15 +166,24 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             }
         } finally {
             try {
-                if (configuration.isGeneratedNS() && performCleanup()) {
+                if (configuration.isGeneratedNS() && configuration.performCleanup()) {
                     client.deleteProject();
                 }
             } finally {
                 try {
-                    client.close();
-                } catch (IOException e) {
-                    //noinspection ThrowFromFinallyBlock
-                    throw new LifecycleException("Error closing Kubernetes client.", e);
+                    if (dockerAdapter != null) {
+                        try {
+                            dockerAdapter.close();
+                        } catch (IOException ignore) {
+                        }
+                    }
+                } finally {
+                    try {
+                        client.close();
+                    } catch (IOException e) {
+                        //noinspection ThrowFromFinallyBlock
+                        throw new LifecycleException("Error closing Kubernetes client.", e);
+                    }
                 }
             }
         }
@@ -477,7 +486,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             }
         } finally {
             // do we keep test config around for some more?
-            if (performCleanup()) {
+            if (configuration.performCleanup()) {
                 try {
                     cleanupResources(archive);
                 } finally {
@@ -491,10 +500,6 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             }
             dockerAdapter.reset(archive);
         }
-    }
-
-    protected boolean performCleanup() {
-        return (configuration.isIgnoreCleanup() == false); // dup negative ;-)
     }
 
     public void deploy(Descriptor descriptor) throws DeploymentException {
