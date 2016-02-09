@@ -74,7 +74,7 @@ public abstract class Configuration implements ContainerConfiguration, Configura
 
     private String templateName = getSystemPropertyOrEnvVar("docker.file.template", "Dockerfile_template");
 
-    private String imageName = getSystemPropertyOrEnvVar("docker.test.image", "cetestimage");
+    private String imageGroup = getSystemPropertyOrEnvVar("docker.test.image", "cetestimage");
     private String imageTag = getSystemPropertyOrEnvVar("docker.test.tag", "latest");
     private String imagePullPolicy = getSystemPropertyOrEnvVar("docker.test.pull.policy", "Always");
 
@@ -321,12 +321,12 @@ public abstract class Configuration implements ContainerConfiguration, Configura
         this.templateName = templateName;
     }
 
-    public String getImageName() {
-        return imageName;
+    public String getImageGroup() {
+        return imageGroup;
     }
 
-    public void setImageName(String imageName) {
-        this.imageName = imageName;
+    public void setImageGroup(String imageGroup) {
+        this.imageGroup = imageGroup;
     }
 
     public String getImageTag() {

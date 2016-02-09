@@ -205,14 +205,16 @@ public class DockerAdapterImpl implements DockerAdapter {
         // Grab Docker registry service
         RegistryLookup.RegistryLookupEntry rle = lookup.lookup();
 
+        // https://access.redhat.com/documentation/en/red-hat-enterprise-linux-atomic-host/7/recommended-practices-for-container-development/chapter-4-image-naming-conventions
         String port = rle.getPort();
-        String iName = context.getImageNamePrefix() + configuration.getImageName();
+        String group = configuration.getImageGroup();
+        String repo = context.getImageNamePrefix() + configuration.getNamespace();
         // our Docker image name
         String imageName;
         if (port != null) {
-            imageName = String.format("%s:%s/%s/%s", rle.getIp(), port, configuration.getNamespace(), iName);
+            imageName = String.format("%s:%s/%s/%s", rle.getIp(), port, group, repo);
         } else {
-            imageName = String.format("%s/%s/%s", rle.getIp(), configuration.getNamespace(), iName);
+            imageName = String.format("%s/%s/%s", rle.getIp(), group, repo);
         }
         log.info(String.format("Docker image name: %s", imageName));
 
