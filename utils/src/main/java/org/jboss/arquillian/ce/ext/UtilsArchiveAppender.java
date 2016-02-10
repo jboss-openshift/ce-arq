@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.ext;
 
 import org.jboss.arquillian.ce.api.ConfigurationHandle;
+import org.jboss.arquillian.ce.api.Tools;
 import org.jboss.arquillian.container.test.spi.RemoteLoadableExtension;
 import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
 import org.jboss.arquillian.core.api.Instance;
@@ -44,6 +45,7 @@ public class UtilsArchiveAppender implements AuxiliaryArchiveAppender {
         return ShrinkWrap.create(JavaArchive.class, "ce-arq-utils.jar")
             .add(new StringAsset(RemoteConfigurationResourceProvider.toProperties(configurationInstance.get())), RemoteConfigurationResourceProvider.FILE_NAME)
             .addClass(ConfigurationHandle.class)
+            .addClass(Tools.class)
             .addClass(UtilsCEExtensionContainer.class)
             .addClass(RemoteConfigurationResourceProvider.class)
             .addAsServiceProviderAndClasses(RemoteLoadableExtension.class, UtilsCEExtensionContainer.class);

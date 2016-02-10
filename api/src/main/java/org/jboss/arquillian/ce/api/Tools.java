@@ -21,44 +21,34 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.arquillian.ce.shrinkwrap;
+package org.jboss.arquillian.ce.api;
 
 import java.io.IOException;
-import java.io.StringWriter;
+import java.io.InputStream;
 import java.util.Properties;
 
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.container.ResourceContainer;
-
 /**
+ * Useful methods that can also be used in-container.
+ * (keep dependecies to a minimal)
+ *
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class Files {
-    public static void storeProperties(ResourceContainer container, Properties properties, String fileName) throws IOException {
-        StringWriter writer = new StringWriter();
-        properties.store(writer, "CE-Arquillian");
-        container.addAsResource(new StringAsset(writer.toString()), fileName);
+public final class Tools {
+
+    /**
+     * Load properties.
+     *
+     * @param clazz    the class from classpath where the properties are
+     * @param fileName properties file name
+     * @return properties
+     * @throws IOException for any error
+     */
+    public static Properties loadProperties(Class<?> clazz, String fileName) throws IOException {
+        Properties properties = new Properties();
+        try (InputStream is = clazz.getClassLoader().getResourceAsStream(fileName)) {
+            properties.load(is);
+        }
+        return properties;
     }
 
-    public static PropertiesHandle createPropertiesHandle(String fileName) {
-        return new PropertiesHandle(fileName);
-    }
-
-    public static class PropertiesHandle {
-        private final String fileName;
-        private final Properties properties;
-
-        private PropertiesHandle(String fileName) {
-            this.fileName = fileName;
-            this.properties = new Properties();
-        }
-
-        public void addProperty(String key, String value) {
-            properties.setProperty(key, value);
-        }
-
-        public void store(ResourceContainer container) throws IOException {
-            storeProperties(container, properties, fileName);
-        }
-    }
 }
