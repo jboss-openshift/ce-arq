@@ -154,9 +154,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         String namespace = configuration.getNamespace();
         log.info("Using Kubernetes namespace / project: " + namespace);
 
-        if (configuration.isGeneratedNS()) {
-            client.createProject();
-        }
+        client.checkProject(); // create project, if it doesn't exist yet
     }
 
     public void stop() throws LifecycleException {

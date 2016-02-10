@@ -43,7 +43,7 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup {
 
     PortForwardContext createPortForwardContext(Map<String, String> labels, int port);
 
-    Object createProject();
+    Object checkProject();
 
     boolean deleteProject();
 

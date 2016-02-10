@@ -63,6 +63,7 @@ import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.openshift.api.model.ImageStream;
+import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.RoleBinding;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
 import io.fabric8.openshift.client.OpenShiftConfig;
@@ -139,9 +140,18 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return new RegistryLookupEntry(ip, String.valueOf(port));
     }
 
-    public Object createProject() {
+    private Object createProject() {
         // oc new-project <namespace>
         return client.projectrequests().createNew().withNewMetadata().withName(configuration.getNamespace()).endMetadata().done();
+    }
+
+    public Object checkProject() {
+        Project project = client.projects().withName(configuration.getNamespace()).get();
+        if (project == null) {
+            return createProject();
+        } else {
+            return project;
+        }
     }
 
     public boolean deleteProject() {

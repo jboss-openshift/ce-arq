@@ -172,12 +172,21 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return new RegistryLookupEntry(ip, String.valueOf(port));
     }
 
-    public Object createProject() {
+    private Object createProject() {
         // oc new-project <namespace>
         Properties properties = new Properties();
         properties.put("PROJECT_NAME", configuration.getNamespace());
         IProjectRequest pr = createResource(Templates.PROJECT_REQUEST, properties);
         return client.create(pr);
+    }
+
+    public Object checkProject() {
+        IProject project = client.get(ResourceKind.PROJECT, configuration.getNamespace(), "");
+        if (project == null) {
+            return createProject();
+        } else {
+            return project;
+        }
     }
 
     public boolean deleteProject() {
