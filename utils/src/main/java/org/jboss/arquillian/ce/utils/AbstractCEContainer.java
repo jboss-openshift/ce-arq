@@ -97,6 +97,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     protected OpenShiftAdapter client;
     protected DockerAdapter dockerAdapter;
     protected Proxy proxy;
+    protected boolean shouldRemoveProject;
 
     protected RunInPodUtils runInPodUtils;
     protected RunInPodContainer runInPodContainer;
@@ -154,7 +155,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         String namespace = configuration.getNamespace();
         log.info("Using Kubernetes namespace / project: " + namespace);
 
-        client.checkProject(); // create project, if it doesn't exist yet
+        shouldRemoveProject = client.checkProject(); // create project, if it doesn't exist yet
     }
 
     public void stop() throws LifecycleException {
@@ -164,7 +165,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             }
         } finally {
             try {
-                if (configuration.isGeneratedNS() && configuration.performCleanup()) {
+                if (shouldRemoveProject && configuration.performCleanup()) {
                     client.deleteProject();
                 }
             } finally {

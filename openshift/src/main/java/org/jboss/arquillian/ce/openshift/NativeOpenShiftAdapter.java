@@ -180,12 +180,12 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.create(pr);
     }
 
-    public Object checkProject() {
+    public boolean checkProject() {
         IProject project = client.get(ResourceKind.PROJECT, configuration.getNamespace(), "");
         if (project == null) {
-            return createProject();
+            return createProject() != null;
         } else {
-            return project;
+            return false;
         }
     }
 
