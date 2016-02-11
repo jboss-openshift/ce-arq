@@ -62,7 +62,6 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.RoleBinding;
@@ -147,17 +146,12 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     public boolean checkProject() {
-        Project project;
-        try {
-            project = client.projects().withName(configuration.getNamespace()).get();
-        } catch (KubernetesClientException e) {
-            project = null;
+        for (Project project : client.projects().list().getItems()) {
+            if (configuration.getNamespace().equals(KubernetesHelper.getName(project))) {
+                return false;
+            }
         }
-        if (project == null) {
-            return createProject() != null;
-        } else {
-            return false;
-        }
+        return createProject() != null;
     }
 
     public boolean deleteProject() {
@@ -345,7 +339,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             .inNamespace(configuration.getNamespace())
             .createNew()
             .withNewMetadata().withName(roleRefName).endMetadata()
-            .withNewRoleRef(). withName(roleRefName).endRoleRef()
+            .withNewRoleRef().withName(roleRefName).endRoleRef()
             .addToUserNames(userName)
             .addNewSubject().withKind("ServiceAccount").withNamespace(configuration.getNamespace()).withName(subjectName).endSubject()
             .done();
@@ -535,7 +529,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
         protected abstract T createResource(InputStream stream);
     }
-    
+
     private class ListOpenShiftResourceHandle extends AbstractOpenShiftResourceHandle<KubernetesList> {
         public ListOpenShiftResourceHandle(String content) {
             super(content);
@@ -549,7 +543,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             client.lists().inNamespace(configuration.getNamespace()).delete(resource);
         }
     }
-    
+
     private class SecretOpenShiftResourceHandle extends AbstractOpenShiftResourceHandle<Secret> {
         public SecretOpenShiftResourceHandle(String content) {
             super(content);
@@ -563,7 +557,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             client.secrets().inNamespace(configuration.getNamespace()).delete(resource);
         }
     }
-    
+
     private class ImageStreamOpenShiftResourceHandle extends AbstractOpenShiftResourceHandle<ImageStream> {
         public ImageStreamOpenShiftResourceHandle(String content) {
             super(content);
