@@ -52,11 +52,7 @@ import com.openshift.restclient.authorization.IAuthorizationClient;
 import com.openshift.restclient.authorization.IAuthorizationContext;
 import com.openshift.restclient.authorization.TokenAuthorizationStrategy;
 import com.openshift.restclient.capability.resources.IProjectTemplateProcessing;
-import com.openshift.restclient.model.IPod;
-import com.openshift.restclient.model.IProject;
-import com.openshift.restclient.model.IReplicationController;
-import com.openshift.restclient.model.IResource;
-import com.openshift.restclient.model.IService;
+import com.openshift.restclient.model.*;
 import com.openshift.restclient.model.authorization.IRoleBinding;
 import com.openshift.restclient.model.project.IProjectRequest;
 import com.openshift.restclient.model.template.IParameter;
@@ -315,6 +311,30 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.get(ResourceKind.SERVICE, serviceName, namespace);
     }
 
+    public void cleanBuilds() {
+        final List<IBuild> b = client.list(ResourceKind.BUILD, configuration.getNamespace());
+        for (IBuild build : b ){
+            try {
+                client.delete(build);
+                log.info(String.format("Build [%s] delete.", build));
+            } catch (Exception e) {
+                log.log(Level.WARNING, String.format("Exception while deleting Build [%s]: %s", build, e), e);
+            }
+        }
+    }
+
+    public void cleanReplicationControllers() {
+        List<IReplicationController> rcs = client.list(ResourceKind.REPLICATION_CONTROLLER, configuration.getNamespace());
+        for (IReplicationController rc : rcs) {
+            try {
+                client.delete(rc);
+                log.info(String.format("RC [%s] delete.", rc));
+            } catch (Exception e){
+                log.log(Level.WARNING, String.format("Exception while deleting RC [%s]: %s", rc, e), e);
+            }
+        }
+    }
+
     public void cleanReplicationControllers(String... ids) throws Exception {
         List<IReplicationController> rcs = client.list(ResourceKind.REPLICATION_CONTROLLER, configuration.getNamespace());
         for (IReplicationController rc : rcs) {
@@ -327,6 +347,18 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
                         log.log(Level.WARNING, String.format("Exception while deleting RC [%s]: %s", id, e), e);
                     }
                 }
+            }
+        }
+    }
+
+    public void cleanPods() throws Exception {
+        final List<IPod> pods = client.list(ResourceKind.POD, configuration.getNamespace());
+        for (IPod pod : pods) {
+            try {
+                client.delete(pod);
+                log.info(String.format("Pod [%s] delete.", pod.getName()));
+            } catch (Exception e) {
+                log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", pod, e), e);
             }
         }
     }

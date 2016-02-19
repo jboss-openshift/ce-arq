@@ -68,5 +68,11 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup {
 
     void cleanReplicationControllers(String... ids) throws Exception;
 
+    void cleanReplicationControllers() throws Exception;
+
     void cleanPods(Map<String, String> labels) throws Exception;
+
+    void cleanPods() throws Exception;
+
+    void cleanBuilds();
 }
