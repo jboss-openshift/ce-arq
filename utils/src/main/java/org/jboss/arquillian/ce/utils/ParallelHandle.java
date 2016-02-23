@@ -36,10 +36,16 @@ class ParallelHandle {
     private enum State {
         DONE,
         IN_PROGRESS,
-        WAITING
+        WAITING,
+        ERROR
     }
 
     private volatile State state;
+    private Throwable error;
+
+    Throwable getError() {
+        return error;
+    }
 
     synchronized void init() {
         if (state == null) {
@@ -55,6 +61,15 @@ class ParallelHandle {
             log.info(String.format("Build %s already done [%s].", info, state != null ? state : State.DONE));
         }
         state = State.DONE;
+    }
+
+    synchronized void doError(String info, Throwable error) {
+        log.info(String.format("Error in %s build: %s", info, error));
+        this.error = error;
+        if (state == State.WAITING) {
+            notifyAll();
+        }
+        state = State.ERROR;
     }
 
     synchronized void doWait(String info) {

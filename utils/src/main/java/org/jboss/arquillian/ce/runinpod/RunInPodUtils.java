@@ -40,10 +40,10 @@ import org.jboss.arquillian.ce.spi.WildFlySPIConfiguration;
 import org.jboss.arquillian.ce.spi.WildFlySPIContainer;
 import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.ParallelHandler;
 import org.jboss.arquillian.ce.utils.ReflectionUtils;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
-import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.test.impl.domain.ProtocolDefinition;
@@ -106,13 +106,14 @@ public class RunInPodUtils {
 
     //---
 
-    public void parallelize(final RunInPodContainer container) {
+    public void parallelize(final RunInPodContainer container, final ParallelHandler parallelHandler) {
         Runnable runnable = new Runnable() {
             public void run() {
                 try {
                     container.deploy();
-                } catch (DeploymentException e) {
-                    throw new IllegalStateException(e);
+                } catch (Throwable error) {
+                    parallelHandler.errorInSPI(error);
+                    throw new IllegalStateException(error);
                 }
             }
         };

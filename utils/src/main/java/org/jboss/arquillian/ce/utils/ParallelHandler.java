@@ -52,7 +52,15 @@ public class ParallelHandler {
         spi.doNotify("RunInPod");
     }
 
+    public void errorInSPI(Throwable error) {
+        spi.doError("RunInPod", error);
+    }
+
     void waitOnSPI() {
         spi.doWait("RunInPod");
+    }
+
+    Throwable getErrorFromSPI() {
+        return spi.getError();
     }
 }

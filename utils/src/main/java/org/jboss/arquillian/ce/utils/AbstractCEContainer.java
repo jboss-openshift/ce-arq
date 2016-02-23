@@ -232,7 +232,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         handleRunInPod();
         if (runInPodContainer != null && !isSPI()) {
             parallelHandler.resetMain();
-            runInPodUtils.parallelize(runInPodContainer);
+            runInPodUtils.parallelize(runInPodContainer, parallelHandler);
         }
 
         final ProtocolMetaData protocolMetaData = doDeploy(archive);
@@ -247,6 +247,16 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             parallelHandler.resetSPI();
             // wait for runinpod to finish
             parallelHandler.waitOnSPI();
+
+            // check if we got some error in SPI / parallel handling
+            Throwable error = parallelHandler.getErrorFromSPI();
+            if (error != null) {
+                if (error instanceof DeploymentException) {
+                    throw DeploymentException.class.cast(error);
+                } else {
+                    throw new DeploymentException("Error in SPI deployment.", error);
+                }
+            }
         }
 
         return protocolMetaData;
