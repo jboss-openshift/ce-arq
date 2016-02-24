@@ -32,7 +32,7 @@ public class ParallelHandler {
     private volatile ParallelHandle main = new ParallelHandle();
     private volatile ParallelHandle spi = new ParallelHandle();
 
-    void resetMain() {
+    void initMain() {
         main.init();
     }
 
@@ -56,7 +56,7 @@ public class ParallelHandler {
         main.clear();
     }
 
-    void resetSPI() {
+    void initSPI() {
         spi.init();
     }
 

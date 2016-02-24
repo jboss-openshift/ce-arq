@@ -244,7 +244,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         handleRunInPod();
         if (runInPodContainer != null && !isSPI()) {
-            parallelHandler.resetMain();
+            parallelHandler.initMain();
             runInPodUtils.parallelize(runInPodContainer, parallelHandler);
         }
 
@@ -265,7 +265,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         if (runInPodContainer != null && !isSPI()) {
             // reset
-            parallelHandler.resetSPI();
+            parallelHandler.initSPI();
             // wait for runinpod to finish
             parallelHandler.waitOnSPI();
 
