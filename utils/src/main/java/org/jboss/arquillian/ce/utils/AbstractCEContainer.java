@@ -225,6 +225,19 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
+        try {
+            return deployInternal(archive);
+        } finally {
+            // reset parallel handler
+            if (isSPI()) {
+                parallelHandler.clearSPI();
+            } else {
+                parallelHandler.clearMain();
+            }
+        }
+    }
+
+    private ProtocolMetaData deployInternal(Archive<?> archive) throws DeploymentException {
         dockerAdapter.prepare(archive);
 
         handleResources(archive);

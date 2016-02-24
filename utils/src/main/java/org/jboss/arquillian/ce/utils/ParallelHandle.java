@@ -53,6 +53,10 @@ class ParallelHandle {
         }
     }
 
+    synchronized void clear() {
+        state = null;
+    }
+
     synchronized void doNotify(String info) {
         if (state == State.WAITING) {
             log.info(String.format("Notifying builds waiting on %s ...", info));

@@ -52,6 +52,10 @@ public class ParallelHandler {
         return main.getError();
     }
 
+    void clearMain() {
+        main.clear();
+    }
+
     void resetSPI() {
         spi.init();
     }
@@ -70,5 +74,9 @@ public class ParallelHandler {
 
     Throwable getErrorFromSPI() {
         return spi.getError();
+    }
+
+    void clearSPI() {
+        spi.clear();
     }
 }
