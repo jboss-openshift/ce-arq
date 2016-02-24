@@ -67,6 +67,24 @@ public class ReflectionUtils {
         findAnnotatedMethods(clazz.getSuperclass(), annotationClass, list);
     }
 
+    public static <T extends Annotation> T findAnnotation(Class<?> clazz, Class<T> annotationClass) {
+        if (clazz == Object.class) {
+            return null;
+        }
+
+        T annotation = clazz.getAnnotation(annotationClass);
+        if (annotation != null) {
+            return annotation;
+        } else {
+            return findAnnotation(clazz.getSuperclass(), annotationClass);
+        }
+    }
+
+    public static boolean isAnnotationPresent(Class<?> clazz, Class<? extends Annotation> annotationClass) {
+        return clazz != Object.class && (clazz.isAnnotationPresent(annotationClass) || isAnnotationPresent(clazz.getSuperclass(), annotationClass));
+
+    }
+
     private static int getParameterCount(Method method) {
         return method.getParameterTypes().length; // use method.getParameterCount() on Java8
     }

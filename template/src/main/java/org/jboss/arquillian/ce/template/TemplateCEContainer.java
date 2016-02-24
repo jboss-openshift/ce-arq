@@ -42,6 +42,7 @@ import org.jboss.arquillian.ce.runinpod.RunInPodContext;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.Archives;
 import org.jboss.arquillian.ce.utils.ParamValue;
+import org.jboss.arquillian.ce.utils.ReflectionUtils;
 import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -129,14 +130,17 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     }
 
     protected Template readTemplate() {
-        return tc.get().getAnnotation(Template.class);
+        return ReflectionUtils.findAnnotation(tc.get().getJavaClass(), Template.class);
     }
 
     protected String readTemplateUrl(StringResolver resolver) {
         Template template = readTemplate();
         String templateUrl = template == null ? null : template.url();
         if (templateUrl == null || templateUrl.length() == 0) {
-            templateUrl = resolver.resolve(configuration.getTemplateURL());
+            String templateFromConfiguration = configuration.getTemplateURL();
+            if (templateFromConfiguration != null) {
+                templateUrl = resolver.resolve(templateFromConfiguration);
+            }
         }
 
         if (templateUrl == null) {

@@ -75,7 +75,7 @@ public class Archives {
     }
 
     public static boolean isExternalDeployment(Class<?> clazz) {
-        return clazz.isAnnotationPresent(ExternalDeployment.class);
+        return ReflectionUtils.isAnnotationPresent(clazz, ExternalDeployment.class);
     }
 
     public static WebArchive generateDummyWebArchive() {
