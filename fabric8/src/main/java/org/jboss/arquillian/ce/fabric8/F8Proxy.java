@@ -23,28 +23,32 @@
 
 package org.jboss.arquillian.ce.fabric8;
 
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodCondition;
+import io.fabric8.kubernetes.api.model.PodStatus;
+import io.fabric8.kubernetes.client.Adapters;
+import io.fabric8.kubernetes.client.internal.SSLUtils;
+import io.fabric8.openshift.client.OpenShiftClient;
+
 import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 
-import com.squareup.okhttp.OkHttpClient;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodCondition;
-import io.fabric8.kubernetes.api.model.PodStatus;
-import io.fabric8.kubernetes.client.internal.SSLUtils;
 import org.jboss.arquillian.ce.proxy.AbstractProxy;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.OkHttpClientUtils;
+
+import com.squareup.okhttp.OkHttpClient;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class F8Proxy extends AbstractProxy<Pod> {
-    private final CeOpenShiftClient client;
+    private final OpenShiftClient client;
     private OkHttpClient httpClient;
 
-    public F8Proxy(Configuration configuration, CeOpenShiftClient client) {
+    public F8Proxy(Configuration configuration, OpenShiftClient client) {
         super(configuration);
         this.client = client;
     }
@@ -59,7 +63,7 @@ public class F8Proxy extends AbstractProxy<Pod> {
 
     protected synchronized OkHttpClient getHttpClient() {
         if (httpClient == null) {
-            OkHttpClient okHttpClient = client.getHttpClient();
+            OkHttpClient okHttpClient = Adapters.get(OkHttpClient.class).adapt(client);
             OkHttpClientUtils.applyCookieHandler(okHttpClient);
             httpClient = okHttpClient;
         }

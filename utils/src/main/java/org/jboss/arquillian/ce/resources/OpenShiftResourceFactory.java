@@ -115,6 +115,14 @@ public class OpenShiftResourceFactory {
         }
     }
 
+    public static void deleteResources(String resourcesKey, OpenShiftAdapter adapter) {
+        try {
+            adapter.deleteResources(resourcesKey);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     private static abstract class Finder<U extends Annotation, V extends Annotation> {
 
         protected abstract Class<U> getWrapperType();

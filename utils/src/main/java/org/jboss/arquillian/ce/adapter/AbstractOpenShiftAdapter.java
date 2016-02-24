@@ -78,4 +78,9 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         addResourceHandle(resourcesKey, handle);
         return handle;
     }
+    
+    @Override
+    public Configuration getConfiguration() {
+        return configuration;
+    }
 }

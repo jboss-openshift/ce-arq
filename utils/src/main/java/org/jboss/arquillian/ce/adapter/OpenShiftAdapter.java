@@ -31,6 +31,7 @@ import java.util.Map;
 
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
+import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.ce.utils.RegistryLookup;
@@ -69,4 +70,6 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup {
     void cleanReplicationControllers(String... ids) throws Exception;
 
     void cleanPods(Map<String, String> labels) throws Exception;
+    
+    Configuration getConfiguration();
 }

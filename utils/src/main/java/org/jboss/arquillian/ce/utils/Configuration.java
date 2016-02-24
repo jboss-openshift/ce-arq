@@ -50,7 +50,7 @@ public abstract class Configuration implements ContainerConfiguration, Configura
     private String openshiftPassword = getSystemPropertyOrEnvVar("openshift.password", "admin");
 
     private String apiVersion = getSystemPropertyOrEnvVar("kubernetes.api.version", "v1");
-    private String namespacePrefix = getSystemPropertyOrEnvVar("kubernetes.namespace.prefix");
+    private String namespacePrefix = getSystemPropertyOrEnvVar("kubernetes.namespace.prefix", "cearq");
     private String namespace = getSystemPropertyOrEnvVar("kubernetes.namespace");
     private String token = getSystemPropertyOrEnvVar("kubernetes.auth.token");
     private boolean trustCerts = Boolean.valueOf(getSystemPropertyOrEnvVar("kubernetes.trust.certs", "true"));

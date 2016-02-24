@@ -33,6 +33,15 @@ import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 public class Libraries {
     public static final PomStrategy MAVEN = new PomStrategy() {
         @Override
+        public String[] profiles() {
+            final String profiles = System.getProperty("cearq.maven.profiles");
+            if (profiles == null) {
+                return null;
+            }
+            return profiles.split(",");
+        }
+
+        @Override
         public String toPom() {
             return "pom.xml";
         }
@@ -43,7 +52,7 @@ public class Libraries {
     }
 
     public static File[] single(PomStrategy pomStrategy, String groupId, String artifactId) {
-        return Maven.resolver().loadPomFromFile(pomStrategy.toPom()).resolve(groupId + ":" + artifactId).withoutTransitivity().asFile();
+        return Maven.resolver().loadPomFromFile(pomStrategy.toPom(), pomStrategy.profiles()).resolve(groupId + ":" + artifactId).withoutTransitivity().asFile();
     }
 
     public static File[] transitive(String groupId, String artifactId) {
@@ -51,6 +60,6 @@ public class Libraries {
     }
 
     public static File[] transitive(PomStrategy pomStrategy, String groupId, String artifactId) {
-        return Maven.resolver().loadPomFromFile(pomStrategy.toPom()).resolve(groupId + ":" + artifactId).withTransitivity().asFile();
+        return Maven.resolver().loadPomFromFile(pomStrategy.toPom(), pomStrategy.profiles()).resolve(groupId + ":" + artifactId).withTransitivity().asFile();
     }
 }

@@ -23,19 +23,6 @@
 
 package org.jboss.arquillian.ce.fabric8;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -66,9 +53,24 @@ import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.RoleBinding;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
@@ -87,7 +89,7 @@ import org.jboss.dmr.ModelNode;
 public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     private final static Logger log = Logger.getLogger(F8OpenShiftAdapter.class.getName());
 
-    private final CeOpenShiftClient client;
+    private final OpenShiftClient client;
     private Map<String, KubernetesList> templates = new ConcurrentHashMap<>();
 
     static OpenShiftConfig toOpenShiftConfig(Configuration configuration) {
@@ -112,6 +114,11 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     public F8OpenShiftAdapter(Configuration configuration) {
         super(configuration);
         this.client = create(configuration);
+    }
+
+    public F8OpenShiftAdapter(OpenShiftClient client, Configuration configuration) {
+        super(configuration);
+        this.client = client;
     }
 
     public Proxy createProxy() {

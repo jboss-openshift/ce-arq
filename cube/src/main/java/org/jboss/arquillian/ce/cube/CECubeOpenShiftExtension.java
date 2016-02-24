@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other
  * contributors as indicated by the @author tags. All rights reserved.
  * See the copyright.txt in the distribution for a full listing of
  * individual contributors.
@@ -20,13 +20,16 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.jboss.arquillian.ce.cube;
 
-package org.jboss.arquillian.ce.shrinkwrap;
+import org.jboss.arquillian.core.spi.LoadableExtension;
 
-/**
- * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
- */
-public interface PomStrategy {
-    String[] profiles();
-    String toPom();
+public class CECubeOpenShiftExtension implements LoadableExtension {
+    public void register(ExtensionBuilder builder) {
+        builder.observer(CECubeInitializer.class)
+               .observer(CubeOpenShiftOverrider.class)
+               .observer(CEProjectManager.class)
+               .observer(CEEnvironmentProcessor.class)
+               .observer(CEApplicationHandler.class);
+    }
 }
