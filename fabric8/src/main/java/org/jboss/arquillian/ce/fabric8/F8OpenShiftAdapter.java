@@ -37,35 +37,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.fabric8.kubernetes.api.KubernetesHelper;
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerPort;
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.ExecAction;
-import io.fabric8.kubernetes.api.model.HTTPGetAction;
-import io.fabric8.kubernetes.api.model.Handler;
-import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.KubernetesList;
-import io.fabric8.kubernetes.api.model.Lifecycle;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodList;
-import io.fabric8.kubernetes.api.model.PodSpec;
-import io.fabric8.kubernetes.api.model.PodTemplateSpec;
-import io.fabric8.kubernetes.api.model.Probe;
-import io.fabric8.kubernetes.api.model.ReplicationController;
-import io.fabric8.kubernetes.api.model.ReplicationControllerSpec;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretVolumeSource;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.ServiceSpec;
-import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.openshift.api.model.ImageStream;
-import io.fabric8.openshift.api.model.Project;
-import io.fabric8.openshift.api.model.RoleBinding;
-import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
+import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.openshift.api.model.*;
 import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
@@ -453,6 +426,44 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             } catch (Exception e) {
                 log.log(Level.WARNING, String.format("Exception while deleting RC [%s]: %s", id, e), e);
             }
+        }
+    }
+
+    public void cleanReplicationControllers() {
+        final ReplicationControllerList rcs = client.replicationControllers().inNamespace(configuration.getNamespace().toString()).list();
+        for (ReplicationController rc : rcs.getItems()) {
+            try {
+                client.replicationControllers().delete();
+                log.info(String.format("RC [%s] delete.", rc));
+            } catch (Exception e) {
+                log.log(Level.WARNING, String.format("Exception while deleting Build [%s]: %s", rc, e), e);
+            }
+        }
+    }
+
+    public void cleanBuilds() {
+        final BuildList builds = client.builds().inNamespace(configuration.getNamespace().toString()).list();
+        for (Build build : builds.getItems()) {
+            try {
+                client.builds().delete();
+                log.info(String.format("Build [%s] delete.", build));
+            } catch (Exception e) {
+                log.log(Level.WARNING, String.format("Exception while deleting Build [%s]: %s", build, e), e);
+            }
+        }
+    }
+
+    public void cleanPods() throws Exception {
+        final PodList pods = client.pods().inNamespace(configuration.getNamespace()).list();
+        String podId = null;
+        try {
+            for (Pod pod : pods.getItems()) {
+                podId = KubernetesHelper.getName(pod);
+                boolean exists = client.pods().inNamespace(configuration.getNamespace()).withName(podId).delete();
+                log.info(String.format("Pod [%s] delete: %s.", podId, exists));
+            }
+        } catch (Exception e) {
+            log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", podId, e), e);
         }
     }
 

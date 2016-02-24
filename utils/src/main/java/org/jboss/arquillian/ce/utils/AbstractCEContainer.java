@@ -33,6 +33,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import io.fabric8.openshift.client.OpenShiftConfig;
 import org.jboss.arquillian.ce.adapter.DockerAdapter;
 import org.jboss.arquillian.ce.adapter.DockerAdapterContext;
 import org.jboss.arquillian.ce.adapter.DockerAdapterImpl;
@@ -73,6 +74,7 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptors;
 import org.jboss.shrinkwrap.descriptor.api.application7.ApplicationDescriptor;
 import org.jboss.shrinkwrap.descriptor.api.application7.ModuleType;
 import org.jboss.shrinkwrap.descriptor.api.application7.WebType;
+
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -141,6 +143,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     public void start() throws LifecycleException {
+
         this.client = OpenShiftAdapterFactory.getOpenShiftAdapter(configuration);
         this.proxy = client.createProxy();
 
@@ -182,6 +185,8 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
                     } catch (IOException e) {
                         //noinspection ThrowFromFinallyBlock
                         throw new LifecycleException("Error closing Kubernetes client.", e);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
             }
@@ -506,16 +511,16 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         return false;
     }
 
+    // Cleanup the runinpod resources
     protected void cleanup(Archive<?> archive) throws Exception {
         String name = getName(getPrefix(), archive) + "rc";
-        client.cleanReplicationControllers(name);
+        client.cleanReplicationControllers(name, name + "-1");
         client.cleanPods(DeploymentContext.getDeploymentLabels(archive));
+
     }
 
     protected void cleanupResources(Archive<?> archive) {
-        if (!isSPI()) {
             client.deleteResources(archive.getName());
-        }
     }
 
     public void undeploy(Archive<?> archive) throws DeploymentException {
@@ -528,8 +533,12 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             if (configuration.performCleanup()) {
                 try {
                     cleanupResources(archive);
+
                 } finally {
                     try {
+                        client.cleanPods();
+                        client.cleanBuilds();
+                        client.cleanReplicationControllers();
                         cleanup(archive);
                     } catch (Exception ignored) {
                     }
