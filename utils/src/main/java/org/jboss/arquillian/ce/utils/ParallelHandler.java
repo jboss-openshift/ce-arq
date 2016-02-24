@@ -36,19 +36,27 @@ public class ParallelHandler {
         main.init();
     }
 
-    void notifyMain() {
+    void resumeOnMain() {
         main.doNotify("Main");
+    }
+
+    void errorInMain(Throwable error) {
+        main.doError("Main", error);
     }
 
     void waitOnMain() {
         main.doWait("Main");
     }
 
+    Throwable getErrorFromMain() {
+        return main.getError();
+    }
+
     void resetSPI() {
         spi.init();
     }
 
-    void notifySPI() {
+    void resumeOnSPI() {
         spi.doNotify("RunInPod");
     }
 

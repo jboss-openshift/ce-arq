@@ -235,11 +235,19 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             runInPodUtils.parallelize(runInPodContainer, parallelHandler);
         }
 
-        final ProtocolMetaData protocolMetaData = doDeploy(archive);
+        final ProtocolMetaData protocolMetaData;
+        try {
+            protocolMetaData = doDeploy(archive);
+        } catch (DeploymentException e) {
+            if (!isSPI()) {
+                parallelHandler.errorInMain(e);
+            }
+            throw e;
+        }
 
         if (isSPI()) {
-            // notify Main that SPI is ready
-            parallelHandler.notifySPI();
+            // resume SPI since it is ready -- Main can move on
+            parallelHandler.resumeOnSPI();
         }
 
         if (runInPodContainer != null && !isSPI()) {
@@ -329,9 +337,18 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     protected String deployResourceContext(RCContext context) throws Exception {
-        // wait for original to finish, if we're @RunInPod container
+        // wait for Main to finish, if we're @RunInPod container
         if (isSPI()) {
             parallelHandler.waitOnMain();
+
+            Throwable error = parallelHandler.getErrorFromMain();
+            if (error != null) {
+                if (error instanceof Exception) {
+                    throw Exception.class.cast(error);
+                } else {
+                    throw new Exception(error);
+                }
+            }
         }
 
         String name = getName(getPrefix(), context.getArchive());
@@ -349,8 +366,8 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         log.info("Creating ProtocolMetaData ...");
 
         if (!isSPI()) {
-            // notify after Main already pushed k8s/ose config
-            parallelHandler.notifyMain();
+            // resume after Main already pushed k8s/ose config
+            parallelHandler.resumeOnMain();
         }
 
         delay(labels, replicas);
