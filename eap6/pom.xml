@@ -17,7 +17,7 @@
     <description>Cloud Enablement integrations for EAP6</description>
 
     <properties>
-        <version.eap>7.5.6.Final-redhat-SNAPSHOT</version.eap>
+        <version.eap>7.5.5.Final-redhat-3</version.eap>
     </properties>
 
     <dependencies>
