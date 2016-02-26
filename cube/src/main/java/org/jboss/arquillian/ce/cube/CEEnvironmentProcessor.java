@@ -39,6 +39,7 @@ import org.jboss.arquillian.ce.resources.OpenShiftResourceFactory;
 import org.jboss.arquillian.ce.utils.Checker;
 import org.jboss.arquillian.ce.utils.Containers;
 import org.jboss.arquillian.ce.utils.ParamValue;
+import org.jboss.arquillian.ce.utils.ReflectionUtils;
 import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -125,7 +126,7 @@ public class CEEnvironmentProcessor {
     private void processTemplate(TestClass tc, OpenShiftAdapter client, CECubeConfiguration configuration)
             throws DeploymentException {
         final StringResolver resolver = Strings.createStringResolver(configuration.getProperties());
-        final Template template = tc.getAnnotation(Template.class);
+        final Template template = ReflectionUtils.findAnnotation(tc.getJavaClass(), Template.class);
         final String templateURL = readTemplateUrl(template, configuration, resolver);
         try {
             final int replicas = readReplicas(tc);
