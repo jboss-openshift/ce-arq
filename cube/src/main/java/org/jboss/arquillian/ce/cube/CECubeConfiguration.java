@@ -43,8 +43,8 @@ public class CECubeConfiguration extends Configuration {
     private boolean templateProcess = Boolean.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.template.process", "true"));
     private String routerHost = Strings.getSystemPropertyOrEnvVar("openshift.router.host");
     private int routerHttpPort = Integer.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.router.httpPort", "80"));
-    private int routerHttpsPort = Integer.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.router.httpPort", "443"));
-    private int routerSniPort = Integer.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.router.httpPort", "443"));
+    private int routerHttpsPort = Integer.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.router.httpsPort", "443"));
+    private int routerSniPort = Integer.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.router.sniPort", "443"));
 
     public static CECubeConfiguration fromMap(final Map<String, String> props) {
         //XXX: need to rename arq.ce-cube properties.  arq extension properties cannot contain '.'

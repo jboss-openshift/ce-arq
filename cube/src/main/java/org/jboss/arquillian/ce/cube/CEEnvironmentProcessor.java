@@ -105,7 +105,7 @@ public class CEEnvironmentProcessor {
             return;
         }
         if (details == null) {
-            log.warning(String.format("No environment for environment for %s", testClass.getName()));
+            log.warning(String.format("No environment for %s", testClass.getName()));
             return;
         }
         log.info(String.format("Waiting for environment for %s", testClass.getName()));
