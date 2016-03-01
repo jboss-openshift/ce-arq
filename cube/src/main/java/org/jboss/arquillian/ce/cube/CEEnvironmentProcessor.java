@@ -43,7 +43,7 @@ import org.jboss.arquillian.ce.utils.ReflectionUtils;
 import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
-import org.jboss.arquillian.container.spi.event.container.BeforeDeploy;
+import org.jboss.arquillian.container.spi.event.container.AfterStart;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
@@ -98,9 +98,14 @@ public class CEEnvironmentProcessor {
      * been started. This allows the test container and the template resources
      * to come up in parallel.
      */
-    public void waitForDeployments(@Observes(precedence = -100) BeforeDeploy event, OpenShiftAdapter client,
+    public void waitForDeployments(@Observes(precedence = -100) AfterStart event, OpenShiftAdapter client,
             TemplateDetails details, TestClass testClass) throws Exception {
+        if (testClass == null) {
+            // nothing to do, since we're not in ClassScoped context
+            return;
+        }
         if (details == null) {
+            log.warning(String.format("No environment for environment for %s", testClass.getName()));
             return;
         }
         log.info(String.format("Waiting for environment for %s", testClass.getName()));
@@ -119,6 +124,7 @@ public class CEEnvironmentProcessor {
      */
     public void deleteEnvironment(@Observes AfterClass event, OpenShiftAdapter client) throws Exception {
         final TestClass testClass = event.getTestClass();
+        log.info(String.format("Deleting environment for environment for %s", testClass.getName()));
         client.deleteTemplate(testClass.getName());
         OpenShiftResourceFactory.deleteResources(testClass.getName(), client);
     }

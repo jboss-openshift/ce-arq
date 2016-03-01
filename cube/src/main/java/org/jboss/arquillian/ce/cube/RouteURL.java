@@ -22,18 +22,31 @@
  */
 package org.jboss.arquillian.ce.cube;
 
-import org.jboss.arquillian.ce.cube.enrichers.RouteURLEnricher;
-import org.jboss.arquillian.core.spi.LoadableExtension;
-import org.jboss.arquillian.test.spi.TestEnricher;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-public class CECubeOpenShiftExtension implements LoadableExtension {
-    public void register(ExtensionBuilder builder) {
-        builder.observer(CECubeInitializer.class)
-               .observer(CubeOpenShiftOverrider.class)
-               .observer(CEProjectManager.class)
-               .observer(CEEnvironmentProcessor.class)
-               .observer(CEApplicationHandler.class);
-        
-        builder.service(TestEnricher.class, RouteURLEnricher.class);
-    }
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import javax.inject.Qualifier;
+
+/**
+ * OpenShiftRouter
+ * <p/>
+ * Used with @ArquillianResource URL objects. Provides a URL to the OpenShift
+ * router configured on the ce-cube extension, e.g.
+ * arq.extension.ce-cube.openShiftRouterIP, setting the hostname appropriately.
+ * 
+ * @author Rob Cernich
+ */
+@Qualifier
+@Documented
+@Retention(RUNTIME)
+@Target({ElementType.FIELD, ElementType.PARAMETER })
+public @interface RouteURL {
+    /**
+     * @return the route name
+     */
+    String value() default "";
 }
