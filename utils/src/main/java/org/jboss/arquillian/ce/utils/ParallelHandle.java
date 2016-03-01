@@ -54,6 +54,9 @@ class ParallelHandle {
     }
 
     synchronized void clear() {
+        if (state == State.WAITING) {
+            notifyAll(); // just to make sure, we don't somehow hang
+        }
         state = null;
     }
 
