@@ -30,10 +30,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import org.arquillian.cube.openshift.impl.client.OpenShiftClient;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.api.Replicas;
 import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.ce.api.TemplateParameter;
+import org.jboss.arquillian.ce.cube.dns.CENameService;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceFactory;
 import org.jboss.arquillian.ce.utils.Checker;
@@ -85,12 +87,13 @@ public class CEEnvironmentProcessor {
      * Needs to fire before the containers are started.
      */
     public void createEnvironment(@Observes(precedence=10) BeforeClass event, OpenShiftAdapter client,
-            CECubeConfiguration configuration) throws DeploymentException {
+            CECubeConfiguration configuration, OpenShiftClient openshiftClient) throws DeploymentException {
         final TestClass testClass = event.getTestClass();
         log.info(String.format("Creating environment for %s", testClass.getName()));
         OpenShiftResourceFactory.createResources(testClass.getName(), client, null, testClass.getJavaClass(),
                 configuration.getProperties());
         processTemplate(testClass, client, configuration);
+        registerRoutes(configuration, openshiftClient);
     }
 
     /**
@@ -127,6 +130,10 @@ public class CEEnvironmentProcessor {
         log.info(String.format("Deleting environment for environment for %s", testClass.getName()));
         client.deleteTemplate(testClass.getName());
         OpenShiftResourceFactory.deleteResources(testClass.getName(), client);
+    }
+
+    private void registerRoutes(CECubeConfiguration configuration, OpenShiftClient client) {
+        CENameService.setRoutes(client.getClientExt().routes().list(), configuration.getRouterHost());
     }
 
     private void processTemplate(TestClass tc, OpenShiftAdapter client, CECubeConfiguration configuration)

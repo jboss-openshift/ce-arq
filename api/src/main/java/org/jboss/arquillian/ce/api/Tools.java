@@ -25,13 +25,22 @@ package org.jboss.arquillian.ce.api;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.Properties;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -79,7 +88,7 @@ public final class Tools {
         // Install the all-trusting trust manager
         final SSLContext sc = SSLContext.getInstance("SSL");
         sc.init(null, trustAllCerts, new java.security.SecureRandom());
-        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+        HttpsURLConnection.setDefaultSSLSocketFactory(new DelegatingSSLSocketFactory(sc.getSocketFactory()));
         // Create all-trusting host name verifier
         HostnameVerifier allHostsValid = new HostnameVerifier() {
             public boolean verify(String hostname, SSLSession session) {
@@ -89,5 +98,61 @@ public final class Tools {
 
         // Install the all-trusting host verifier
         HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+    }
+
+    private static final class DelegatingSSLSocketFactory extends SSLSocketFactory {
+        private final SSLSocketFactory delegate;
+        
+        private DelegatingSSLSocketFactory(final SSLSocketFactory delegate) {
+            this.delegate = delegate;
+        }
+        
+        @Override
+        public String[] getDefaultCipherSuites() {
+            return delegate.getDefaultCipherSuites();
+        }
+
+        @Override
+        public String[] getSupportedCipherSuites() {
+            return delegate.getSupportedCipherSuites();
+        }
+
+        @Override
+        public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
+            return overrideHostname(delegate.createSocket(s, host, port, autoClose), host);
+        }
+
+        @Override
+        public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+            return overrideHostname(delegate.createSocket(host, port), host);
+        }
+
+        @Override
+        public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException,
+                UnknownHostException {
+            return overrideHostname(delegate.createSocket(host, port, localHost, localPort), host);
+        }
+
+        @Override
+        public Socket createSocket(InetAddress host, int port) throws IOException {
+            return overrideHostname(delegate.createSocket(host, port), host.getHostName());
+        }
+
+        @Override
+        public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort)
+                throws IOException {
+            return overrideHostname(delegate.createSocket(address, port, localAddress, localPort), address.getHostName());
+        }
+        
+        private Socket overrideHostname(final Socket socket, String hostname) {
+            if (hostname == null) {
+                return socket;
+            }
+            final SSLSocket sslSocket = (SSLSocket) socket;
+            final SSLParameters params = sslSocket.getSSLParameters();
+            params.setServerNames(Collections.<SNIServerName>singletonList(new SNIHostName(hostname)));
+            sslSocket.setSSLParameters(params);
+            return sslSocket;
+        }
     }
 }
