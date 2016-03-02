@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,6 +53,7 @@ import com.openshift.restclient.authorization.IAuthorizationClient;
 import com.openshift.restclient.authorization.IAuthorizationContext;
 import com.openshift.restclient.authorization.TokenAuthorizationStrategy;
 import com.openshift.restclient.capability.resources.IProjectTemplateProcessing;
+import com.openshift.restclient.model.IDeploymentConfig;
 import com.openshift.restclient.model.IPod;
 import com.openshift.restclient.model.IProject;
 import com.openshift.restclient.model.IReplicationController;
@@ -61,17 +63,21 @@ import com.openshift.restclient.model.authorization.IRoleBinding;
 import com.openshift.restclient.model.project.IProjectRequest;
 import com.openshift.restclient.model.template.IParameter;
 import com.openshift.restclient.model.template.ITemplate;
+
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
+import org.jboss.arquillian.ce.utils.Checker;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.Containers;
 import org.jboss.arquillian.ce.utils.CustomValueExpressionResolver;
 import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.ce.utils.RCContext;
+import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
@@ -313,6 +319,29 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     public IService getService(String namespace, String serviceName) {
         return client.get(ResourceKind.SERVICE, serviceName, namespace);
+    }
+
+    @Override
+    public void scaleDeployment(String name, final int replicas) throws DeploymentException {
+        final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, name, configuration.getNamespace());
+        final Map<String,String> labels = dc.getReplicaSelector();
+        final Proxy proxy = createProxy();
+        dc.setReplicas(replicas);
+        client.update(dc);
+        try {
+            Containers.delay(0, 4000L, new Checker() {
+                public boolean check() {
+                    Set<String> pods = proxy.getReadyPods(labels);
+                    boolean result = (pods.size() >= replicas);
+                    if (result) {
+                        log.info(String.format("Pods are ready: %s", pods));
+                    }
+                    return result;
+                }
+            });
+        } catch (Exception e) {
+            throw new DeploymentException(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);
+        }
     }
 
     public void cleanReplicationControllers(String... ids) throws Exception {

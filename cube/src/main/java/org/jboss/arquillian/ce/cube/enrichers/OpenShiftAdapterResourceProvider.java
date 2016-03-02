@@ -20,23 +20,36 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.arquillian.ce.cube;
+package org.jboss.arquillian.ce.cube.enrichers;
 
-import org.jboss.arquillian.ce.cube.enrichers.OpenShiftAdapterResourceProvider;
-import org.jboss.arquillian.ce.cube.enrichers.RouteURLEnricher;
-import org.jboss.arquillian.core.spi.LoadableExtension;
-import org.jboss.arquillian.test.spi.TestEnricher;
+import java.lang.annotation.Annotation;
+
+import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
+import org.jboss.arquillian.core.api.annotation.Inject;
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 
-public class CECubeOpenShiftExtension implements LoadableExtension {
-    public void register(ExtensionBuilder builder) {
-        builder.observer(CECubeInitializer.class)
-               .observer(CubeOpenShiftOverrider.class)
-               .observer(CEProjectManager.class)
-               .observer(CEEnvironmentProcessor.class)
-               .observer(CEApplicationHandler.class);
-        
-        builder.service(TestEnricher.class, RouteURLEnricher.class)
-               .service(ResourceProvider.class, OpenShiftAdapterResourceProvider.class);
+/**
+ * OpenShiftAdapterResourceProvider
+ * 
+ * @author Rob Cernich
+ */
+public class OpenShiftAdapterResourceProvider implements ResourceProvider {
+
+    @Inject
+    @ApplicationScoped
+    private Instance<OpenShiftAdapter> openshiftAdapterInstance;
+
+    @Override
+    public boolean canProvide(Class<?> type) {
+        return type.isAssignableFrom(OpenShiftAdapter.class);
     }
+
+    @Override
+    public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
+        return openshiftAdapterInstance.get();
+    }
+
 }

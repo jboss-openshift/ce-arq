@@ -49,6 +49,7 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.openshift.api.model.DoneableDeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.RoleBinding;
@@ -67,6 +68,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -76,11 +78,14 @@ import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
+import org.jboss.arquillian.ce.utils.Checker;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.Containers;
 import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.ce.utils.RCContext;
+import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -382,6 +387,28 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     public Service getService(String namespace, String serviceName) {
         return client.services().inNamespace(namespace).withName(serviceName).get();
+    }
+
+    @Override
+    public void scaleDeployment(String name, final int replicas) throws DeploymentException {
+        final DoneableDeploymentConfig dc = client.deploymentConfigs().inNamespace(configuration.getNamespace()).withName(name).edit();
+        final Map<String,String> labels = dc.getSpec().getSelector();
+        final Proxy proxy = createProxy();
+        dc.editSpec().withReplicas(replicas).endSpec().done();
+        try {
+            Containers.delay(0, 4000L, new Checker() {
+                public boolean check() {
+                    Set<String> pods = proxy.getReadyPods(labels);
+                    boolean result = (pods.size() >= replicas);
+                    if (result) {
+                        log.info(String.format("Pods are ready: %s", pods));
+                    }
+                    return result;
+                }
+            });
+        } catch (Exception e) {
+            throw new DeploymentException(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);
+        }
     }
 
     private Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle, Probe probe, String imagePullPolicy) throws Exception {
