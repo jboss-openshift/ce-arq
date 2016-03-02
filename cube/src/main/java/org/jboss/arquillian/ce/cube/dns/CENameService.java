@@ -40,13 +40,13 @@ import sun.net.spi.nameservice.NameService;
 public class CENameService implements NameService {
 
     private static Set<String> hosts = new HashSet<String>();
-    private static InetAddress[] routerAddr = new InetAddress[1];
+    private static InetAddress routerAddr;
 
     public static void setRoutes(RouteList routeList, String routerHost) {
         synchronized (hosts) {
             hosts.clear();
             try {
-                CENameService.routerAddr[0] = routerHost == null ? null : InetAddress.getByName(routerHost);
+                CENameService.routerAddr = routerHost == null ? null : InetAddress.getByName(routerHost);
             } catch (UnknownHostException e) {
                 throw new IllegalArgumentException("Invalid IP for router host", e);
             }
@@ -64,8 +64,8 @@ public class CENameService implements NameService {
     @Override
     public InetAddress[] lookupAllHostAddr(String host) throws UnknownHostException {
         synchronized (hosts) {
-            if (routerAddr[0] != null && hosts.contains(host)) {
-                return routerAddr;
+            if (routerAddr != null && hosts.contains(host)) {
+                return new InetAddress[] {InetAddress.getByAddress(host, routerAddr.getAddress()) };
             }
             throw new UnknownHostException(host);
         }

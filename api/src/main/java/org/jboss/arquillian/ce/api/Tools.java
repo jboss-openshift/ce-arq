@@ -88,7 +88,7 @@ public final class Tools {
         // Install the all-trusting trust manager
         final SSLContext sc = SSLContext.getInstance("SSL");
         sc.init(null, trustAllCerts, new java.security.SecureRandom());
-        HttpsURLConnection.setDefaultSSLSocketFactory(new DelegatingSSLSocketFactory(sc.getSocketFactory()));
+        HttpsURLConnection.setDefaultSSLSocketFactory(createSSLSocketFactory(sc));
         // Create all-trusting host name verifier
         HostnameVerifier allHostsValid = new HostnameVerifier() {
             public boolean verify(String hostname, SSLSession session) {
@@ -98,6 +98,16 @@ public final class Tools {
 
         // Install the all-trusting host verifier
         HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+    }
+
+    private static SSLSocketFactory createSSLSocketFactory(final SSLContext sc) {
+        try {
+            Class.forName("javax.net.ssl.SNIHostName");
+        } catch (ClassNotFoundException e) {
+            // Java 7, no need to patch
+            return sc.getSocketFactory();
+        }
+        return new DelegatingSSLSocketFactory(sc.getSocketFactory());
     }
 
     private static final class DelegatingSSLSocketFactory extends SSLSocketFactory {

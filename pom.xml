@@ -35,6 +35,8 @@
         <version.surefire.plugin>2.12.1</version.surefire.plugin>
         <version.dmr>1.2.0.Final</version.dmr>
         <version.javax.ejb>1.0.0.Final</version.javax.ejb>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
     </properties>
 
     <modules>
@@ -229,6 +231,34 @@
 
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>1.4.1</version>
+                    <executions>
+                        <execution>
+                            <id>enforce-java</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <!-- Requires Java 8 for SNI patching -->
+                                    <requireJavaVersion>
+                                        <version>[1.8.0,)</version>
+                                    </requireJavaVersion>
+                                </rules>    
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
     <profiles>
         <profile>
