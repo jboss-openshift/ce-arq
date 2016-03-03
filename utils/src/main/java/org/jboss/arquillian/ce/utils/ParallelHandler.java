@@ -33,7 +33,7 @@ public class ParallelHandler {
     private volatile ParallelHandle spi = new ParallelHandle();
 
     void initMain() {
-        main.init();
+        main.init("Main");
     }
 
     void resumeOnMain() {
@@ -53,11 +53,11 @@ public class ParallelHandler {
     }
 
     void clearMain() {
-        main.clear();
+        main.clear("Main");
     }
 
     void initSPI() {
-        spi.init();
+        spi.init("RunInPod");
     }
 
     void resumeOnSPI() {
@@ -77,6 +77,6 @@ public class ParallelHandler {
     }
 
     void clearSPI() {
-        spi.clear();
+        spi.clear("RunInPod");
     }
 }

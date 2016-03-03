@@ -34,30 +34,33 @@ class ParallelHandle {
     private static final Logger log = Logger.getLogger(ParallelHandle.class.getName());
 
     private enum State {
+        INIT,
         DONE,
         IN_PROGRESS,
         WAITING,
         ERROR
     }
 
-    private volatile State state;
+    private volatile State state = State.INIT;
     private Throwable error;
 
     Throwable getError() {
         return error;
     }
 
-    synchronized void init() {
-        if (state == null) {
+    synchronized void init(String info) {
+        log.info(String.format("Build %s init [%s]", info, state));
+        if (state == State.INIT) {
             state = State.IN_PROGRESS;
         }
     }
 
-    synchronized void clear() {
+    synchronized void clear(String info) {
+        log.info(String.format("Clear build %s [%s]", info, state));
         if (state == State.WAITING) {
             notifyAll(); // just to make sure, we don't somehow hang
         }
-        state = null;
+        state = State.INIT;
     }
 
     synchronized void doNotify(String info) {
@@ -65,13 +68,13 @@ class ParallelHandle {
             log.info(String.format("Notifying builds waiting on %s ...", info));
             notifyAll();
         } else {
-            log.info(String.format("Build %s already done [%s].", info, state != null ? state : State.DONE));
+            log.info(String.format("Build %s already done [%s].", info, state));
         }
         state = State.DONE;
     }
 
     synchronized void doError(String info, Throwable error) {
-        log.info(String.format("Error in %s build: %s", info, error));
+        log.warning(String.format("Error in %s build: %s [%s]", info, error, state));
         this.error = error;
         if (state == State.WAITING) {
             notifyAll();
@@ -89,6 +92,8 @@ class ParallelHandle {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(e);
             }
+        } else {
+            log.info(String.format("Build %s not in-progress [%s]", info, state));
         }
     }
 }
