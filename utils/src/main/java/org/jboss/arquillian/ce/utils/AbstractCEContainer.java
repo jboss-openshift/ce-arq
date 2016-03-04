@@ -230,8 +230,10 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         } finally {
             // reset parallel handler
             if (isSPI()) {
+                log.info("Cleaning parallel handler {SPI}");
                 parallelHandler.clearSPI();
             } else {
+                log.info("Cleaning parallel handler {MAIN}");
                 parallelHandler.clearMain();
             }
         }
@@ -260,14 +262,14 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
         if (isSPI()) {
             // resume SPI since it is ready -- Main can move on
+            log.info("Resuming OnSPI");
             parallelHandler.resumeOnSPI();
         }
 
         if (runInPodContainer != null && !isSPI()) {
             // reset
+            log.info("runInPodContainer is not null and SPI " + isSPI());
             parallelHandler.initSPI();
-            // wait for runinpod to finish
-            parallelHandler.waitOnSPI();
 
             // check if we got some error in SPI / parallel handling
             Throwable error = parallelHandler.getErrorFromSPI();
