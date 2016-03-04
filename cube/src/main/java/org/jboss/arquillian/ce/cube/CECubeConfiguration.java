@@ -52,8 +52,8 @@ public class CECubeConfiguration extends Configuration {
         config.setApiVersion(getProperty(props, "kubernetesApiVersion", config.getApiVersion()));
         config.setIgnoreCleanup(Boolean.valueOf(getProperty(props, "kubernetesIgnoreCleanup", Boolean.toString(config.isIgnoreCleanup()))));
         config.setKubernetesMaster(getProperty(props, "kubernetesMaster", config.getKubernetesMaster()));
-        config.setNamespace(getProperty(props, "kubernetesNamespace", null));
         config.setNamespacePrefix(getProperty(props, "kubernetesNamespacePrefix", config.getNamespacePrefix()));
+        config.setNamespace(getProperty(props, "kubernetesNamespace", config.getNamespace()));
         config.setOpenshiftPassword(getProperty(props, "openshiftPassword", config.getOpenshiftPassword()));
         config.setOpenshiftUsername(getProperty(props, "openshiftUsername", config.getOpenshiftUsername()));
         config.setRouterHost(getProperty(props, "routerHost", config.routerHost));
