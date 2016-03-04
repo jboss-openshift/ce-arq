@@ -43,24 +43,30 @@ class ParallelHandle {
 
     private volatile State state = State.INIT;
     private Throwable error;
+    private int counter;
 
     Throwable getError() {
         return error;
     }
 
     synchronized void init(String info) {
-        log.info(String.format("Build %s init [%s]", info, state));
+        log.info(String.format("Build %s init [%s] (%s)", info, state, counter));
         if (state == State.INIT) {
             state = State.IN_PROGRESS;
         }
+        counter += 2; // we need both, Main and RunInPod to clear
     }
 
-    synchronized void clear(String info) {
-        log.info(String.format("Clear build %s [%s]", info, state));
+    synchronized void clear(String info, String from) {
+        log.info(String.format("Clear build %s from %s [%s] (%s)", info, from, state, counter));
         if (state == State.WAITING) {
             notifyAll(); // just to make sure, we don't somehow hang
         }
-        state = State.INIT;
+        counter--;
+        if (counter == 0) {
+            log.info(String.format("Reset build %s [%s]", info, state));
+            state = State.INIT;
+        }
     }
 
     synchronized void doNotify(String info) {
@@ -68,7 +74,7 @@ class ParallelHandle {
             log.info(String.format("Notifying builds waiting on %s ...", info));
             notifyAll();
         } else {
-            log.info(String.format("Build %s already done [%s].", info, state));
+            log.info(String.format("Build %s not waiting [%s].", info, state));
         }
         state = State.DONE;
     }

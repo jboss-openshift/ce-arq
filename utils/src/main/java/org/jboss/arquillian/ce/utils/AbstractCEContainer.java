@@ -231,7 +231,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             // reset parallel handler
             if (isSPI()) {
                 parallelHandler.clearSPI();
-            } else {
+            } else if (runInPodContainer != null) {
                 parallelHandler.clearMain();
             }
         }

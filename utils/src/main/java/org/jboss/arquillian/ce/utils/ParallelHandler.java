@@ -53,7 +53,8 @@ public class ParallelHandler {
     }
 
     void clearMain() {
-        main.clear("Main");
+        main.clear("Main", "Main");
+        spi.clear("RunInPod", "Main");
     }
 
     void initSPI() {
@@ -77,6 +78,7 @@ public class ParallelHandler {
     }
 
     void clearSPI() {
-        spi.clear("RunInPod");
+        spi.clear("RunInPod", "RunInPod");
+        main.clear("Main", "RunInPod");
     }
 }
