@@ -322,7 +322,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     @Override
-    public void scaleDeployment(String name, final int replicas) throws DeploymentException {
+    public void scaleDeployment(final String name, final int replicas) throws DeploymentException {
         final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, name, configuration.getNamespace());
         final Map<String,String> labels = dc.getReplicaSelector();
         final Proxy proxy = createProxy();
@@ -338,6 +338,11 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
                     }
                     return result;
                 }
+                @Override
+                public String toString() {
+                    return String.format("Scaling deployment %s to %d replicas", name, replicas);
+                }
+
             });
         } catch (Exception e) {
             throw new DeploymentException(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);

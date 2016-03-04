@@ -390,7 +390,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     @Override
-    public void scaleDeployment(String name, final int replicas) throws DeploymentException {
+    public void scaleDeployment(final String name, final int replicas) throws DeploymentException {
         final DoneableDeploymentConfig dc = client.deploymentConfigs().inNamespace(configuration.getNamespace()).withName(name).edit();
         final Map<String,String> labels = dc.getSpec().getSelector();
         final Proxy proxy = createProxy();
@@ -404,6 +404,10 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
                         log.info(String.format("Pods are ready: %s", pods));
                     }
                     return result;
+                }
+                @Override
+                public String toString() {
+                    return String.format("Scaling deployment %s to %d replicas", name, replicas);
                 }
             });
         } catch (Exception e) {
