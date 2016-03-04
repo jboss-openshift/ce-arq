@@ -396,7 +396,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         final Proxy proxy = createProxy();
         dc.editSpec().withReplicas(replicas).endSpec().done();
         try {
-            Containers.delay(0, 4000L, new Checker() {
+            Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
                 public boolean check() {
                     Set<String> pods = proxy.getReadyPods(labels);
                     boolean result = (pods.size() >= replicas);

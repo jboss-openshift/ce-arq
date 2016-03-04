@@ -329,7 +329,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         dc.setReplicas(replicas);
         client.update(dc);
         try {
-            Containers.delay(0, 4000L, new Checker() {
+            Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
                 public boolean check() {
                     Set<String> pods = proxy.getReadyPods(labels);
                     boolean result = (pods.size() >= replicas);
