@@ -40,6 +40,7 @@ import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ReplicationController;
+import io.fabric8.kubernetes.api.model.ReplicationControllerList;
 import io.fabric8.kubernetes.api.model.ReplicationControllerSpec;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
@@ -49,7 +50,6 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.openshift.api.model.DoneableDeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.RoleBinding;
@@ -391,15 +391,27 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     @Override
     public void scaleDeployment(final String name, final int replicas) throws DeploymentException {
-        final DoneableDeploymentConfig dc = client.deploymentConfigs().inNamespace(configuration.getNamespace()).withName(name).edit();
-        final Map<String,String> labels = dc.getSpec().getSelector();
+        ReplicationController rc;
+        String actualName = "";
+        ReplicationControllerList list = client.replicationControllers().inNamespace(configuration.getNamespace()).list();
+        for (ReplicationController r: list.getItems()) {
+            if (r.getMetadata().getName().startsWith(name)) {
+                actualName = r.getMetadata().getName();
+                break;
+            }
+        }
+        if (actualName != "")
+            rc = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(actualName).scale(replicas);
+        else
+            throw new DeploymentException("There weren't found any RC starting with " + name);
+
+        final Map<String,String> labels = rc.getSpec().getSelector();
         final Proxy proxy = createProxy();
-        dc.editSpec().withReplicas(replicas).endSpec().done();
         try {
             Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
                 public boolean check() {
                     Set<String> pods = proxy.getReadyPods(labels);
-                    boolean result = (pods.size() >= replicas);
+                    boolean result = (pods.size() == replicas);
                     if (result) {
                         log.info(String.format("Pods are ready: %s", pods));
                     }
