@@ -38,7 +38,6 @@ public class UtilsCEExtension implements LoadableExtension {
         builder.service(DeploymentScenarioGenerator.class, ExternalDeploymentScenarioGenerator.class);
         builder.service(ResourceProvider.class, LocalConfigurationResourceProvider.class);
         builder.service(ResourceProvider.class, OpenShiftHandleResourceProvider.class);
-        builder.service(ResourceProvider.class, OpenShiftAdapterResourceProvider.class);
         builder.service(AuxiliaryArchiveAppender.class, UtilsArchiveAppender.class);
     }
 }

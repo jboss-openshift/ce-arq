@@ -117,7 +117,7 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
     public void delay(final Map<String, String> labels, final int replicas) throws Exception {
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {
-                Set<String> pods = proxy.getReadyPods(labels);
+                Set<String> pods = getProxy().getReadyPods(labels);
                 boolean result = (pods.size() >= replicas);
                 if (result) {
                     log.info(String.format("Pods are ready: %s", pods));
