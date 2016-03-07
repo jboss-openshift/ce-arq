@@ -37,6 +37,7 @@ import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.ce.api.TemplateParameter;
 import org.jboss.arquillian.ce.cube.dns.CENameService;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceFactory;
+import org.jboss.arquillian.ce.utils.Operator;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.ReflectionUtils;
 import org.jboss.arquillian.ce.utils.StringResolver;
@@ -110,7 +111,7 @@ public class CEEnvironmentProcessor {
         }
         log.info(String.format("Waiting for environment for %s", testClass.getName()));
         try {
-            client.delay(details.getLabels(), details.getReplicas());
+            client.delay(details.getLabels(), details.getReplicas(), Operator.GREATER_THAN_OR_EQUAL);
         } catch (Throwable t) {
             throw new DeploymentException("Error waiting for template resources to deploy: " + testClass.getName(), t);
         }

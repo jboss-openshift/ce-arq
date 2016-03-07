@@ -77,6 +77,7 @@ import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.HookType;
+import org.jboss.arquillian.ce.utils.Operator;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.ce.utils.RCContext;
@@ -400,7 +401,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
         final Map<String,String> labels = rc.getSpec().getSelector();
         try {
-            delay(labels, replicas);
+            delay(labels, replicas, Operator.EQUAL);
         } catch (Exception e) {
             throw new DeploymentException(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);
         }

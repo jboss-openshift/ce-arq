@@ -31,6 +31,7 @@ import java.util.Map;
 import org.jboss.arquillian.ce.spi.WildFlySPIContainer;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
 import org.jboss.arquillian.ce.utils.Archives;
+import org.jboss.arquillian.ce.utils.Operator;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -90,7 +91,7 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
         try {
             int replicas = 1; // single pod
             labels = deployEapPods(replicas);
-            client.delay(labels, replicas);
+            client.delay(labels, replicas, Operator.GREATER_THAN_OR_EQUAL);
 
 /*
             PortForwardContext context = client.createPortForwardContext(labels, configuration.getMgmtPort());

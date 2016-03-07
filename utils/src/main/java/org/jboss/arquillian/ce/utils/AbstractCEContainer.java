@@ -388,7 +388,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             parallelHandler.resumeOnMain();
         }
 
-        client.delay(labels, replicas);
+        client.delay(labels, replicas, Operator.GREATER_THAN_OR_EQUAL);
 
         return getProtocolMetaData(archive, labels);
     }

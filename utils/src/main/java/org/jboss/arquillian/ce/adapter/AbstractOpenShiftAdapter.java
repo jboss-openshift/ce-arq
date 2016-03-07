@@ -38,6 +38,7 @@ import org.jboss.arquillian.ce.utils.Checker;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Containers;
 import org.jboss.arquillian.ce.utils.DeploymentContext;
+import org.jboss.arquillian.ce.utils.Operator;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.core.api.Instance;
 
@@ -114,11 +115,11 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         return handle;
     }
 
-    public void delay(final Map<String, String> labels, final int replicas) throws Exception {
+    public void delay(final Map<String, String> labels, final int replicas, final Operator op) throws Exception {
         Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
             public boolean check() {
                 Set<String> pods = getProxy().getReadyPods(labels);
-                boolean result = (pods.size() >= replicas);
+                boolean result = op.op(pods.size(), replicas);
                 if (result) {
                     log.info(String.format("Pods are ready: %s", pods));
                 }

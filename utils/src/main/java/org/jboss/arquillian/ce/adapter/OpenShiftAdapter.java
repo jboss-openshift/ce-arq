@@ -32,6 +32,7 @@ import java.util.Map;
 import org.jboss.arquillian.ce.api.OpenShiftHandle;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
+import org.jboss.arquillian.ce.utils.Operator;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.ce.utils.RegistryLookup;
@@ -71,5 +72,8 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup, OpenShiftHa
 
     void cleanPods(Map<String, String> labels) throws Exception;
 
-    void delay(Map<String, String> labels, int replicas) throws Exception;
+    /**
+     * @param op compare current number of pods vs. replicas
+     */
+    void delay(Map<String, String> labels, int replicas, Operator op) throws Exception;
 }
