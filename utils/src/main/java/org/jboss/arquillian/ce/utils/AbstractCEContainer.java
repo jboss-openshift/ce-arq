@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.adapter.DockerAdapter;
@@ -79,6 +78,10 @@ import org.jboss.shrinkwrap.descriptor.api.application7.WebType;
  */
 public abstract class AbstractCEContainer<T extends Configuration> implements DeployableContainer<T>, DockerFileTemplateHandler {
     protected final Logger log = Logger.getLogger(getClass().getName());
+
+    @Inject
+    @ApplicationScoped
+    private InstanceProducer<OpenShiftAdapter> openShiftAdapterProducer;
 
     @Inject
     @ApplicationScoped
@@ -142,7 +145,9 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
 
     public void start() throws LifecycleException {
         this.client = OpenShiftAdapterFactory.getOpenShiftAdapter(configuration);
-        this.proxy = client.createProxy();
+        this.openShiftAdapterProducer.set(client);
+
+        this.proxy = client.getProxy();
 
         RegistryLookup lookup;
         if ("static".equalsIgnoreCase(configuration.getRegistryType())) {
@@ -383,7 +388,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             parallelHandler.resumeOnMain();
         }
 
-        delay(labels, replicas);
+        client.delay(labels, replicas);
 
         return getProtocolMetaData(archive, labels);
     }
@@ -398,24 +403,6 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         pmd.addContext(context);
         pmd.addContext(proxy.createManagementHandle(labels));
         return pmd;
-    }
-
-    protected void delay(final Map<String, String> labels, final int replicas) throws Exception {
-        Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
-            public boolean check() {
-                Set<String> pods = proxy.getReadyPods(labels);
-                boolean result = (pods.size() >= replicas);
-                if (result) {
-                    log.info(String.format("Pods are ready: %s", pods));
-                }
-                return result;
-            }
-
-            @Override
-            public String toString() {
-                return String.format("(Required pods: %s)", replicas);
-            }
-        });
     }
 
     protected void addServlets(HTTPContext context, Archive<?> archive) throws Exception {

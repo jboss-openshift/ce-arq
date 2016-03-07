@@ -23,6 +23,18 @@
 
 package org.jboss.arquillian.ce.fabric8;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -58,29 +70,12 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
-import org.jboss.arquillian.ce.utils.Checker;
 import org.jboss.arquillian.ce.utils.Configuration;
-import org.jboss.arquillian.ce.utils.Containers;
 import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.Port;
@@ -92,8 +87,6 @@ import org.jboss.dmr.ModelNode;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
-    private final static Logger log = Logger.getLogger(F8OpenShiftAdapter.class.getName());
-
     private final OpenShiftClient client;
     private Map<String, KubernetesList> templates = new ConcurrentHashMap<>();
 
@@ -126,7 +119,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         this.client = client;
     }
 
-    public Proxy createProxy() {
+    protected Proxy createProxy() {
         return new F8Proxy(configuration, client);
     }
 
@@ -389,10 +382,9 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.services().inNamespace(namespace).withName(serviceName).get();
     }
 
-    @Override
     public void scaleDeployment(final String name, final int replicas) throws DeploymentException {
         ReplicationController rc;
-        String actualName = "";
+        String actualName = null;
         ReplicationControllerList list = client.replicationControllers().inNamespace(configuration.getNamespace()).list();
         for (ReplicationController r: list.getItems()) {
             if (r.getMetadata().getName().startsWith(name)) {
@@ -400,28 +392,15 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
                 break;
             }
         }
-        if (actualName != "")
+        if (actualName != null) {
             rc = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(actualName).scale(replicas);
-        else
-            throw new DeploymentException("There weren't found any RC starting with " + name);
+        } else {
+            throw new DeploymentException("No RC found starting with " + name);
+        }
 
         final Map<String,String> labels = rc.getSpec().getSelector();
-        final Proxy proxy = createProxy();
         try {
-            Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
-                public boolean check() {
-                    Set<String> pods = proxy.getReadyPods(labels);
-                    boolean result = (pods.size() == replicas);
-                    if (result) {
-                        log.info(String.format("Pods are ready: %s", pods));
-                    }
-                    return result;
-                }
-                @Override
-                public String toString() {
-                    return String.format("Scaling deployment %s to %d replicas", name, replicas);
-                }
-            });
+            delay(labels, replicas);
         } catch (Exception e) {
             throw new DeploymentException(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);
         }

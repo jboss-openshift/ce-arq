@@ -22,11 +22,9 @@
  */
 package org.jboss.arquillian.ce.cube;
 
-import org.jboss.arquillian.ce.cube.enrichers.OpenShiftAdapterResourceProvider;
 import org.jboss.arquillian.ce.cube.enrichers.RouteURLEnricher;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.jboss.arquillian.test.spi.TestEnricher;
-import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 
 public class CECubeOpenShiftExtension implements LoadableExtension {
     public void register(ExtensionBuilder builder) {
@@ -35,8 +33,7 @@ public class CECubeOpenShiftExtension implements LoadableExtension {
                .observer(CEProjectManager.class)
                .observer(CEEnvironmentProcessor.class)
                .observer(CEApplicationHandler.class);
-        
-        builder.service(TestEnricher.class, RouteURLEnricher.class)
-               .service(ResourceProvider.class, OpenShiftAdapterResourceProvider.class);
+
+        builder.service(TestEnricher.class, RouteURLEnricher.class);
     }
 }

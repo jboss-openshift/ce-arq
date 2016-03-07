@@ -90,7 +90,7 @@ public class CEDeployableContainer extends AbstractCEContainer<CEConfiguration> 
         try {
             int replicas = 1; // single pod
             labels = deployEapPods(replicas);
-            delay(labels, replicas);
+            client.delay(labels, replicas);
 
 /*
             PortForwardContext context = client.createPortForwardContext(labels, configuration.getMgmtPort());

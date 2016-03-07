@@ -36,10 +36,7 @@ import org.jboss.arquillian.ce.api.Replicas;
 import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.ce.api.TemplateParameter;
 import org.jboss.arquillian.ce.cube.dns.CENameService;
-import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceFactory;
-import org.jboss.arquillian.ce.utils.Checker;
-import org.jboss.arquillian.ce.utils.Containers;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.ReflectionUtils;
 import org.jboss.arquillian.ce.utils.StringResolver;
@@ -113,7 +110,7 @@ public class CEEnvironmentProcessor {
         }
         log.info(String.format("Waiting for environment for %s", testClass.getName()));
         try {
-            delay(client, details.getLabels(), details.getReplicas());
+            client.delay(details.getLabels(), details.getReplicas());
         } catch (Throwable t) {
             throw new DeploymentException("Error waiting for template resources to deploy: " + testClass.getName(), t);
         }
@@ -271,25 +268,4 @@ public class CEEnvironmentProcessor {
         }
         return configuration.getTemplateParameters();
     }
-
-    private void delay(OpenShiftAdapter client, final Map<String, String> labels, final int replicas) throws Exception {
-        final Proxy proxy = client.createProxy();
-        Containers.delay(client.getConfiguration().getStartupTimeout(), 4000L, new Checker() {
-            public boolean check() {
-                Set<String> pods = proxy.getReadyPods(labels);
-                boolean result = (pods.size() >= replicas);
-                if (result) {
-                    log.info(String.format("Pods are ready: %s", pods));
-                }
-                return result;
-            }
-
-            @Override
-            public String toString() {
-                return String.format("(Required pods: %s)", replicas);
-            }
-        });
-    }
-
-
 }

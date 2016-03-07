@@ -29,19 +29,18 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.arquillian.ce.api.OpenShiftHandle;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
-import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.ce.utils.RegistryLookup;
-import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface OpenShiftAdapter extends Closeable, RegistryLookup {
-    Proxy createProxy();
+public interface OpenShiftAdapter extends Closeable, RegistryLookup, OpenShiftHandle {
+    Proxy getProxy();
 
     PortForwardContext createPortForwardContext(Map<String, String> labels, int port);
 
@@ -68,11 +67,9 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup {
 
     Object getService(String namespace, String serviceName);
 
-    void scaleDeployment(String name, int replicas) throws DeploymentException;
-
     void cleanReplicationControllers(String... ids) throws Exception;
 
     void cleanPods(Map<String, String> labels) throws Exception;
-    
-    Configuration getConfiguration();
+
+    void delay(Map<String, String> labels, int replicas) throws Exception;
 }

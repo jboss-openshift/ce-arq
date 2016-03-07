@@ -28,6 +28,8 @@ import java.io.InputStream;
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface Client {
-    InputStream execute(int pod, String path) throws Exception;
+public interface OpenShiftHandle {
+    InputStream execute(int pod, int port, String path) throws Exception;
+
+    void scaleDeployment(String name, int replicas) throws Exception;
 }

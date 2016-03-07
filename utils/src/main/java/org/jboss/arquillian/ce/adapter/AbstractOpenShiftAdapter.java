@@ -28,20 +28,55 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
+import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
+import org.jboss.arquillian.ce.utils.Checker;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.Containers;
+import org.jboss.arquillian.ce.utils.DeploymentContext;
+import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
+import org.jboss.arquillian.core.api.Instance;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
+    protected final Logger log = Logger.getLogger(getClass().getName());
+
     protected final Configuration configuration;
     private Map<String, List<OpenShiftResourceHandle>> resourcesMap = new ConcurrentHashMap<>();
+    private Proxy proxy;
+    private Instance<ProtocolMetaData> pmdInstance;
 
     protected AbstractOpenShiftAdapter(Configuration configuration) {
         this.configuration = configuration;
+    }
+
+    public void setProtocolMetaData(Instance<ProtocolMetaData> pmd) {
+        this.pmdInstance = pmd;
+    }
+
+    protected abstract Proxy createProxy();
+
+    public InputStream execute(int pod, int port, String path) throws Exception {
+        ProtocolMetaData pmd = pmdInstance.get();
+        if (pmd != null) {
+            Map<String, String> labels = DeploymentContext.getDeploymentContext(pmd).getLabels();
+            return getProxy().post(labels, pod, port, path);
+        } else {
+            throw new IllegalStateException("No ProtocolMetaData set!");
+        }
+    }
+
+    public synchronized Proxy getProxy() {
+        if (proxy == null) {
+            proxy = createProxy();
+        }
+        return proxy;
     }
 
     private void addResourceHandle(String resourcesKey, OpenShiftResourceHandle handle) {
@@ -78,9 +113,22 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         addResourceHandle(resourcesKey, handle);
         return handle;
     }
-    
-    @Override
-    public Configuration getConfiguration() {
-        return configuration;
+
+    public void delay(final Map<String, String> labels, final int replicas) throws Exception {
+        Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
+            public boolean check() {
+                Set<String> pods = proxy.getReadyPods(labels);
+                boolean result = (pods.size() >= replicas);
+                if (result) {
+                    log.info(String.format("Pods are ready: %s", pods));
+                }
+                return result;
+            }
+
+            @Override
+            public String toString() {
+                return String.format("(Required # of pods: %s)", replicas);
+            }
+        });
     }
 }

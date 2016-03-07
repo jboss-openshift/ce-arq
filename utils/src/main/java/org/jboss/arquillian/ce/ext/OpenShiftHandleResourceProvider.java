@@ -20,36 +20,17 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.arquillian.ce.cube.enrichers;
+package org.jboss.arquillian.ce.ext;
 
-import java.lang.annotation.Annotation;
-
-import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
-import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
+import org.jboss.arquillian.ce.api.OpenShiftHandle;
 
 /**
- * OpenShiftAdapterResourceProvider
- * 
- * @author Rob Cernich
+ * OpenShiftHandleResourceProvider
+ *
+ * @author Ales Justin
  */
-public class OpenShiftAdapterResourceProvider implements ResourceProvider {
-
-    @Inject
-    @ApplicationScoped
-    private Instance<OpenShiftAdapter> openshiftAdapterInstance;
-
-    @Override
+public class OpenShiftHandleResourceProvider extends AbstractOpenShiftAdapterResourceProvider {
     public boolean canProvide(Class<?> type) {
-        return type.isAssignableFrom(OpenShiftAdapter.class);
+        return type.isAssignableFrom(OpenShiftHandle.class);
     }
-
-    @Override
-    public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
-        return openshiftAdapterInstance.get();
-    }
-
 }
