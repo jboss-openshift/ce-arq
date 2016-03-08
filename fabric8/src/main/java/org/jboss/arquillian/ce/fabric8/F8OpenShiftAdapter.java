@@ -23,18 +23,6 @@
 
 package org.jboss.arquillian.ce.fabric8;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -42,6 +30,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.ExecAction;
 import io.fabric8.kubernetes.api.model.HTTPGetAction;
 import io.fabric8.kubernetes.api.model.Handler;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.KubernetesList;
 import io.fabric8.kubernetes.api.model.Lifecycle;
@@ -62,16 +51,37 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.openshift.api.model.Build;
+import io.fabric8.openshift.api.model.BuildList;
+import io.fabric8.openshift.api.model.DeploymentConfig;
+import io.fabric8.openshift.api.model.DoneableTemplate;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.RoleBinding;
+import io.fabric8.openshift.api.model.Template;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
+import io.fabric8.openshift.client.dsl.ClientTemplateResource;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.api.MountSecret;
+import org.jboss.arquillian.ce.api.model.OpenShiftResource;
+import org.jboss.arquillian.ce.fabric8.model.F8DeploymentConfig;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
@@ -279,20 +289,29 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
     }
 
-    public KubernetesList processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values) throws Exception {
+    @Override
+    public List<? extends OpenShiftResource> processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values, Map<String, String> labels) throws Exception {
         List<ParameterValue> pvs = new ArrayList<>();
         for (ParamValue value : values) {
             pvs.add(new ParameterValue(value.getName(), value.getValue()));
         }
-        KubernetesList list = processTemplate(templateURL, pvs);
+        KubernetesList list = processTemplate(templateURL, pvs, labels);
         KubernetesList result = createResources(list);
         templates.put(templateKey, result);
-        return result;
+        List<OpenShiftResource> retVal = new ArrayList<OpenShiftResource>(result.getItems().size());
+        for (HasMetadata item : result.getItems()) {
+            if (item instanceof DeploymentConfig) {
+                retVal.add(new F8DeploymentConfig((DeploymentConfig) item));
+            }
+        }
+        return retVal;
     }
 
-    private KubernetesList processTemplate(String templateURL, List<ParameterValue> values) throws IOException {
+    private KubernetesList processTemplate(String templateURL, List<ParameterValue> values, Map<String, String> labels) throws IOException {
         try (InputStream stream = new URL(templateURL).openStream()) {
-            return client.templates().inNamespace(configuration.getNamespace()).load(stream).process(values.toArray(new ParameterValue[values.size()]));
+            ClientTemplateResource<Template, KubernetesList, DoneableTemplate> template = client.templates().inNamespace(configuration.getNamespace()).load(stream);
+            template.get().getLabels().putAll(labels);
+            return template.process(values.toArray(new ParameterValue[values.size()]));
         }
     }
 
@@ -496,6 +515,39 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             }
         } catch (Exception e) {
             log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", labels, e), e);
+        }
+    }
+
+    @Override
+    public void cleanRemnants(Map<String, String> labels) throws Exception {
+        cleanBuilds(labels);
+        cleanDeployments(labels);
+    }
+
+    private void cleanBuilds(Map<String, String> labels) throws Exception {
+        final BuildList builds = client.builds().inNamespace(configuration.getNamespace()).withLabels(labels).list();
+        try {
+            for (Build build : builds.getItems()) {
+                String buildId = KubernetesHelper.getName(build);
+                boolean exists = client.builds().inNamespace(configuration.getNamespace()).withName(buildId).delete();
+                log.info(String.format("Build [%s] delete: %s.", buildId, exists));
+            }
+        } catch (Exception e) {
+            log.log(Level.WARNING, String.format("Exception while deleting build [%s]: %s", labels, e), e);
+        }
+    }
+
+    private void cleanDeployments(Map<String, String> labels) throws Exception {
+        final ReplicationControllerList rcs = client.replicationControllers().inNamespace(configuration.getNamespace()).withLabels(labels).list();
+        try {
+            for (ReplicationController rc : rcs.getItems()) {
+                String rcId = KubernetesHelper.getName(rc);
+                client.replicationControllers().inNamespace(configuration.getNamespace()).withName(rcId).scale(0, true);
+                boolean exists = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(rcId).delete();
+                log.info(String.format("ReplicationController [%s] delete: %s.", rcId, exists));
+            }
+        } catch (Exception e) {
+            log.log(Level.WARNING, String.format("Exception while deleting rc [%s]: %s", labels, e), e);
         }
     }
 

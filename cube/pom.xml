@@ -16,7 +16,7 @@
     <description>Cloud Enablement integration with Arquillian Cube</description>
 
     <properties>
-        <version.arquillian.cube>1.0.0.Alpha9</version.arquillian.cube>
+        <version.arquillian.cube>1.0.0.Final-SNAPSHOT</version.arquillian.cube>
     </properties>
 
     <dependencyManagement>

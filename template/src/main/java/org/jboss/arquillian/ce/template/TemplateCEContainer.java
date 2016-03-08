@@ -118,7 +118,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
 
                 log.info(String.format("Applying OpenShift template: %s", templateURL));
                 // use old archive name as templateKey
-                client.processTemplateAndCreateResources(archive.getName(), templateURL, values);
+                client.processTemplateAndCreateResources(archive.getName(), templateURL, values, labels);
             } else {
                 log.info(String.format("Ignoring template [%s] processing ...", templateURL));
             }

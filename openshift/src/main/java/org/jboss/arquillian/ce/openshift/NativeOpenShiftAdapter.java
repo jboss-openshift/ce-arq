@@ -38,31 +38,10 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
-import com.openshift.internal.restclient.model.KubernetesResource;
-import com.openshift.internal.restclient.model.properties.ResourcePropertyKeys;
-import com.openshift.internal.restclient.model.template.Parameter;
-import com.openshift.restclient.ClientFactory;
-import com.openshift.restclient.IClient;
-import com.openshift.restclient.NoopSSLCertificateCallback;
-import com.openshift.restclient.ResourceKind;
-import com.openshift.restclient.authorization.AuthorizationClientFactory;
-import com.openshift.restclient.authorization.BasicAuthorizationStrategy;
-import com.openshift.restclient.authorization.IAuthorizationClient;
-import com.openshift.restclient.authorization.IAuthorizationContext;
-import com.openshift.restclient.authorization.TokenAuthorizationStrategy;
-import com.openshift.restclient.capability.resources.IProjectTemplateProcessing;
-import com.openshift.restclient.model.IDeploymentConfig;
-import com.openshift.restclient.model.IPod;
-import com.openshift.restclient.model.IProject;
-import com.openshift.restclient.model.IReplicationController;
-import com.openshift.restclient.model.IResource;
-import com.openshift.restclient.model.IService;
-import com.openshift.restclient.model.authorization.IRoleBinding;
-import com.openshift.restclient.model.project.IProjectRequest;
-import com.openshift.restclient.model.template.IParameter;
-import com.openshift.restclient.model.template.ITemplate;
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.api.MountSecret;
+import org.jboss.arquillian.ce.api.model.OpenShiftResource;
+import org.jboss.arquillian.ce.openshift.model.NativeDeploymentConfig;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
@@ -77,6 +56,31 @@ import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
+
+import com.openshift.internal.restclient.model.KubernetesResource;
+import com.openshift.internal.restclient.model.properties.ResourcePropertyKeys;
+import com.openshift.internal.restclient.model.template.Parameter;
+import com.openshift.restclient.ClientFactory;
+import com.openshift.restclient.IClient;
+import com.openshift.restclient.NoopSSLCertificateCallback;
+import com.openshift.restclient.ResourceKind;
+import com.openshift.restclient.authorization.AuthorizationClientFactory;
+import com.openshift.restclient.authorization.BasicAuthorizationStrategy;
+import com.openshift.restclient.authorization.IAuthorizationClient;
+import com.openshift.restclient.authorization.IAuthorizationContext;
+import com.openshift.restclient.authorization.TokenAuthorizationStrategy;
+import com.openshift.restclient.capability.resources.IProjectTemplateProcessing;
+import com.openshift.restclient.model.IBuild;
+import com.openshift.restclient.model.IDeploymentConfig;
+import com.openshift.restclient.model.IPod;
+import com.openshift.restclient.model.IProject;
+import com.openshift.restclient.model.IReplicationController;
+import com.openshift.restclient.model.IResource;
+import com.openshift.restclient.model.IService;
+import com.openshift.restclient.model.authorization.IRoleBinding;
+import com.openshift.restclient.model.project.IProjectRequest;
+import com.openshift.restclient.model.template.IParameter;
+import com.openshift.restclient.model.template.ITemplate;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -270,13 +274,16 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return builder.toString();
     }
 
-    public Object processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values) throws Exception {
+    @Override
+    public List<? extends OpenShiftResource> processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values, Map<String,String> labels) throws Exception {
         final IProject project = client.get(ResourceKind.PROJECT, configuration.getNamespace(), "");
 
         final ITemplate template;
         try (InputStream stream = new URL(templateURL).openStream()) {
             template = client.getResourceFactory().create(stream);
         }
+
+        template.getLabels().putAll(labels);
 
         Collection<IParameter> parameters = new HashSet<>();
         for (ParamValue pv : values) {
@@ -288,7 +295,13 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         ITemplate processed = capability.process(template);
         Collection<IResource> resources = capability.apply(processed);
         templates.put(templateKey, resources);
-        return resources;
+        final List<OpenShiftResource> retVal = new ArrayList<OpenShiftResource>(resources.size());
+        for (IResource resource : resources) {
+            if (resource instanceof IDeploymentConfig) {
+                retVal.add(new NativeDeploymentConfig((IDeploymentConfig) resource));
+            }
+        }
+        return retVal;
     }
 
     public Object deleteTemplate(String templateKey) throws Exception {
@@ -352,6 +365,36 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
                 log.info(String.format("Pod [%s] delete.", pod.getName()));
             } catch (Exception e) {
                 log.log(Level.WARNING, String.format("Exception while deleting pod [%s]: %s", pod, e), e);
+            }
+        }
+    }
+
+    @Override
+    public void cleanRemnants(Map<String, String> labels) throws Exception {
+        cleanBuilds(labels);
+        cleanReplicationControllers(labels);
+    }
+
+    private void cleanBuilds(Map<String, String> labels) {
+        final List<IBuild> builds = client.list(ResourceKind.BUILD, configuration.getNamespace(), labels);
+        for (IBuild build : builds) {
+            try {
+                client.delete(build);
+                log.info(String.format("Build [%s] delete.", build.getName()));
+            } catch (Exception e) {
+                log.log(Level.WARNING, String.format("Exception while deleting build [%s]: %s", build, e), e);
+            }
+        }
+    }
+
+    private void cleanReplicationControllers(Map<String, String> labels) {
+        final List<IReplicationController> rcs = client.list(ResourceKind.REPLICATION_CONTROLLER, configuration.getNamespace(), labels);
+        for (IReplicationController rc : rcs) {
+            try {
+                client.delete(rc);
+                log.info(String.format("ReplicationController [%s] delete.", rc.getName()));
+            } catch (Exception e) {
+                log.log(Level.WARNING, String.format("Exception while deleting rc [%s]: %s", rc, e), e);
             }
         }
     }

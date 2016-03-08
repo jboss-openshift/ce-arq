@@ -24,6 +24,7 @@ package org.jboss.arquillian.ce.cube;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,8 @@ import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.api.Replicas;
 import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.ce.api.TemplateParameter;
+import org.jboss.arquillian.ce.api.model.DeploymentConfig;
+import org.jboss.arquillian.ce.api.model.OpenShiftResource;
 import org.jboss.arquillian.ce.cube.dns.CENameService;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceFactory;
 import org.jboss.arquillian.ce.utils.Operator;
@@ -68,8 +71,7 @@ public class CEEnvironmentProcessor {
     private final Logger log = Logger.getLogger(CEEnvironmentProcessor.class.getName());
     
     public interface TemplateDetails {
-        public Map<String,String> getLabels();
-        public int getReplicas();
+        public List<? extends OpenShiftResource> getResources();
     }
 
     @Inject @ClassScoped
@@ -111,7 +113,7 @@ public class CEEnvironmentProcessor {
         }
         log.info(String.format("Waiting for environment for %s", testClass.getName()));
         try {
-            client.delay(details.getLabels(), details.getReplicas(), Operator.GREATER_THAN_OR_EQUAL);
+            delay(client, details.getResources());
         } catch (Throwable t) {
             throw new DeploymentException("Error waiting for template resources to deploy: " + testClass.getName(), t);
         }
@@ -123,13 +125,13 @@ public class CEEnvironmentProcessor {
      * In the future, this might be handled by stopping application Cube
      * objects, e.g. StopCube(application), DestroyCube(application).
      */
-    public void deleteEnvironment(@Observes AfterClass event, CECubeConfiguration configuration, OpenShiftAdapter client) throws Exception {
+    public void deleteEnvironment(@Observes(precedence=-10) AfterClass event, OpenShiftAdapter client, CECubeConfiguration configuration, TemplateDetails details) throws Exception {
         final TestClass testClass = event.getTestClass();
         if (configuration.performCleanup()) {
-            log.info(String.format("Deleting environment for %s", testClass.getName()));
-            log.info(configuration.toString());
+            log.info(String.format("Deleting environment for environment for %s", testClass.getName()));
             client.deleteTemplate(testClass.getName());
             OpenShiftResourceFactory.deleteResources(testClass.getName(), client);
+            additionalCleanup(client, Collections.singletonMap("test-case", testClass.getJavaClass().getSimpleName().toLowerCase()));
         } else {
             log.info(String.format("Ignoring cleanup for %s", testClass.getName()));
         }
@@ -144,9 +146,11 @@ public class CEEnvironmentProcessor {
         final StringResolver resolver = Strings.createStringResolver(configuration.getProperties());
         final Template template = ReflectionUtils.findAnnotation(tc.getJavaClass(), Template.class);
         final String templateURL = readTemplateUrl(template, configuration, resolver);
+        final List<? extends OpenShiftResource> resources;
         try {
             final int replicas = readReplicas(tc);
             final Map<String, String> labels = readLabels(template, configuration, resolver);
+            labels.put("test-case", tc.getJavaClass().getSimpleName().toLowerCase());
             if (labels.isEmpty()) {
                 log.warning(String.format("Empty labels for template: %s, namespace: %s", templateURL,
                         configuration.getNamespace()));
@@ -163,21 +167,16 @@ public class CEEnvironmentProcessor {
 
                 log.info(String.format("Applying OpenShift template: %s", templateURL));
                 // use old archive name as templateKey
-                client.processTemplateAndCreateResources(tc.getName(), templateURL, values);
+                resources = client.processTemplateAndCreateResources(tc.getName(), templateURL, values, labels);
             } else {
                 log.info(String.format("Ignoring template [%s] processing ...", templateURL));
+                resources = Collections.emptyList();
             }
 
             templateDetailsProducer.set(new TemplateDetails() {
-                
                 @Override
-                public int getReplicas() {
-                    return replicas;
-                }
-                
-                @Override
-                public Map<String, String> getLabels() {
-                    return labels;
+                public List<? extends OpenShiftResource> getResources() {
+                    return resources;
                 }
             });
         } catch (Throwable t) {
@@ -274,4 +273,18 @@ public class CEEnvironmentProcessor {
         }
         return configuration.getTemplateParameters();
     }
+
+    private void delay(OpenShiftAdapter client, final List<? extends OpenShiftResource> resources) throws Exception {
+        for (OpenShiftResource resource: resources) {
+            if (resource instanceof DeploymentConfig) {
+                final DeploymentConfig dc = (DeploymentConfig) resource;
+                client.delay(dc.getSelector(), dc.getReplicas(), Operator.EQUAL);
+            }            
+        }
+    }
+
+    private void additionalCleanup(OpenShiftAdapter client, Map<String, String> labels) throws Exception {
+        client.cleanRemnants(labels);
+    }
+
 }

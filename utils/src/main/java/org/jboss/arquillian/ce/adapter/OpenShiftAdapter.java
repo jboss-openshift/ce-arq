@@ -30,8 +30,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.jboss.arquillian.ce.api.OpenShiftHandle;
+import org.jboss.arquillian.ce.api.model.OpenShiftResource;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
+import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Operator;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.RCContext;
@@ -56,7 +58,7 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup, OpenShiftHa
 
     String deployReplicationController(String name, String env, RCContext context) throws Exception;
 
-    Object processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values) throws Exception;
+    List<? extends OpenShiftResource> processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values, Map<String, String> labels) throws Exception;
 
     Object deleteTemplate(String templateKey) throws Exception;
 
@@ -76,4 +78,8 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup, OpenShiftHa
      * @param op compare current number of pods vs. replicas
      */
     void delay(Map<String, String> labels, int replicas, Operator op) throws Exception;
+    
+    void cleanRemnants(Map<String, String> labels) throws Exception;
+    
+    Configuration getConfiguration();
 }
