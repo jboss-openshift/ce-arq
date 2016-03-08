@@ -123,11 +123,16 @@ public class CEEnvironmentProcessor {
      * In the future, this might be handled by stopping application Cube
      * objects, e.g. StopCube(application), DestroyCube(application).
      */
-    public void deleteEnvironment(@Observes AfterClass event, OpenShiftAdapter client) throws Exception {
+    public void deleteEnvironment(@Observes AfterClass event, CECubeConfiguration configuration, OpenShiftAdapter client) throws Exception {
         final TestClass testClass = event.getTestClass();
-        log.info(String.format("Deleting environment for environment for %s", testClass.getName()));
-        client.deleteTemplate(testClass.getName());
-        OpenShiftResourceFactory.deleteResources(testClass.getName(), client);
+        if (configuration.performCleanup()) {
+            log.info(String.format("Deleting environment for environment for %s", testClass.getName()));
+            log.info(configuration.toString());
+            client.deleteTemplate(testClass.getName());
+            OpenShiftResourceFactory.deleteResources(testClass.getName(), client);
+        } else {
+            log.info(String.format("Ignoring cleanup for %s", testClass.getName()));
+        }
     }
 
     private void registerRoutes(CECubeConfiguration configuration, OpenShiftClient client) {
