@@ -126,7 +126,7 @@ public class CEEnvironmentProcessor {
     public void deleteEnvironment(@Observes AfterClass event, CECubeConfiguration configuration, OpenShiftAdapter client) throws Exception {
         final TestClass testClass = event.getTestClass();
         if (configuration.performCleanup()) {
-            log.info(String.format("Deleting environment for environment for %s", testClass.getName()));
+            log.info(String.format("Deleting environment for %s", testClass.getName()));
             log.info(configuration.toString());
             client.deleteTemplate(testClass.getName());
             OpenShiftResourceFactory.deleteResources(testClass.getName(), client);
