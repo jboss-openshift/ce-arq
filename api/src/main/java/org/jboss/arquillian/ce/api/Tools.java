@@ -28,6 +28,9 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Properties;
@@ -73,7 +76,7 @@ public final class Tools {
      *
      * @throws Exception for any error
      */
-    public static void trustAllCertificates() throws Exception {
+    public static SSLContext trustAllCertificates() throws Exception {
         TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
             public java.security.cert.X509Certificate[] getAcceptedIssuers() {
                 return null;
@@ -88,6 +91,7 @@ public final class Tools {
         // Install the all-trusting trust manager
         final SSLContext sc = SSLContext.getInstance("SSL");
         sc.init(null, trustAllCerts, new java.security.SecureRandom());
+
         HttpsURLConnection.setDefaultSSLSocketFactory(createSSLSocketFactory(sc));
         // Create all-trusting host name verifier
         HostnameVerifier allHostsValid = new HostnameVerifier() {
@@ -98,6 +102,29 @@ public final class Tools {
 
         // Install the all-trusting host verifier
         HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+
+        return sc;
+    }
+
+    /*
+    * Configure the SSLContext to accept untrusted connections
+    */
+    public static SSLContext getTlsSslContext() throws Exception {
+        // Create a trust manager that does not validate certificate chains
+        TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                return new java.security.cert.X509Certificate[]{};
+            }
+
+            public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            }
+
+            public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            }
+        }};
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init( null, trustAllCerts, new java.security.SecureRandom());
+        return sslContext;
     }
 
     private static SSLSocketFactory createSSLSocketFactory(final SSLContext sc) {
