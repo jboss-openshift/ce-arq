@@ -33,7 +33,6 @@ import org.jboss.arquillian.ce.api.OpenShiftHandle;
 import org.jboss.arquillian.ce.api.model.OpenShiftResource;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
-import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Operator;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.RCContext;
@@ -80,6 +79,4 @@ public interface OpenShiftAdapter extends Closeable, RegistryLookup, OpenShiftHa
     void delay(Map<String, String> labels, int replicas, Operator op) throws Exception;
     
     void cleanRemnants(Map<String, String> labels) throws Exception;
-    
-    Configuration getConfiguration();
 }

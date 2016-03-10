@@ -73,11 +73,6 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         }
     }
 
-    @Override
-    public Configuration getConfiguration() {
-        return configuration;
-    }
-
     public synchronized Proxy getProxy() {
         if (proxy == null) {
             proxy = createProxy();
