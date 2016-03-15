@@ -23,7 +23,7 @@
     <properties>
         <version.arquillian>1.1.11.Final</version.arquillian>
         <version.dockerjava>2.1.3</version.dockerjava>
-        <version.http-client>2.6.0</version.http-client>
+        <version.ok-http-client>2.6.0</version.ok-http-client>
         <version.openshift.client>3.0.1.Final</version.openshift.client>
         <version.fabric8>2.2.80</version.fabric8>
         <version.fabric8.client>1.3.63</version.fabric8.client>
@@ -35,6 +35,8 @@
         <version.surefire.plugin>2.12.1</version.surefire.plugin>
         <version.dmr>1.2.0.Final</version.dmr>
         <version.javax.ejb>1.0.0.Final</version.javax.ejb>
+        <version.httpclient>4.3.6</version.httpclient>
+        <!-- compiler -->
         <maven.compiler.target>1.7</maven.compiler.target>
         <maven.compiler.source>1.7</maven.compiler.source>
     </properties>
@@ -50,6 +52,7 @@
         <module>wildfly</module>
         <module>template</module>
         <module>cube</module>
+        <module>httpclient</module>
     </modules>
 
     <!-- Maven 2 Repositories -->
@@ -135,7 +138,7 @@
             <dependency>
                 <groupId>com.squareup.okhttp</groupId>
                 <artifactId>okhttp</artifactId>
-                <version>${version.http-client}</version>
+                <version>${version.ok-http-client}</version>
             </dependency>
 
             <dependency>
@@ -211,6 +214,12 @@
                 <artifactId>jboss-ejb-api_3.2_spec</artifactId>
                 <version>${version.javax.ejb}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${version.httpclient}</version>
             </dependency>
 
             <!-- ARQ -->
