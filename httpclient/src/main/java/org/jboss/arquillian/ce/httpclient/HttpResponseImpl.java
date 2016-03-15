@@ -25,6 +25,7 @@ package org.jboss.arquillian.ce.httpclient;
 
 import java.io.IOException;
 
+import org.apache.http.Header;
 import org.apache.http.util.EntityUtils;
 
 /**
@@ -35,6 +36,23 @@ class HttpResponseImpl implements HttpResponse {
 
     public HttpResponseImpl(org.apache.http.HttpResponse response) {
         this.response = response;
+    }
+
+    public String getHeader(String name) {
+        Header header = response.getFirstHeader(name);
+        return (header != null ? header.getValue() : null);
+    }
+
+    public String[] getHeaders(String name) {
+        Header[] headers = response.getHeaders(name);
+        if (headers == null) {
+            return null;
+        }
+        String[] values = new String[headers.length];
+        for (int i = 0; i < headers.length; i++) {
+            values[i] = headers[i].getValue();
+        }
+        return values;
     }
 
     public int getResponseCode() {

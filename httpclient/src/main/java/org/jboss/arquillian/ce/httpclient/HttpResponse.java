@@ -29,6 +29,10 @@ import java.io.IOException;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public interface HttpResponse {
+    String getHeader(String name);
+
+    String[] getHeaders(String name);
+
     int getResponseCode();
 
     String getResponseBodyAsString() throws IOException;
