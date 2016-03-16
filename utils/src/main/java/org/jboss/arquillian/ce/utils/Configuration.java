@@ -84,6 +84,7 @@ public abstract class Configuration implements ContainerConfiguration, Configura
     private String dockerAddress = getSystemPropertyOrEnvVar("docker.address", "");
 
     private long startupTimeout = Integer.parseInt(getSystemPropertyOrEnvVar("arquillian.startup.timeout", "600")); // 10min ...
+    private long okHttpClientTimeout = Integer.parseInt(getSystemPropertyOrEnvVar("arquillian.okhttp.client.timeout", "120")); //default: 2 minutes
 
     private boolean ignoreCleanup = Boolean.parseBoolean(getSystemPropertyOrEnvVar("kubernetes.ignore.cleanup"));
 
@@ -383,6 +384,14 @@ public abstract class Configuration implements ContainerConfiguration, Configura
 
     public void setStartupTimeout(long startupTimeout) {
         this.startupTimeout = startupTimeout;
+    }
+
+    public long getOkHttpClientTimeout() {
+        return okHttpClientTimeout;
+    }
+
+    public void setOkHttpClientTimeout(long okHttpClientTimeout) {
+        this.okHttpClientTimeout = okHttpClientTimeout;
     }
 
     public boolean isIgnoreCleanup() {

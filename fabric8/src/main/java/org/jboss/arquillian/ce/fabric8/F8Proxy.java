@@ -32,6 +32,7 @@ import io.fabric8.openshift.client.OpenShiftClient;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 
@@ -65,6 +66,10 @@ public class F8Proxy extends AbstractProxy<Pod> {
         if (httpClient == null) {
             OkHttpClient okHttpClient = Adapters.get(OkHttpClient.class).adapt(client);
             OkHttpClientUtils.applyCookieHandler(okHttpClient);
+            //Increasing timeout to avoid this issue:
+            //Caused by: io.fabric8.kubernetes.client.KubernetesClientException: Error executing: GET at:
+            //https://localhost:8443/api/v1/namespaces/cearq-jws-tcznhcfw354/pods?labelSelector=deploymentConfig%3Djws-app. Cause: timeout
+            okHttpClient.setConnectTimeout(configuration.getOkHttpClientTimeout(), TimeUnit.SECONDS);
             httpClient = okHttpClient;
         }
         return httpClient;
