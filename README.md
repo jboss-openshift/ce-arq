@@ -50,7 +50,7 @@ Additional properties you **can** set / change.
 
 -Darquillian.startup.timeout=[boot timeout in seconds], default is 600sec
 
--Darquillian.okhttp.client.timeout=[timeout for the okhttpclient requests], default is 120sec
+-Darquillian.http.client.timeout=[timeout for the httpclient requests], default is 120sec
 
 -Dkubernetes.api.version=[K8s API version], default is "v1"
 

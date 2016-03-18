@@ -23,24 +23,22 @@
 
 package org.jboss.arquillian.ce.fabric8;
 
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodCondition;
-import io.fabric8.kubernetes.api.model.PodStatus;
-import io.fabric8.kubernetes.client.Adapters;
-import io.fabric8.kubernetes.client.internal.SSLUtils;
-import io.fabric8.openshift.client.OpenShiftClient;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 
+import com.squareup.okhttp.OkHttpClient;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodCondition;
+import io.fabric8.kubernetes.api.model.PodStatus;
+import io.fabric8.kubernetes.client.Adapters;
+import io.fabric8.kubernetes.client.internal.SSLUtils;
+import io.fabric8.openshift.client.OpenShiftClient;
 import org.jboss.arquillian.ce.proxy.AbstractProxy;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.OkHttpClientUtils;
-
-import com.squareup.okhttp.OkHttpClient;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -69,7 +67,7 @@ public class F8Proxy extends AbstractProxy<Pod> {
             //Increasing timeout to avoid this issue:
             //Caused by: io.fabric8.kubernetes.client.KubernetesClientException: Error executing: GET at:
             //https://localhost:8443/api/v1/namespaces/cearq-jws-tcznhcfw354/pods?labelSelector=deploymentConfig%3Djws-app. Cause: timeout
-            okHttpClient.setConnectTimeout(configuration.getOkHttpClientTimeout(), TimeUnit.SECONDS);
+            okHttpClient.setConnectTimeout(configuration.getHttpClientTimeout(), TimeUnit.SECONDS);
             httpClient = okHttpClient;
         }
         return httpClient;
