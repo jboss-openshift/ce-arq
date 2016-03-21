@@ -144,10 +144,12 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
     }
 
     public void start() throws LifecycleException {
-        this.client = OpenShiftAdapterFactory.getOpenShiftAdapter(configuration);
-        this.openShiftAdapterProducer.set(client);
+        client = OpenShiftAdapterFactory.getOpenShiftAdapter(configuration);
+        if (openShiftAdapterProducer != null) {
+            openShiftAdapterProducer.set(client);
+        }
 
-        this.proxy = client.getProxy();
+        proxy = client.getProxy();
 
         RegistryLookup lookup;
         if ("static".equalsIgnoreCase(configuration.getRegistryType())) {
@@ -155,7 +157,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         } else {
             lookup = client;
         }
-        this.dockerAdapter = new DockerAdapterImpl(configuration, lookup);
+        dockerAdapter = new DockerAdapterImpl(configuration, lookup);
 
         String namespace = configuration.getNamespace();
         log.info("Using Kubernetes namespace / project: " + namespace);
