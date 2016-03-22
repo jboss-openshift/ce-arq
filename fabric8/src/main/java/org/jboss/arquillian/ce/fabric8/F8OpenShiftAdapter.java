@@ -298,7 +298,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         KubernetesList list = processTemplate(templateURL, pvs, labels);
         KubernetesList result = createResources(list);
         templates.put(templateKey, result);
-        List<OpenShiftResource> retVal = new ArrayList<OpenShiftResource>(result.getItems().size());
+        List<OpenShiftResource> retVal = new ArrayList<>();
         for (HasMetadata item : result.getItems()) {
             if (item instanceof DeploymentConfig) {
                 retVal.add(new F8DeploymentConfig((DeploymentConfig) item));

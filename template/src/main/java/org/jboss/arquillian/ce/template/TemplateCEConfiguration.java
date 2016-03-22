@@ -24,21 +24,16 @@
 package org.jboss.arquillian.ce.template;
 
 import java.io.Serializable;
-import java.util.Map;
 
-import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Strings;
+import org.jboss.arquillian.ce.utils.TemplateConfiguration;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public class TemplateCEConfiguration extends Configuration implements Serializable {
+public class TemplateCEConfiguration extends TemplateConfiguration implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String templateURL = Strings.getSystemPropertyOrEnvVar("openshift.template.url");
-    private String templateLabels = Strings.getSystemPropertyOrEnvVar("openshift.template.labels");
-    private String templateParameters = Strings.getSystemPropertyOrEnvVar("openshift.template.parameters");
-    private boolean templateProcess = Boolean.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.template.process", "true"));
 
     private String gitRepository = Strings.getSystemPropertyOrEnvVar("git.repository");
     private String gitCredentials = Strings.getSystemPropertyOrEnvVar("git.credentials");
@@ -47,38 +42,6 @@ public class TemplateCEConfiguration extends Configuration implements Serializab
 
     public boolean isNetRC() {
         return "netrc".equalsIgnoreCase(getGitCredentials());
-    }
-
-    public String getTemplateURL() {
-        return templateURL;
-    }
-
-    public void setTemplateURL(String templateURL) {
-        this.templateURL = templateURL;
-    }
-
-    public Map<String, String> getTemplateLabels() {
-        return Strings.splitKeyValueList(templateLabels);
-    }
-
-    public void setTemplateLabels(String templateLabels) {
-        this.templateLabels = templateLabels;
-    }
-
-    public Map<String, String> getTemplateParameters() {
-        return Strings.splitKeyValueList(templateParameters);
-    }
-
-    public void setTemplateParameters(String templateParameters) {
-        this.templateParameters = templateParameters;
-    }
-
-    public boolean isTemplateProcess() {
-        return templateProcess;
-    }
-
-    public void setTemplateProcess(boolean templateProcess) {
-        this.templateProcess = templateProcess;
     }
 
     public String getGitRepository(boolean fail) {

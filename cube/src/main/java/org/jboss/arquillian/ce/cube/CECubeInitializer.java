@@ -55,8 +55,7 @@ public class CECubeInitializer {
 
     public void configure(@Observes ArquillianDescriptor arquillianDescriptor) {
         // read in our configuration
-        CECubeConfiguration config = CECubeConfiguration.fromMap(arquillianDescriptor.extension("ce-cube")
-                .getExtensionProperties());
+        CECubeConfiguration config = CECubeConfiguration.fromMap(arquillianDescriptor.extension("ce-cube").getExtensionProperties());
         configurationProducer.set(config);
         configurationHandleProducer.set(config);
     }

@@ -25,7 +25,6 @@ package org.jboss.arquillian.ce.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,6 @@ import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapterFactory;
 import org.jboss.arquillian.ce.api.ConfigurationHandle;
 import org.jboss.arquillian.ce.api.MountSecret;
-import org.jboss.arquillian.ce.api.Replicas;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceFactory;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
@@ -51,7 +49,6 @@ import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.container.test.impl.domain.ProtocolRegistry;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
@@ -299,28 +296,7 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
             return 1; // @RunInPod
         }
 
-        TestClass testClass = tc.get();
-        Replicas replicas = testClass.getAnnotation(Replicas.class);
-        int r = -1;
-        if (replicas != null) {
-            if (replicas.value() <= 0) {
-                throw new IllegalArgumentException("Non-positive replicas size: " + replicas.value());
-            }
-            r = replicas.value();
-        }
-        int max = 0;
-        for (Method c : testClass.getMethods(TargetsContainer.class)) {
-            int index = Strings.parseNumber(c.getAnnotation(TargetsContainer.class).value());
-            if (r > 0 && index >= r) {
-                throw new IllegalArgumentException(String.format("Node / pod index bigger then replicas; %s >= %s ! (%s)", index, r, c));
-            }
-            max = Math.max(max, index);
-        }
-        if (r < 0) {
-            return max + 1;
-        } else {
-            return r;
-        }
+        return TemplateUtils.readReplicas(tc.get());
     }
 
     protected MountSecret readMountSecret() {

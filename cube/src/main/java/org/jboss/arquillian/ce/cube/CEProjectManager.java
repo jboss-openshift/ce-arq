@@ -24,16 +24,15 @@ package org.jboss.arquillian.ce.cube;
 
 import io.fabric8.openshift.api.model.DoneableProjectRequest;
 import io.fabric8.openshift.api.model.Project;
-
 import org.arquillian.cube.openshift.impl.client.OpenShiftClient;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 
 /**
  * CEProjectManager
- * <p/>
+ * <p>
  * Manages the test project, creating it if need be and cleaning up afterward.
- * 
+ *
  * @author Rob Cernich
  */
 public class CEProjectManager {
@@ -44,14 +43,11 @@ public class CEProjectManager {
      * before Arquillian Cube starts registering Cube objects, so this needs to
      * be invoked prior to CubeOpenShiftRegistrar, but after the OpenShiftClient
      * has been created.
-     * 
+     * <p>
      * TODO: consider creating a new project for each test case.
-     * 
-     * @param client
-     * @param config
      */
     public void createProject(@Observes(precedence = 10) OpenShiftClient client, CECubeConfiguration config) {
-        Project existing = null;;
+        Project existing = null;
         try {
             existing = client.getClientExt().projects().withName(config.getNamespace()).get();
         } catch (Exception e) {
@@ -59,9 +55,11 @@ public class CEProjectManager {
         }
         if (existing == null) {
             DoneableProjectRequest projectRequest = client.getClientExt().projectrequests().createNew();
-            projectRequest.withDescription("auto-generated project for arquillian testing").withNewMetadata()
-                    .withName(config.getNamespace())
-                    .endMetadata();
+            projectRequest
+                .withDescription("auto-generated project for arquillian testing")
+                .withNewMetadata()
+                .withName(config.getNamespace())
+                .endMetadata();
             projectRequest.done();
             createdProject = client.getClientExt().projects().withName(config.getNamespace()).get();
         }
@@ -70,13 +68,8 @@ public class CEProjectManager {
     /**
      * Clean up after ourselves. This needs to be invoked before the
      * OpenShiftClient is closed.
-     * 
-     * @param event
-     * @param client
-     * @param config
      */
-    public void deleteProject(@Observes(precedence = -100) AfterSuite event, OpenShiftClient client,
-            CECubeConfiguration config) {
+    public void deleteProject(@Observes(precedence = -100) AfterSuite event, OpenShiftClient client, CECubeConfiguration config) {
         if (createdProject != null && config.performCleanup()) {
             client.getClientExt().projects().withName(createdProject.getMetadata().getName()).delete();
             createdProject = null;

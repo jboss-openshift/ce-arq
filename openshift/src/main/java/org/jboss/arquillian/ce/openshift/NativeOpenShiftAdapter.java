@@ -295,7 +295,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         ITemplate processed = capability.process(template);
         Collection<IResource> resources = capability.apply(processed);
         templates.put(templateKey, resources);
-        final List<OpenShiftResource> retVal = new ArrayList<OpenShiftResource>(resources.size());
+        final List<OpenShiftResource> retVal = new ArrayList<>();
         for (IResource resource : resources) {
             if (resource instanceof IDeploymentConfig) {
                 retVal.add(new NativeDeploymentConfig((IDeploymentConfig) resource));

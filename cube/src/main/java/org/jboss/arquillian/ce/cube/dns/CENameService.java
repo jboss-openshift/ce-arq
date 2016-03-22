@@ -39,7 +39,7 @@ import sun.net.spi.nameservice.NameService;
  */
 public class CENameService implements NameService {
 
-    private static Set<String> hosts = new HashSet<String>();
+    private static final Set<String> hosts = new HashSet<>();
     private static InetAddress routerAddr;
 
     public static void setRoutes(RouteList routeList, String routerHost) {

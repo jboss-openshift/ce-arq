@@ -24,8 +24,8 @@ package org.jboss.arquillian.ce.cube;
 
 import java.util.Map;
 
-import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Strings;
+import org.jboss.arquillian.ce.utils.TemplateConfiguration;
 
 /**
  * CECubeConfiguration
@@ -34,13 +34,9 @@ import org.jboss.arquillian.ce.utils.Strings;
  * 
  * @author Rob Cernich
  */
-public class CECubeConfiguration extends Configuration {
+public class CECubeConfiguration extends TemplateConfiguration {
     private static final long serialVersionUID = 1L;
 
-    private String templateURL = Strings.getSystemPropertyOrEnvVar("openshift.template.url");
-    private String templateLabels = Strings.getSystemPropertyOrEnvVar("openshift.template.labels");
-    private String templateParameters = Strings.getSystemPropertyOrEnvVar("openshift.template.parameters");
-    private boolean templateProcess = Boolean.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.template.process", "true"));
     private String routerHost = Strings.getSystemPropertyOrEnvVar("openshift.router.host");
     private int routerHttpPort = Integer.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.router.httpPort", "80"));
     private int routerHttpsPort = Integer.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.router.httpsPort", "443"));
@@ -61,10 +57,10 @@ public class CECubeConfiguration extends Configuration {
         config.setRouterHttpsPort(Integer.valueOf(getProperty(props, "routerHttpsPort", Integer.toString(config.routerHttpsPort))));
         config.setRouterSniPort(Integer.valueOf(getProperty(props, "routerSniPort", Integer.toString(config.routerSniPort))));
         config.setStartupTimeout(Long.valueOf(getProperty(props, "arquillianStartupTimeout", Long.toString(config.getStartupTimeout()))));
-        config.setTemplateLabels(getProperty(props, "openshiftTemplateLabels", config.templateLabels));
-        config.setTemplateParameters(getProperty(props, "openshiftTemplateParameters", config.templateParameters));
-        config.setTemplateProcess(Boolean.valueOf(getProperty(props, "openshiftTemplateProcess", Boolean.toString(config.templateProcess))));
-        config.setTemplateURL(getProperty(props, "openshiftTemplateUrl", config.templateURL));
+        config.setTemplateLabels(getProperty(props, "openshiftTemplateLabels", config.getTemplateLabelsRaw()));
+        config.setTemplateParameters(getProperty(props, "openshiftTemplateParameters", config.getTemplateParametersRaw()));
+        config.setTemplateProcess(Boolean.valueOf(getProperty(props, "openshiftTemplateProcess", Boolean.toString(config.isTemplateProcess()))));
+        config.setTemplateURL(getProperty(props, "openshiftTemplateUrl", config.getTemplateURL()));
         config.setToken(getProperty(props, "kubernetesAuthToken", config.getToken()));
         config.setTrustCerts(Boolean.valueOf(getProperty(props, "kubernetesTrustCerts", Boolean.toString(config.isTrustCerts()))));
         config.loadApplications(props);
@@ -75,38 +71,6 @@ public class CECubeConfiguration extends Configuration {
     private void loadApplications(Map<String, String> props) {
         //TODO: parse application properties, e.g. templates, parms, env, role bindings, etc.
         // this might replace @Template
-    }
-
-    public String getTemplateURL() {
-        return templateURL;
-    }
-
-    public void setTemplateURL(String templateURL) {
-        this.templateURL = templateURL;
-    }
-
-    public Map<String, String> getTemplateLabels() {
-        return Strings.splitKeyValueList(templateLabels);
-    }
-
-    public void setTemplateLabels(String templateLabels) {
-        this.templateLabels = templateLabels;
-    }
-
-    public Map<String, String> getTemplateParameters() {
-        return Strings.splitKeyValueList(templateParameters);
-    }
-
-    public void setTemplateParameters(String templateParameters) {
-        this.templateParameters = templateParameters;
-    }
-
-    public boolean isTemplateProcess() {
-        return templateProcess;
-    }
-
-    public void setTemplateProcess(boolean templateProcess) {
-        this.templateProcess = templateProcess;
     }
 
     public String getRouterHost() {
@@ -139,10 +103,6 @@ public class CECubeConfiguration extends Configuration {
 
     public void setRouterSniPort(int routerSniPort) {
         this.routerSniPort = routerSniPort;
-    }
-
-    public static long getSerialversionuid() {
-        return serialVersionUID;
     }
 
     private static String getProperty(final Map<String, String> props, final String key, final String defaultValue) {

@@ -22,20 +22,22 @@
  */
 package org.jboss.arquillian.ce.cube;
 
-import java.lang.reflect.Method;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.addParameterValues;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.executeProcessTemplate;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.readLabels;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.readParameters;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.readReplicas;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.readTemplateUrl;
+
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import org.arquillian.cube.openshift.impl.client.OpenShiftClient;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
-import org.jboss.arquillian.ce.api.Replicas;
 import org.jboss.arquillian.ce.api.Template;
-import org.jboss.arquillian.ce.api.TemplateParameter;
 import org.jboss.arquillian.ce.api.model.DeploymentConfig;
 import org.jboss.arquillian.ce.api.model.OpenShiftResource;
 import org.jboss.arquillian.ce.cube.dns.CENameService;
@@ -47,7 +49,6 @@ import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.event.container.AfterStart;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
@@ -58,40 +59,40 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 
 /**
  * CEEnvironmentProcessor
- * <p/>
+ * <p>
  * Temporary class to handle @Template and @OpenShiftResource annotations on
  * test classes. Eventually, these will be migrated to Cube types, at which
  * point this will delegate to those for setup/teardown (via
  * StartCube/StopCube).
- * 
+ *
  * @author Rob Cernich
  */
 public class CEEnvironmentProcessor {
 
     private final Logger log = Logger.getLogger(CEEnvironmentProcessor.class.getName());
-    
+
     public interface TemplateDetails {
-        public List<? extends OpenShiftResource> getResources();
+        List<? extends OpenShiftResource> getResources();
     }
 
-    @Inject @ClassScoped
+    @Inject
+    @ClassScoped
     private InstanceProducer<TemplateDetails> templateDetailsProducer;
 
     /**
      * Create the environment as specified by @Template or
      * arq.extension.ce-cube.openshift.template.* properties.
-     * 
+     * <p>
      * In the future, this might be handled by starting application Cube
      * objects, e.g. CreateCube(application), StartCube(application)
-     * 
+     * <p>
      * Needs to fire before the containers are started.
      */
-    public void createEnvironment(@Observes(precedence=10) BeforeClass event, OpenShiftAdapter client,
-            CECubeConfiguration configuration, OpenShiftClient openshiftClient) throws DeploymentException {
+    public void createEnvironment(@Observes(precedence = 10) BeforeClass event, OpenShiftAdapter client,
+                                  CECubeConfiguration configuration, OpenShiftClient openshiftClient) throws DeploymentException {
         final TestClass testClass = event.getTestClass();
         log.info(String.format("Creating environment for %s", testClass.getName()));
-        OpenShiftResourceFactory.createResources(testClass.getName(), client, null, testClass.getJavaClass(),
-                configuration.getProperties());
+        OpenShiftResourceFactory.createResources(testClass.getName(), client, null, testClass.getJavaClass(), configuration.getProperties());
         processTemplate(testClass, client, configuration);
         registerRoutes(configuration, openshiftClient);
     }
@@ -101,8 +102,7 @@ public class CEEnvironmentProcessor {
      * been started. This allows the test container and the template resources
      * to come up in parallel.
      */
-    public void waitForDeployments(@Observes(precedence = -100) AfterStart event, OpenShiftAdapter client,
-            TemplateDetails details, TestClass testClass) throws Exception {
+    public void waitForDeployments(@Observes(precedence = -100) AfterStart event, OpenShiftAdapter client, TemplateDetails details, TestClass testClass) throws Exception {
         if (testClass == null) {
             // nothing to do, since we're not in ClassScoped context
             return;
@@ -121,11 +121,11 @@ public class CEEnvironmentProcessor {
 
     /**
      * Tear down the environment.
-     * 
+     * <p>
      * In the future, this might be handled by stopping application Cube
      * objects, e.g. StopCube(application), DestroyCube(application).
      */
-    public void deleteEnvironment(@Observes(precedence=-10) AfterClass event, OpenShiftAdapter client, CECubeConfiguration configuration, TemplateDetails details) throws Exception {
+    public void deleteEnvironment(@Observes(precedence = -10) AfterClass event, OpenShiftAdapter client, CECubeConfiguration configuration, TemplateDetails details) throws Exception {
         final TestClass testClass = event.getTestClass();
         if (configuration.performCleanup()) {
             log.info(String.format("Deleting environment for %s", testClass.getName()));
@@ -142,7 +142,7 @@ public class CEEnvironmentProcessor {
     }
 
     private void processTemplate(TestClass tc, OpenShiftAdapter client, CECubeConfiguration configuration)
-            throws DeploymentException {
+        throws DeploymentException {
         final StringResolver resolver = Strings.createStringResolver(configuration.getProperties());
         final Template template = ReflectionUtils.findAnnotation(tc.getJavaClass(), Template.class);
         final String templateURL = readTemplateUrl(template, configuration, resolver);
@@ -153,7 +153,7 @@ public class CEEnvironmentProcessor {
             labels.put("test-case", tc.getJavaClass().getSimpleName().toLowerCase());
             if (labels.isEmpty()) {
                 log.warning(String.format("Empty labels for template: %s, namespace: %s", templateURL,
-                        configuration.getNamespace()));
+                    configuration.getNamespace()));
             }
 
             if (executeProcessTemplate(template, configuration)) {
@@ -161,9 +161,7 @@ public class CEEnvironmentProcessor {
                 addParameterValues(values, readParameters(template, configuration, resolver), false);
                 addParameterValues(values, System.getenv(), true);
                 addParameterValues(values, System.getProperties(), true);
-                values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not
-                                                                                  // yet
-                                                                                  // supported
+                values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
 
                 log.info(String.format("Applying OpenShift template: %s", templateURL));
                 // use old archive name as templateKey
@@ -184,102 +182,12 @@ public class CEEnvironmentProcessor {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked" })
-    private void addParameterValues(List<ParamValue> values, Map map, boolean filter) {
-        Set<Map.Entry> entries = map.entrySet();
-        for (Map.Entry env : entries) {
-            if (env.getKey() instanceof String && env.getValue() instanceof String) {
-                String key = (String) env.getKey();
-                if (filter == false || key.startsWith("ARQ_") || key.startsWith("arq_")) {
-                    if (filter) {
-                        values.add(new ParamValue(key.substring("ARQ_".length()), (String) env.getValue()));
-                    } else {
-                        values.add(new ParamValue(key, (String) env.getValue()));
-                    }
-                }
-            }
-        }
-    }
-
-    private String readTemplateUrl(Template template, CECubeConfiguration configuration, StringResolver resolver) {
-        String templateUrl = template == null ? null : template.url();
-        if (templateUrl == null || templateUrl.length() == 0) {
-            templateUrl = resolver.resolve(configuration.getTemplateURL());
-        }
-
-        if (templateUrl == null) {
-            throw new IllegalArgumentException(
-                    "Missing template URL! Either add @Template to your test or add -Dopenshift.template.url=<url>");
-        }
-
-        return templateUrl;
-    }
-
-    private int readReplicas(TestClass testClass) {
-        Replicas replicas = testClass.getAnnotation(Replicas.class);
-        int r = -1;
-        if (replicas != null) {
-            if (replicas.value() <= 0) {
-                throw new IllegalArgumentException("Non-positive replicas size: " + replicas.value());
-            }
-            r = replicas.value();
-        }
-        int max = 0;
-        for (Method c : testClass.getMethods(TargetsContainer.class)) {
-            int index = Strings.parseNumber(c.getAnnotation(TargetsContainer.class).value());
-            if (r > 0 && index >= r) {
-                throw new IllegalArgumentException(String.format(
-                        "Node / pod index bigger then replicas; %s >= %s ! (%s)", index, r, c));
-            }
-            max = Math.max(max, index);
-        }
-        if (r < 0) {
-            return max + 1;
-        } else {
-            return r;
-        }
-    }
-
-    private Map<String, String> readLabels(Template template, CECubeConfiguration configuration, StringResolver resolver) {
-        if (template != null) {
-            String string = template.labels();
-            if (string != null && string.length() > 0) {
-                Map<String, String> map = Strings.splitKeyValueList(string);
-                Map<String, String> resolved = new HashMap<>();
-                for (Map.Entry<String, String> entry : map.entrySet()) {
-                    resolved.put(resolver.resolve(entry.getKey()), resolver.resolve(entry.getValue()));
-                }
-                return resolved;
-            }
-        }
-        return configuration.getTemplateLabels();
-    }
-
-    private boolean executeProcessTemplate(Template template, CECubeConfiguration configuration) {
-        return (template == null || template.process()) && configuration.isTemplateProcess();
-    }
-
-    private Map<String, String> readParameters(Template template, CECubeConfiguration configuration,
-            StringResolver resolver) {
-        if (template != null) {
-            TemplateParameter[] parameters = template.parameters();
-            Map<String, String> map = new HashMap<>();
-            for (TemplateParameter parameter : parameters) {
-                String name = resolver.resolve(parameter.name());
-                String value = resolver.resolve(parameter.value());
-                map.put(name, value);
-            }
-            return map;
-        }
-        return configuration.getTemplateParameters();
-    }
-
     private void delay(OpenShiftAdapter client, final List<? extends OpenShiftResource> resources) throws Exception {
-        for (OpenShiftResource resource: resources) {
+        for (OpenShiftResource resource : resources) {
             if (resource instanceof DeploymentConfig) {
                 final DeploymentConfig dc = (DeploymentConfig) resource;
                 client.delay(dc.getSelector(), dc.getReplicas(), Operator.EQUAL);
-            }            
+            }
         }
     }
 

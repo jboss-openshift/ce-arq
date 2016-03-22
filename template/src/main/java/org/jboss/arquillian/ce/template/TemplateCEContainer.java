@@ -27,16 +27,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.NetRCCredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.jboss.arquillian.ce.api.Template;
-import org.jboss.arquillian.ce.api.TemplateParameter;
 import org.jboss.arquillian.ce.runinpod.RunInPodContainer;
 import org.jboss.arquillian.ce.runinpod.RunInPodContext;
 import org.jboss.arquillian.ce.utils.AbstractCEContainer;
@@ -49,6 +46,8 @@ import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+
+import static org.jboss.arquillian.ce.utils.TemplateUtils.*;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -67,26 +66,9 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
     public void apply(OutputStream outputStream) throws IOException {
     }
 
-    @SuppressWarnings("unchecked")
-    private void addParameterValues(List<ParamValue> values, Map map, boolean filter) {
-        Set<Map.Entry> entries = map.entrySet();
-        for (Map.Entry env : entries) {
-            if (env.getKey() instanceof String && env.getValue() instanceof String) {
-                String key = (String) env.getKey();
-                if (filter == false || key.startsWith("ARQ_") || key.startsWith("arq_")) {
-                    if (filter) {
-                        values.add(new ParamValue(key.substring("ARQ_".length()), (String) env.getValue()));
-                    } else {
-                        values.add(new ParamValue(key, (String) env.getValue()));
-                    }
-                }
-            }
-        }
-    }
-
     public ProtocolMetaData doDeploy(final Archive<?> archive) throws DeploymentException {
         final StringResolver resolver = Strings.createStringResolver(configuration.getProperties());
-        final String templateURL = readTemplateUrl(resolver);
+        final String templateURL = readTemplateUrl(readTemplate(), configuration, resolver);
         try {
             final String newArchiveName;
             boolean externalDeployment = Archives.isExternalDeployment(tc.get().getJavaClass());
@@ -101,16 +83,16 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
             Archive<?> proxy = Archives.toProxy(archive, newArchiveName);
 
             int replicas = readReplicas();
-            Map<String, String> labels = readLabels(resolver);
+            Map<String, String> labels = readLabels(readTemplate(), configuration, resolver);
             if (labels.isEmpty()) {
                 log.warning(String.format("Empty labels for template: %s, namespace: %s", templateURL, configuration.getNamespace()));
             }
 
-            if (executeProcessTemplate()) {
+            if (executeProcessTemplate(readTemplate(), configuration)) {
                 List<ParamValue> values = new ArrayList<>();
                 addParameterValues(values, System.getenv(), true);
                 addParameterValues(values, System.getProperties(), true);
-                addParameterValues(values, readParameters(resolver), false);
+                addParameterValues(values, readParameters(readTemplate(), configuration, resolver), false);
                 values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
                 if (externalDeployment == false || (configuration.getGitRepository(false) != null)) {
                     values.add(new ParamValue("SOURCE_REPOSITORY_URL", resolver.resolve(configuration.getGitRepository(true))));
@@ -131,59 +113,6 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
 
     protected Template readTemplate() {
         return ReflectionUtils.findAnnotation(tc.get().getJavaClass(), Template.class);
-    }
-
-    protected String readTemplateUrl(StringResolver resolver) {
-        Template template = readTemplate();
-        String templateUrl = template == null ? null : template.url();
-        if (templateUrl == null || templateUrl.length() == 0) {
-            String templateFromConfiguration = configuration.getTemplateURL();
-            if (templateFromConfiguration != null) {
-                templateUrl = resolver.resolve(templateFromConfiguration);
-            }
-        }
-
-        if (templateUrl == null) {
-            throw new IllegalArgumentException("Missing template URL! Either add @Template to your test or add -Dopenshift.template.url=<url>");
-        }
-
-        return templateUrl;
-    }
-
-    private Map<String, String> readLabels(StringResolver resolver) {
-        Template template = readTemplate();
-        if (template != null) {
-            String string = template.labels();
-            if (string != null && string.length() > 0) {
-                Map<String, String> map = Strings.splitKeyValueList(string);
-                Map<String, String> resolved = new HashMap<>();
-                for (Map.Entry<String, String> entry : map.entrySet()) {
-                    resolved.put(resolver.resolve(entry.getKey()), resolver.resolve(entry.getValue()));
-                }
-                return resolved;
-            }
-        }
-        return configuration.getTemplateLabels();
-    }
-
-    private boolean executeProcessTemplate() {
-        Template template = readTemplate();
-        return (template == null || template.process()) && configuration.isTemplateProcess();
-    }
-
-    private Map<String, String> readParameters(StringResolver resolver) {
-        Template template = readTemplate();
-        if (template != null) {
-            TemplateParameter[] parameters = template.parameters();
-            Map<String, String> map = new HashMap<>();
-            for (TemplateParameter parameter : parameters) {
-                String name = resolver.resolve(parameter.name());
-                String value = resolver.resolve(parameter.value());
-                map.put(name, value);
-            }
-            return map;
-        }
-        return configuration.getTemplateParameters();
     }
 
     @Override

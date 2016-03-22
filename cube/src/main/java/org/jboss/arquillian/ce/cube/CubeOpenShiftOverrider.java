@@ -38,12 +38,8 @@ public class CubeOpenShiftOverrider {
     /**
      * Override values used to initialize CubeOpenShiftConfiguration so we're
      * all on the same page.
-     * 
-     * @param config
-     * @param arquillianDescriptor
      */
-    public void overrideCubeOpenShiftConfiguration(@Observes CECubeConfiguration config,
-            ArquillianDescriptor arquillianDescriptor) {
+    public void overrideCubeOpenShiftConfiguration(@Observes CECubeConfiguration config, ArquillianDescriptor arquillianDescriptor) {
         final ExtensionDef cubeOpenShiftExtension = arquillianDescriptor.extension("openshift");
         cubeOpenShiftExtension.property("originServer", config.getKubernetesMaster());
         cubeOpenShiftExtension.property("namespace", config.getNamespace());
