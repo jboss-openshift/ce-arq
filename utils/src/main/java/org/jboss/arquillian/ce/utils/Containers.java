@@ -37,6 +37,8 @@ public class Containers {
     private static final Logger log = Logger.getLogger(Containers.class.getName());
 
     public static void delay(long startupTimeout, long checkPeriod, Checker checker) throws Exception {
+        log.info(String.format("Applying checker [%s], timeout: %ss, check period: %sms", checker, startupTimeout, checkPeriod));
+
         long timeout = startupTimeout * 1000;
         while (timeout > 0) {
             Thread.sleep(checkPeriod);
