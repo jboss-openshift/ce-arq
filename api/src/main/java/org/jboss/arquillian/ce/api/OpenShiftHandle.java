@@ -32,4 +32,5 @@ public interface OpenShiftHandle {
     InputStream execute(int pod, int port, String path) throws Exception;
 
     void scaleDeployment(String name, int replicas) throws Exception;
+    String getLog(String name) throws Exception;
 }

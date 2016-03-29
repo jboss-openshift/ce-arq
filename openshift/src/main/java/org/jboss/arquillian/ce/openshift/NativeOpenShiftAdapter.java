@@ -25,6 +25,9 @@ package org.jboss.arquillian.ce.openshift;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,6 +60,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.dmr.ValueExpressionResolver;
 
+import com.openshift.internal.restclient.capability.resources.OpenShiftBinaryPodLogRetrieval;
 import com.openshift.internal.restclient.model.KubernetesResource;
 import com.openshift.internal.restclient.model.properties.ResourcePropertyKeys;
 import com.openshift.internal.restclient.model.template.Parameter;
@@ -338,6 +342,34 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
             delay(labels, replicas, Operator.EQUAL);
         } catch (Exception e) {
             throw new DeploymentException(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);
+        }
+    }
+
+    private String getFirstResource(String kind, String prefix) throws DeploymentException {
+        List<IResource> list = client.list(kind, configuration.getNamespace());
+        for (IResource r: list) {
+            if (r.getName().startsWith(prefix))
+                return r.getName();
+        }
+        throw new DeploymentException("No resource found starting with " + prefix);
+    }
+
+    public String getLog(String name) throws DeploymentException {
+        String podName = getFirstResource(ResourceKind.POD, name);
+        final IPod pod = client.get(ResourceKind.POD, podName, configuration.getNamespace());
+        OpenShiftBinaryPodLogRetrieval l = new OpenShiftBinaryPodLogRetrieval(pod, client);
+        try {
+            final Reader reader = new InputStreamReader(l.getLogs(false), "UTF-8");
+            StringWriter writer = new StringWriter();
+            char[] buf = new char[1024];
+            int len;
+            while ((len = reader.read(buf)) != -1) {
+                writer.write(buf, 0, len);
+            }
+            return writer.toString();
+
+        } catch (Exception e) {
+            throw new DeploymentException(e.getMessage(), e);
         }
     }
 

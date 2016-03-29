@@ -426,6 +426,23 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
     }
 
+    public String getLog(String name) throws DeploymentException {
+        String actualName = null;
+        PodList list = client.pods().inNamespace(configuration.getNamespace()).list();
+        for (Pod p: list.getItems()) {
+            if (p.getMetadata().getName().startsWith(name)) {
+                actualName = p.getMetadata().getName();
+                break;
+            }
+        }
+        if (actualName != null) {
+            log.info("Retrieving logs from pod " + actualName);
+            return client.pods().inNamespace(configuration.getNamespace()).withName(actualName).getLog();
+        }
+
+        throw new DeploymentException("No pod found starting with " + name);
+    }
+
     private Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle, Probe probe, String imagePullPolicy) throws Exception {
         Container container = new Container();
         container.setImage(image);
