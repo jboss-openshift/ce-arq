@@ -334,7 +334,8 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     @Override
     public void scaleDeployment(final String name, final int replicas) throws DeploymentException {
-        final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, name, configuration.getNamespace());
+        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, name);
+        final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
         final Map<String,String> labels = dc.getReplicaSelector();
         dc.setReplicas(replicas);
         client.update(dc);
