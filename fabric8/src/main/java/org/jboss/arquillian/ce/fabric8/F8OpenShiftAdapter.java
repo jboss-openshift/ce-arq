@@ -23,6 +23,18 @@
 
 package org.jboss.arquillian.ce.fabric8;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -65,19 +77,6 @@ import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
 import io.fabric8.openshift.client.dsl.ClientTemplateResource;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.api.model.OpenShiftResource;
@@ -402,23 +401,12 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.services().inNamespace(namespace).withName(serviceName).get();
     }
 
-    public void scaleDeployment(final String name, final int replicas) throws DeploymentException {
-        ReplicationController rc;
-        String actualName = null;
+    public void scaleDeployment(final String name, final int replicas) throws Exception {
         ReplicationControllerList list = client.replicationControllers().inNamespace(configuration.getNamespace()).list();
-        for (ReplicationController r: list.getItems()) {
-            if (r.getMetadata().getName().startsWith(name)) {
-                actualName = r.getMetadata().getName();
-                break;
-            }
-        }
-        if (actualName != null) {
-            rc = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(actualName).scale(replicas);
-        } else {
-            throw new DeploymentException("No RC found starting with " + name);
-        }
+        String actualName = getActualName(name, list.getItems(), "No RC found starting with " + name);
+        ReplicationController rc = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(actualName).scale(replicas);
 
-        final Map<String,String> labels = rc.getSpec().getSelector();
+        final Map<String, String> labels = rc.getSpec().getSelector();
         try {
             delay(labels, replicas, Operator.EQUAL);
         } catch (Exception e) {
@@ -426,21 +414,21 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
     }
 
-    public String getLog(String name) throws DeploymentException {
-        String actualName = null;
+    public String getLog(String name) throws Exception {
         PodList list = client.pods().inNamespace(configuration.getNamespace()).list();
-        for (Pod p: list.getItems()) {
-            if (p.getMetadata().getName().startsWith(name)) {
-                actualName = p.getMetadata().getName();
-                break;
+        String actualName = getActualName(name, list.getItems(), "No pod found starting with " + name);
+        log.info("Retrieving logs from pod " + actualName);
+        return client.pods().inNamespace(configuration.getNamespace()).withName(actualName).getLog();
+    }
+
+    private String getActualName(String prefix, Iterable<? extends HasMetadata> objects, String msg) throws Exception {
+        for (HasMetadata hmd : objects) {
+            String name = hmd.getMetadata().getName();
+            if (name.startsWith(prefix)) {
+                return name;
             }
         }
-        if (actualName != null) {
-            log.info("Retrieving logs from pod " + actualName);
-            return client.pods().inNamespace(configuration.getNamespace()).withName(actualName).getLog();
-        }
-
-        throw new DeploymentException("No pod found starting with " + name);
+        throw new Exception(msg);
     }
 
     private Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle, Probe probe, String imagePullPolicy) throws Exception {

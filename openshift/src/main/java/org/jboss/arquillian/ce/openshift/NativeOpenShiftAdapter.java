@@ -41,25 +41,6 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
-import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
-import org.jboss.arquillian.ce.api.MountSecret;
-import org.jboss.arquillian.ce.api.model.OpenShiftResource;
-import org.jboss.arquillian.ce.openshift.model.NativeDeploymentConfig;
-import org.jboss.arquillian.ce.portfwd.PortForwardContext;
-import org.jboss.arquillian.ce.proxy.Proxy;
-import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
-import org.jboss.arquillian.ce.utils.Configuration;
-import org.jboss.arquillian.ce.utils.CustomValueExpressionResolver;
-import org.jboss.arquillian.ce.utils.HookType;
-import org.jboss.arquillian.ce.utils.Operator;
-import org.jboss.arquillian.ce.utils.ParamValue;
-import org.jboss.arquillian.ce.utils.Port;
-import org.jboss.arquillian.ce.utils.RCContext;
-import org.jboss.arquillian.container.spi.client.container.DeploymentException;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ValueExpression;
-import org.jboss.dmr.ValueExpressionResolver;
-
 import com.openshift.internal.restclient.capability.resources.OpenShiftBinaryPodLogRetrieval;
 import com.openshift.internal.restclient.model.KubernetesResource;
 import com.openshift.internal.restclient.model.properties.ResourcePropertyKeys;
@@ -85,6 +66,23 @@ import com.openshift.restclient.model.authorization.IRoleBinding;
 import com.openshift.restclient.model.project.IProjectRequest;
 import com.openshift.restclient.model.template.IParameter;
 import com.openshift.restclient.model.template.ITemplate;
+import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
+import org.jboss.arquillian.ce.api.MountSecret;
+import org.jboss.arquillian.ce.api.model.OpenShiftResource;
+import org.jboss.arquillian.ce.openshift.model.NativeDeploymentConfig;
+import org.jboss.arquillian.ce.portfwd.PortForwardContext;
+import org.jboss.arquillian.ce.proxy.Proxy;
+import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
+import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.CustomValueExpressionResolver;
+import org.jboss.arquillian.ce.utils.HookType;
+import org.jboss.arquillian.ce.utils.Operator;
+import org.jboss.arquillian.ce.utils.ParamValue;
+import org.jboss.arquillian.ce.utils.Port;
+import org.jboss.arquillian.ce.utils.RCContext;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ValueExpression;
+import org.jboss.dmr.ValueExpressionResolver;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -279,7 +277,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     @Override
-    public List<? extends OpenShiftResource> processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values, Map<String,String> labels) throws Exception {
+    public List<? extends OpenShiftResource> processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values, Map<String, String> labels) throws Exception {
         final IProject project = client.get(ResourceKind.PROJECT, configuration.getNamespace(), "");
 
         final ITemplate template;
@@ -332,35 +330,35 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.get(ResourceKind.SERVICE, serviceName, namespace);
     }
 
-    @Override
-    public void scaleDeployment(final String name, final int replicas) throws DeploymentException {
+    public void scaleDeployment(final String name, final int replicas) throws Exception {
         String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, name);
         final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
-        final Map<String,String> labels = dc.getReplicaSelector();
+        final Map<String, String> labels = dc.getReplicaSelector();
         dc.setReplicas(replicas);
         client.update(dc);
         try {
             delay(labels, replicas, Operator.EQUAL);
         } catch (Exception e) {
-            throw new DeploymentException(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);
+            throw new Exception(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);
         }
     }
 
-    private String getFirstResource(String kind, String prefix) throws DeploymentException {
+    private String getFirstResource(String kind, String prefix) throws Exception {
         List<IResource> list = client.list(kind, configuration.getNamespace());
-        for (IResource r: list) {
-            if (r.getName().startsWith(prefix))
-                return r.getName();
+        for (IResource r : list) {
+            String name = r.getName();
+            if (name.startsWith(prefix)) {
+                return name;
+            }
         }
-        throw new DeploymentException("No resource found starting with " + prefix);
+        throw new Exception(String.format("No resource [%s] found starting with %s", kind, prefix));
     }
 
-    public String getLog(String name) throws DeploymentException {
+    public String getLog(String name) throws Exception {
         String podName = getFirstResource(ResourceKind.POD, name);
         final IPod pod = client.get(ResourceKind.POD, podName, configuration.getNamespace());
         OpenShiftBinaryPodLogRetrieval l = new OpenShiftBinaryPodLogRetrieval(pod, client);
-        try {
-            final Reader reader = new InputStreamReader(l.getLogs(false), "UTF-8");
+        try (Reader reader = new InputStreamReader(l.getLogs(false), "UTF-8")) {
             StringWriter writer = new StringWriter();
             char[] buf = new char[1024];
             int len;
@@ -368,9 +366,6 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
                 writer.write(buf, 0, len);
             }
             return writer.toString();
-
-        } catch (Exception e) {
-            throw new DeploymentException(e.getMessage(), e);
         }
     }
 
