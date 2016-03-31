@@ -425,6 +425,16 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             throw new DeploymentException(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);
         }
     }
+    
+    @Override
+    public List<String> getPods() throws Exception {
+    	PodList pods = client.pods().inNamespace(configuration.getNamespace()).list();
+    	List<String> podNames = new ArrayList<>();
+    	for (Pod pod: pods.getItems()) {
+    		podNames.add(pod.getMetadata().getName());
+    	}
+    	return podNames;
+    }
 
     private Container createContainer(String image, String name, List<EnvVar> envVars, List<ContainerPort> ports, List<VolumeMount> volumes, Lifecycle lifecycle, Probe probe, String imagePullPolicy) throws Exception {
         Container container = new Container();

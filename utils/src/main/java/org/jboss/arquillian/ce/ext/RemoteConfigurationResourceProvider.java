@@ -53,6 +53,7 @@ public class RemoteConfigurationResourceProvider implements ResourceProvider {
             properties.put("kubernetes.master", check(configuration.getKubernetesMaster()));
             properties.put("kubernetes.api.version", check(configuration.getApiVersion()));
             properties.put("kubernetes.namespace", check(configuration.getNamespace()));
+            properties.put("kubernetes.auth.token", check(configuration.getToken()));
             StringWriter writer = new StringWriter();
             properties.store(writer, "CE Arquillian Configuration");
             log.info(String.format("Stored configuration %s ...", properties));
@@ -99,6 +100,9 @@ public class RemoteConfigurationResourceProvider implements ResourceProvider {
 
             public String getNamespace() {
                 return properties.getProperty("kubernetes.namespace");
+            }
+            public String getToken() {
+            	return properties.getProperty(properties.getProperty("kubernetes.auth.token"));
             }
         };
     }

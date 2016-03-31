@@ -34,4 +34,6 @@ public interface ConfigurationHandle {
     String getApiVersion();
 
     String getNamespace();
+    
+    String getToken();
 }

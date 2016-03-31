@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.api;
 
 import java.io.InputStream;
+import java.util.List;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -32,4 +33,7 @@ public interface OpenShiftHandle {
     InputStream execute(int pod, int port, String path) throws Exception;
 
     void scaleDeployment(String name, int replicas) throws Exception;
+    
+    List<String> getPods() throws Exception;
+        
 }
