@@ -101,8 +101,9 @@ public class RemoteConfigurationResourceProvider implements ResourceProvider {
             public String getNamespace() {
                 return properties.getProperty("kubernetes.namespace");
             }
+
             public String getToken() {
-            	return properties.getProperty(properties.getProperty("kubernetes.auth.token"));
+            	return properties.getProperty("kubernetes.auth.token");
             }
         };
     }
