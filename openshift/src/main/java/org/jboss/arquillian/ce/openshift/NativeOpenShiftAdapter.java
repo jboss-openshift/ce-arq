@@ -368,6 +368,16 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
             return writer.toString();
         }
     }
+    
+    @Override
+    public List<String> getPods() throws Exception {
+    	final List<IPod> pods = client.list(ResourceKind.POD, configuration.getNamespace());
+    	List<String> podNames = new ArrayList<>();
+    	for (IPod pod : pods) {
+    		podNames.add(pod.getName());
+    	}
+    	return podNames;
+    }
 
     public void cleanReplicationControllers(String... ids) throws Exception {
         List<IReplicationController> rcs = client.list(ResourceKind.REPLICATION_CONTROLLER, configuration.getNamespace());
