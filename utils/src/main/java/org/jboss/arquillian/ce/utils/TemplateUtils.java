@@ -61,12 +61,9 @@ public class TemplateUtils {
 
     public static String readTemplateUrl(Template template, TemplateAwareConfiguration configuration, StringResolver resolver) {
         String templateUrl = template == null ? null : template.url();
-        if (templateUrl == null || templateUrl.length() == 0) {
-            templateUrl = resolver.resolve(configuration.getTemplateURL());
-        }
 
-        if (templateUrl == null) {
-            throw new IllegalArgumentException("Missing template URL! Either add @Template to your test or add -Dopenshift.template.url=<url>");
+        if (null != configuration.getTemplateURL()) {
+            templateUrl = configuration.getTemplateURL();
         }
 
         return templateUrl;
