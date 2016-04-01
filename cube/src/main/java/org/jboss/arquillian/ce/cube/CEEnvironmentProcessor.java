@@ -91,10 +91,12 @@ public class CEEnvironmentProcessor {
     public void createEnvironment(@Observes(precedence = 10) BeforeClass event, OpenShiftAdapter client,
                                   CECubeConfiguration configuration, OpenShiftClient openshiftClient) throws DeploymentException {
         final TestClass testClass = event.getTestClass();
+
         log.info(String.format("Creating environment for %s", testClass.getName()));
         OpenShiftResourceFactory.createResources(testClass.getName(), client, null, testClass.getJavaClass(), configuration.getProperties());
         processTemplate(testClass, client, configuration);
         registerRoutes(configuration, openshiftClient);
+
     }
 
     /**
@@ -142,18 +144,24 @@ public class CEEnvironmentProcessor {
     }
 
     private void processTemplate(TestClass tc, OpenShiftAdapter client, CECubeConfiguration configuration)
-        throws DeploymentException {
+            throws DeploymentException {
         final StringResolver resolver = Strings.createStringResolver(configuration.getProperties());
         final Template template = ReflectionUtils.findAnnotation(tc.getJavaClass(), Template.class);
         final String templateURL = readTemplateUrl(template, configuration, resolver);
         final List<? extends OpenShiftResource> resources;
+
+        if (templateURL == null || templateURL.length() == 0) {
+            log.warning(String.format("No template specified for %s", tc.getName()));
+            return;
+        }
+
         try {
             final int replicas = readReplicas(tc);
             final Map<String, String> labels = readLabels(template, configuration, resolver);
             labels.put("test-case", tc.getJavaClass().getSimpleName().toLowerCase());
             if (labels.isEmpty()) {
                 log.warning(String.format("Empty labels for template: %s, namespace: %s", templateURL,
-                    configuration.getNamespace()));
+                        configuration.getNamespace()));
             }
 
             if (executeProcessTemplate(template, configuration)) {
