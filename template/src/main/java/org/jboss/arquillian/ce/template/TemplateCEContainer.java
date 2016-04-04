@@ -23,6 +23,12 @@
 
 package org.jboss.arquillian.ce.template;
 
+import static org.jboss.arquillian.ce.utils.TemplateUtils.addParameterValues;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.executeProcessTemplate;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.readLabels;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.readParameters;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.readTemplateUrl;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -47,8 +53,6 @@ import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaD
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
-import static org.jboss.arquillian.ce.utils.TemplateUtils.*;
-
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
@@ -68,7 +72,7 @@ public class TemplateCEContainer extends AbstractCEContainer<TemplateCEConfigura
 
     public ProtocolMetaData doDeploy(final Archive<?> archive) throws DeploymentException {
         final StringResolver resolver = Strings.createStringResolver(configuration.getProperties());
-        final String templateURL = readTemplateUrl(readTemplate(), configuration, resolver);
+        final String templateURL = readTemplateUrl(readTemplate(), configuration, true, resolver);
         try {
             final String newArchiveName;
             boolean externalDeployment = Archives.isExternalDeployment(tc.get().getJavaClass());

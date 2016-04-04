@@ -141,11 +141,16 @@ public class CEEnvironmentProcessor {
         CENameService.setRoutes(client.getClientExt().routes().list(), configuration.getRouterHost());
     }
 
-    private void processTemplate(TestClass tc, OpenShiftAdapter client, CECubeConfiguration configuration)
-        throws DeploymentException {
+    private void processTemplate(TestClass tc, OpenShiftAdapter client, CECubeConfiguration configuration) throws DeploymentException {
         final StringResolver resolver = Strings.createStringResolver(configuration.getProperties());
         final Template template = ReflectionUtils.findAnnotation(tc.getJavaClass(), Template.class);
-        final String templateURL = readTemplateUrl(template, configuration, resolver);
+        final String templateURL = readTemplateUrl(template, configuration, false, resolver);
+
+        if (templateURL == null) {
+            log.info(String.format("No template specified for %s", tc.getName()));
+            return;
+        }
+
         final List<? extends OpenShiftResource> resources;
         try {
             final int replicas = readReplicas(tc);

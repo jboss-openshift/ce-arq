@@ -255,10 +255,13 @@ public abstract class AbstractCEContainer<T extends Configuration> implements De
         final ProtocolMetaData protocolMetaData;
         try {
             protocolMetaData = doDeploy(archive);
-        } catch (DeploymentException e) {
+        } catch (Exception e) {
             if (!isSPI()) {
                 parallelHandler.errorInMain(e);
             }
+
+            undeploy(archive); // try to cleanup
+
             throw e;
         }
 
