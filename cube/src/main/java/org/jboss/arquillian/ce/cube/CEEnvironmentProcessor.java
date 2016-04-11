@@ -126,7 +126,11 @@ public class CEEnvironmentProcessor {
      * objects, e.g. StopCube(application), DestroyCube(application).
      */
     public void deleteEnvironment(@Observes(precedence = -10) AfterClass event, OpenShiftAdapter client, CECubeConfiguration configuration, TemplateDetails details) throws Exception {
-        final TestClass testClass = event.getTestClass();
+    	deleteEnvironment(event.getTestClass(), client, configuration, details);
+    }
+    
+    public void deleteEnvironment(final TestClass testClass, OpenShiftAdapter client, CECubeConfiguration configuration, TemplateDetails details) throws Exception {
+        
         if (configuration.performCleanup()) {
             log.info(String.format("Deleting environment for %s", testClass.getName()));
             client.deleteTemplate(testClass.getName());
@@ -170,7 +174,12 @@ public class CEEnvironmentProcessor {
 
                 log.info(String.format("Applying OpenShift template: %s", templateURL));
                 // use old archive name as templateKey
-                resources = client.processTemplateAndCreateResources(tc.getName(), templateURL, values, labels);
+                try {
+                	resources = client.processTemplateAndCreateResources(tc.getName(), templateURL, values, labels, configuration.getNamespace());
+                } catch (Exception e){
+                	deleteEnvironment(tc, client, configuration, null);
+                	throw e;
+                }
             } else {
                 log.info(String.format("Ignoring template [%s] processing ...", templateURL));
                 resources = Collections.emptyList();

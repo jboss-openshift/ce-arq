@@ -277,14 +277,14 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     @Override
-    public List<? extends OpenShiftResource> processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values, Map<String, String> labels) throws Exception {
+    public List<? extends OpenShiftResource> processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values, Map<String, String> labels, String namespace) throws Exception {
         final IProject project = client.get(ResourceKind.PROJECT, configuration.getNamespace(), "");
 
         final ITemplate template;
         try (InputStream stream = new URL(templateURL).openStream()) {
             template = client.getResourceFactory().create(stream);
         }
-
+       
         template.getLabels().putAll(labels);
 
         Collection<IParameter> parameters = new HashSet<>();
