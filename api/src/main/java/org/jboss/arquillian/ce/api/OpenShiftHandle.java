@@ -31,6 +31,8 @@ import java.util.Map;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public interface OpenShiftHandle {
+    InputStream execute(int pod, int port, String path) throws Exception;
+
     InputStream execute(Map<String, String> labels, int pod, int port, String path) throws Exception;
 
     void scaleDeployment(String name, int replicas) throws Exception;

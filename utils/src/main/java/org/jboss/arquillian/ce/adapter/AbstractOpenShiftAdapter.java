@@ -37,6 +37,7 @@ import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
 import org.jboss.arquillian.ce.utils.Checker;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Containers;
+import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.utils.Operator;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.core.api.Instance;
@@ -62,7 +63,16 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
 
     protected abstract Proxy createProxy();
 
-    @Override
+    public InputStream execute(int pod, int port, String path) throws Exception {
+        ProtocolMetaData pmd = pmdInstance.get();
+        if (pmd != null) {
+            Map<String, String> labels = DeploymentContext.getDeploymentContext(pmd).getLabels();
+            return execute(labels, pod, port, path);
+        } else {
+            throw new IllegalStateException("No ProtocolMetaData set!");
+        }
+    }
+
     public InputStream execute(Map<String, String> labels, int pod, int port, String path) throws Exception {
         return getProxy().post(labels, pod, port, path);
     }
