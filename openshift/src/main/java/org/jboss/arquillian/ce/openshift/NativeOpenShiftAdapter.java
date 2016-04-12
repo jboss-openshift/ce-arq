@@ -276,8 +276,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return builder.toString();
     }
 
-    @Override
-    public List<? extends OpenShiftResource> processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values, Map<String, String> labels, String namespace) throws Exception {
+    public List<? extends OpenShiftResource> processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values, Map<String, String> labels) throws Exception {
         final IProject project = client.get(ResourceKind.PROJECT, configuration.getNamespace(), "");
 
         final ITemplate template;
@@ -300,10 +299,23 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         final List<OpenShiftResource> retVal = new ArrayList<>();
         for (IResource resource : resources) {
             if (resource instanceof IDeploymentConfig) {
-                retVal.add(new NativeDeploymentConfig((IDeploymentConfig) resource));
+                IDeploymentConfig deploymentConfig = (IDeploymentConfig) resource;
+
+                verifyPersistentVolumes(deploymentConfig);
+                verifyServiceAccounts(deploymentConfig);
+
+                retVal.add(new NativeDeploymentConfig(deploymentConfig));
             }
         }
         return retVal;
+    }
+
+    private void verifyPersistentVolumes(IDeploymentConfig dc) throws Exception {
+        // TODO
+    }
+
+    private void verifyServiceAccounts(IDeploymentConfig dc) throws Exception {
+        // TODO
     }
 
     public Object deleteTemplate(String templateKey) throws Exception {

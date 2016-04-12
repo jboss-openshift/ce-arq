@@ -47,7 +47,8 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.KubernetesList;
 import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.PersistentVolume;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.PodSpec;
@@ -78,15 +79,10 @@ import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
 import io.fabric8.openshift.client.dsl.ClientTemplateResource;
-
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.api.model.OpenShiftResource;
 import org.jboss.arquillian.ce.fabric8.model.F8DeploymentConfig;
-import org.jboss.arquillian.ce.httpclient.HttpClient;
-import org.jboss.arquillian.ce.httpclient.HttpClientBuilder;
-import org.jboss.arquillian.ce.httpclient.HttpRequest;
-import org.jboss.arquillian.ce.httpclient.HttpResponse;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
@@ -294,8 +290,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
     }
 
-    @Override
-    public List<? extends OpenShiftResource> processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values, Map<String, String> labels, String namespace) throws Exception {
+    public List<? extends OpenShiftResource> processTemplateAndCreateResources(String templateKey, String templateURL, List<ParamValue> values, Map<String, String> labels) throws Exception {
         List<ParameterValue> pvs = new ArrayList<>();
         for (ParamValue value : values) {
             pvs.add(new ParameterValue(value.getName(), value.getValue()));
@@ -303,49 +298,46 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         KubernetesList list = processTemplate(templateURL, pvs, labels);
         KubernetesList result = createResources(list);
         templates.put(templateKey, result);
+
         List<OpenShiftResource> retVal = new ArrayList<>();
         for (HasMetadata item : result.getItems()) {
             if (item instanceof DeploymentConfig) {
-            	DeploymentConfig dc = (DeploymentConfig)item;
-            	
-            	verifyPersistentVolumes(dc);
-            	verifyServiceAccounts(dc, namespace);
-            	
+                DeploymentConfig dc = (DeploymentConfig) item;
+
+                verifyPersistentVolumes(dc);
+                verifyServiceAccounts(dc);
+
                 retVal.add(new F8DeploymentConfig((DeploymentConfig) item));
             }
         }
         return retVal;
     }
-    
-    private void verifyServiceAccounts(DeploymentConfig dc, String namespace) throws Exception
-    {
-    	String serviceAccount = dc.getSpec().getTemplate().getSpec().getServiceAccountName();	
-    		
-		if (serviceAccount != null){
-			HttpClient client = HttpClientBuilder.untrustedConnectionClient();
-			HttpRequest request = HttpClientBuilder.doGET(System.getProperty("kubernetes.master") + "/api/v1/namespaces/" + namespace + "/serviceaccounts/" + serviceAccount);
-			String response = client.execute(request).getResponseBodyAsString();
-			
-			if (response.contains("NotFound")){
-				throw new Exception("Missing required ServiceAccount " + serviceAccount);
-			}
-		}
+
+    private void verifyServiceAccounts(DeploymentConfig dc) throws Exception {
+        String serviceAccountName = dc.getSpec().getTemplate().getSpec().getServiceAccountName();
+        if (serviceAccountName != null) {
+            ServiceAccount serviceAccount = client.serviceAccounts().inNamespace(configuration.getNamespace()).withName(serviceAccountName).get();
+            if (serviceAccount == null) {
+                throw new Exception("Missing required ServiceAccount: " + serviceAccountName);
+            }
+        }
     }
-    
-    private void verifyPersistentVolumes(DeploymentConfig dc) throws Exception
-    {
-    	List<Volume> volumes = dc.getSpec().getTemplate().getSpec().getVolumes();
-    	for (Volume volume : volumes){
-    		if (volume.getPersistentVolumeClaim() != null){
-    			HttpClient client = HttpClientBuilder.untrustedConnectionClient();
-    			HttpRequest request = HttpClientBuilder.doGET(System.getProperty("kubernetes.master") + "/api/v1/persistentvolumes/" + volume.getName());
-    			String response = client.execute(request).getResponseBodyAsString();
-    			
-    			if (response.contains("NotFound") || !response.contains("\"status\":{\"phase\":\"Bound\"}")){
-    				throw new Exception("Missing PersistentVolume " + volume.getName() + "for PersistentVolumenClaim " + volume.getPersistentVolumeClaim().getClaimName());
-    			}
-    		}
-    	}
+
+    private void verifyPersistentVolumes(DeploymentConfig dc) throws Exception {
+        List<Volume> volumes = dc.getSpec().getTemplate().getSpec().getVolumes();
+        for (Volume volume : volumes) {
+            PersistentVolumeClaimVolumeSource pvc = volume.getPersistentVolumeClaim();
+            if (pvc != null) {
+                PersistentVolume persistentVolume = client.persistentVolumes().withName(volume.getName()).get();
+                if (persistentVolume == null || !isBound(persistentVolume)) {
+                    throw new Exception(String.format("Missing PersistentVolume '%s' for PersistentVolumenClaim '%s'.", volume.getName(), pvc.getClaimName()));
+                }
+            }
+        }
+    }
+
+    private boolean isBound(PersistentVolume pv) {
+        return "Bound".equalsIgnoreCase(pv.getStatus().getPhase());
     }
 
     private KubernetesList processTemplate(String templateURL, List<ParameterValue> values, Map<String, String> labels) throws IOException {

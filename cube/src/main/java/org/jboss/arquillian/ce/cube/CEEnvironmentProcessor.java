@@ -129,8 +129,7 @@ public class CEEnvironmentProcessor {
     	deleteEnvironment(event.getTestClass(), client, configuration, details);
     }
     
-    public void deleteEnvironment(final TestClass testClass, OpenShiftAdapter client, CECubeConfiguration configuration, TemplateDetails details) throws Exception {
-        
+    private void deleteEnvironment(final TestClass testClass, OpenShiftAdapter client, CECubeConfiguration configuration, TemplateDetails details) throws Exception {
         if (configuration.performCleanup()) {
             log.info(String.format("Deleting environment for %s", testClass.getName()));
             client.deleteTemplate(testClass.getName());
@@ -173,9 +172,9 @@ public class CEEnvironmentProcessor {
                 values.add(new ParamValue("REPLICAS", String.valueOf(replicas))); // not yet supported
 
                 log.info(String.format("Applying OpenShift template: %s", templateURL));
-                // use old archive name as templateKey
                 try {
-                	resources = client.processTemplateAndCreateResources(tc.getName(), templateURL, values, labels, configuration.getNamespace());
+                    // class name is template key
+                	resources = client.processTemplateAndCreateResources(tc.getName(), templateURL, values, labels);
                 } catch (Exception e){
                 	deleteEnvironment(tc, client, configuration, null);
                 	throw e;
