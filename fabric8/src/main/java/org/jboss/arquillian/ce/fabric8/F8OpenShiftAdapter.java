@@ -396,7 +396,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             .roleBindings()
             .inNamespace(configuration.getNamespace())
             .createNew()
-            .withNewMetadata().withName(roleRefName).endMetadata()
+            .withNewMetadata().withName(roleRefName + "-" + subjectName).endMetadata()
             .withNewRoleRef().withName(roleRefName).endRoleRef()
             .addToUserNames(userName)
             .addNewSubject().withKind("ServiceAccount").withNamespace(configuration.getNamespace()).withName(subjectName).endSubject()
