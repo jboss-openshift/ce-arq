@@ -328,7 +328,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         for (Volume volume : volumes) {
             PersistentVolumeClaimVolumeSource pvc = volume.getPersistentVolumeClaim();
             if (pvc != null) {
-                PersistentVolume persistentVolume = client.persistentVolumes().withName(volume.getName()).get();
+                PersistentVolume persistentVolume = client.inAnyNamespace().persistentVolumes().withName(volume.getName()).get();
                 if (persistentVolume == null || !isBound(persistentVolume)) {
                     throw new Exception(String.format("Missing PersistentVolume '%s' for PersistentVolumenClaim '%s'.", volume.getName(), pvc.getClaimName()));
                 }
