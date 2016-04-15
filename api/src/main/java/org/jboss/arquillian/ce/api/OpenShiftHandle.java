@@ -40,4 +40,6 @@ public interface OpenShiftHandle {
     String getLog(String name) throws Exception;
 
     List<String> getPods() throws Exception;
+
+    void killPod(String podName) throws Exception;
 }

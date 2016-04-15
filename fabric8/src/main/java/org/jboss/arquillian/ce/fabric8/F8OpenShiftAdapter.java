@@ -175,6 +175,10 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.projects().withName(configuration.getNamespace()).delete();
     }
 
+    public void killPod(String podName) {
+        client.pods().inNamespace(configuration.getNamespace()).withName(podName).delete();
+    }
+
     public String deployPod(String name, String env, RCContext context) throws Exception {
         List<Container> containers = getContainers(name, context);
 

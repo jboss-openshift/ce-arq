@@ -197,6 +197,10 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return true;
     }
 
+    public void killPod(String podName) {
+        client.delete(client.get(ResourceKind.POD, podName, configuration.getNamespace()));
+    }
+
     public String deployPod(String name, String env, RCContext context) throws Exception {
         Properties properties = getResourceProperties(name, env, context);
         IPod rc = createResource(Templates.POD, properties);
