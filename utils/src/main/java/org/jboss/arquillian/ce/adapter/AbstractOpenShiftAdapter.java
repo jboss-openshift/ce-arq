@@ -67,6 +67,10 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         return getProxy().url(podName, port, path, parameters);
     }
 
+    public InputStream execute(String podName, int port, String path) throws Exception {
+        return getProxy().post(podName, port, path);
+    }
+
     public InputStream execute(int pod, int port, String path) throws Exception {
         ProtocolMetaData pmd = pmdInstance.get();
         if (pmd != null) {

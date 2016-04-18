@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.proxy;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -159,15 +160,17 @@ public abstract class AbstractProxy<P> implements Proxy {
         return null; // TODO
     }
 
-    public synchronized InputStream post(Map<String, String> labels, int index, int port, String path) throws Exception {
-        String url = url(
-            labels,
-            index,
-            port,
-            path,
-            null
-        );
+    public InputStream post(String podName, int port, String path) throws Exception {
+        String url = url(podName, port, path, null);
+        return getInputStream(url);
+    }
 
+    public synchronized InputStream post(Map<String, String> labels, int index, int port, String path) throws Exception {
+        String url = url(labels, index, port, path, null);
+        return getInputStream(url);
+    }
+
+    private InputStream getInputStream(String url) throws IOException {
         OkHttpClient httpClient = getHttpClient();
         Request.Builder builder = new Request.Builder();
         builder.url(url);

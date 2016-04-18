@@ -52,6 +52,8 @@ public interface Proxy {
 
     <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
 
+    InputStream post(String podName, int port, String path) throws Exception;
+
     InputStream post(Map<String, String> labels, int index, int port, String path) throws Exception;
 
     int status(String url);

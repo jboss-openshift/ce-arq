@@ -33,6 +33,8 @@ import java.util.Map;
 public interface OpenShiftHandle {
     String url(String podName, int port, String path, String parameters);
 
+    InputStream execute(String podName, int port, String path) throws Exception;
+
     InputStream execute(int pod, int port, String path) throws Exception;
 
     InputStream execute(Map<String, String> labels, int pod, int port, String path) throws Exception;
