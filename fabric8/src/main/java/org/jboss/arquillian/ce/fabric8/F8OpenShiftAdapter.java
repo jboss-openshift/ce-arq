@@ -47,13 +47,17 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.KubernetesList;
 import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolume;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
+import io.fabric8.kubernetes.api.model.PersistentVolumeList;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Probe;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.ReplicationControllerList;
 import io.fabric8.kubernetes.api.model.ReplicationControllerSpec;
@@ -79,6 +83,7 @@ import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
 import io.fabric8.openshift.client.dsl.ClientTemplateResource;
+
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.api.model.OpenShiftResource;
@@ -101,6 +106,9 @@ import org.jboss.dmr.ModelNode;
 public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     private final OpenShiftClient client;
     private Map<String, KubernetesList> templates = new ConcurrentHashMap<>();
+    
+    private static final String STORAGE = "storage";
+    private static final String BOUND = "Bound";
 
     static OpenShiftConfig toOpenShiftConfig(Configuration configuration) {
         OpenShiftConfigBuilder builder = new OpenShiftConfigBuilder()
@@ -308,7 +316,8 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             if (item instanceof DeploymentConfig) {
                 DeploymentConfig dc = (DeploymentConfig) item;
 
-                verifyPersistentVolumes(dc);
+                verifyPersistentVolumes(dc, result.getItems());
+                
                 verifyServiceAccounts(dc);
 
                 retVal.add(new F8DeploymentConfig((DeploymentConfig) item));
@@ -326,22 +335,76 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             }
         }
     }
-
-    private void verifyPersistentVolumes(DeploymentConfig dc) throws Exception {
-        List<Volume> volumes = dc.getSpec().getTemplate().getSpec().getVolumes();
-        for (Volume volume : volumes) {
-            PersistentVolumeClaimVolumeSource pvc = volume.getPersistentVolumeClaim();
-            if (pvc != null) {
-                PersistentVolume persistentVolume = client.inAnyNamespace().persistentVolumes().withName(volume.getName()).get();
-                if (persistentVolume == null || !isBound(persistentVolume)) {
-                    throw new Exception(String.format("Missing PersistentVolume '%s' for PersistentVolumenClaim '%s'.", volume.getName(), pvc.getClaimName()));
-                }
-            }
-        }
+    
+    private Volume getVolume(DeploymentConfig dc, String name) {
+    	List<Volume> volumes = dc.getSpec().getTemplate().getSpec().getVolumes();
+    	for (Volume volume : volumes){
+    		if (volume.getName().equals(name))
+    			return volume;
+    	}
+    	
+    	return null;
+    }
+    
+    private PersistentVolumeClaim getPersistentVolumeClaim(List<HasMetadata> items, String claimName){
+    	for (HasMetadata item : items){
+    		if (item instanceof PersistentVolumeClaim){
+    			PersistentVolumeClaim pvc = (PersistentVolumeClaim)item;
+    			if (pvc.getMetadata().getName().equals(claimName))
+    				return pvc;
+    		}
+    	}
+    	
+    	return null;
     }
 
-    private boolean isBound(PersistentVolume pv) {
-        return "Bound".equalsIgnoreCase(pv.getStatus().getPhase());
+    private void verifyPersistentVolumes(DeploymentConfig dc, List<HasMetadata> items) throws Exception {
+    	
+    	List<Container> containers = dc.getSpec().getTemplate().getSpec().getContainers();
+    	
+    	for (Container container : containers) {
+    		List<VolumeMount> volumeMounts = container.getVolumeMounts();
+    		for (VolumeMount volumeMount : volumeMounts){
+    			Volume volume = getVolume(dc, volumeMount.getName());
+    			if (volume != null && volume.getPersistentVolumeClaim() != null){
+    				String claimName = volume.getPersistentVolumeClaim().getClaimName();
+    				PersistentVolumeClaim pvc = getPersistentVolumeClaim(items, claimName);
+    				if (pvc != null){
+    					if (!existsMatchingPV(pvc)){
+    						throw new Exception(String.format("Missing PersistentVolume '%s' for PersistentVolumenClaim '%s'.", volume.getName(), claimName));
+    					}
+    				}
+    			}
+    		}
+    	}
+    }
+    
+    private boolean existsMatchingPV(PersistentVolumeClaim pvc){
+    	String targetClaimName = pvc.getMetadata().getName();
+    	 
+    	List<PersistentVolume> persistentVolumes = client.inAnyNamespace().persistentVolumes().list().getItems();
+        
+        for (PersistentVolume persistentVolume : persistentVolumes) {
+        	
+        	if (isBound(persistentVolume, targetClaimName, configuration.getNamespace())) 		
+        		return true;
+        	
+        }
+        
+        return false;
+    }
+
+    private boolean isBound(PersistentVolume pv, String targetClaimName, String targetNamespace) {
+        String status = pv.getStatus().getPhase();
+        ObjectReference claimRef = pv.getSpec().getClaimRef();
+        
+        if (claimRef != null && claimRef.getName().equals(targetClaimName) && claimRef.getNamespace().equals(targetNamespace)){
+    		if (status.equals(BOUND)){
+    			return true;
+    		}
+        }
+        		
+        return false;
     }
 
     private KubernetesList processTemplate(String templateURL, List<ParameterValue> values, Map<String, String> labels) throws IOException {
