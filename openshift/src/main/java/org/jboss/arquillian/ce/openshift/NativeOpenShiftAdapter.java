@@ -197,7 +197,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return true;
     }
 
-    public void killPod(String podName) {
+    public void deletePod(String podName) {
         client.delete(client.get(ResourceKind.POD, podName, configuration.getNamespace()));
     }
 

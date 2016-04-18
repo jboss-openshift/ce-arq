@@ -31,6 +31,8 @@ import java.util.Map;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public interface OpenShiftHandle {
+    String url(String podName, int port, String path, String parameters);
+
     InputStream execute(int pod, int port, String path) throws Exception;
 
     InputStream execute(Map<String, String> labels, int pod, int port, String path) throws Exception;
@@ -41,5 +43,5 @@ public interface OpenShiftHandle {
 
     List<String> getPods() throws Exception;
 
-    void killPod(String podName) throws Exception;
+    void deletePod(String podName) throws Exception;
 }

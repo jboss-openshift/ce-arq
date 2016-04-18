@@ -175,7 +175,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.projects().withName(configuration.getNamespace()).delete();
     }
 
-    public void killPod(String podName) {
+    public void deletePod(String podName) {
         client.pods().inNamespace(configuration.getNamespace()).withName(podName).delete();
     }
 
