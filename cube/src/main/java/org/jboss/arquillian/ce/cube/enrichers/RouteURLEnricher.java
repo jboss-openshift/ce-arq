@@ -22,14 +22,13 @@
  */
 package org.jboss.arquillian.ce.cube.enrichers;
 
-import io.fabric8.openshift.api.model.Route;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import io.fabric8.openshift.api.model.Route;
 import org.arquillian.cube.impl.util.ReflectionUtil;
 import org.arquillian.cube.openshift.impl.client.OpenShiftClient;
 import org.jboss.arquillian.ce.cube.CECubeConfiguration;
@@ -60,7 +59,7 @@ public class RouteURLEnricher implements TestEnricher {
                 }
                 field.set(testCase, lookup(getRouteURLAnnotation(field.getAnnotations())));
             } catch (Exception e) {
-                throw new RuntimeException("Could not set RoutURL value on field " + field);
+                throw new RuntimeException("Could not set RouteURL value on field " + field);
             }
         }
     }
