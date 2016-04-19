@@ -133,14 +133,14 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
                 Set<String> pods = getProxy().getReadyPods(labels);
                 boolean result = op.op(pods.size(), replicas);
                 if (result) {
-                    log.info(String.format("Pods are ready: %s", pods));
+                    log.info(String.format("Pods are ready [%s]: %s", op, pods));
                 }
                 return result;
             }
 
             @Override
             public String toString() {
-                return String.format("(Required # of pods: %s)", replicas);
+                return String.format("(Required # of pods [%s]: %s)", op, replicas);
             }
         });
     }
