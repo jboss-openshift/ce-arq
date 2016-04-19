@@ -37,6 +37,7 @@ import java.util.logging.Level;
 
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.client.dsl.ClientRollableScallableResource;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildList;
 import io.fabric8.openshift.api.model.DeploymentConfig;
@@ -461,17 +462,29 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.services().inNamespace(namespace).withName(serviceName).get();
     }
 
-    public void scaleDeployment(final String name, final int replicas) throws Exception {
+    private ClientRollableScallableResource<ReplicationController, DoneableReplicationController> getReplicationController(String name) throws Exception {
         ReplicationControllerList list = client.replicationControllers().inNamespace(configuration.getNamespace()).list();
         String actualName = getActualName(name, list.getItems(), "No RC found starting with " + name);
-        ReplicationController rc = client.replicationControllers().inNamespace(configuration.getNamespace()).withName(actualName).scale(replicas);
+        return client.replicationControllers().inNamespace(configuration.getNamespace()).withName(actualName);
+    }
 
+    private void delayDeployment(ReplicationController rc, String name, int replicas, Operator op) throws Exception {
         final Map<String, String> labels = rc.getSpec().getSelector();
         try {
-            delay(labels, replicas, Operator.EQUAL);
+            delay(labels, replicas, op);
         } catch (Exception e) {
             throw new DeploymentException(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);
         }
+    }
+
+    public void resumeDeployment(String name, int replicas) throws Exception {
+        ReplicationController rc = getReplicationController(name).get();
+        delayDeployment(rc, name, replicas, Operator.GREATER_THAN_OR_EQUAL);
+    }
+
+    public void scaleDeployment(final String name, final int replicas) throws Exception {
+        ReplicationController rc = getReplicationController(name).scale(replicas);
+        delayDeployment(rc, name, replicas, Operator.EQUAL);
     }
 
     public List<String> getPods() throws Exception {

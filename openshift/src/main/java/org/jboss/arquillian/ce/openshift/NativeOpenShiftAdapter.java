@@ -346,6 +346,17 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.get(ResourceKind.SERVICE, serviceName, namespace);
     }
 
+    public void resumeDeployment(String name, int replicas) throws Exception {
+        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, name);
+        final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
+        final Map<String, String> labels = dc.getReplicaSelector();
+        try {
+            delay(labels, replicas, Operator.GREATER_THAN_OR_EQUAL);
+        } catch (Exception e) {
+            throw new Exception(String.format("Timeout waiting for deployment %s to resume to %s pods", name, replicas), e);
+        }
+    }
+
     public void scaleDeployment(final String name, final int replicas) throws Exception {
         String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, name);
         final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
