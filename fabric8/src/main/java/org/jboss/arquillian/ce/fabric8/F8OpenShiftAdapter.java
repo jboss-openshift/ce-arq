@@ -477,9 +477,8 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
     }
 
-    public void resumeDeployment(String name, int replicas) throws Exception {
-        ReplicationController rc = getReplicationController(name).get();
-        delayDeployment(rc, name, replicas, Operator.EQUAL);
+    protected Map<String, String> getLabels(String prefix) throws Exception {
+        return getReplicationController(prefix).get().getSpec().getSelector();
     }
 
     public void scaleDeployment(final String name, final int replicas) throws Exception {

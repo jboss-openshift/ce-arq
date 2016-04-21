@@ -40,10 +40,9 @@ public interface OpenShiftHandle {
     InputStream execute(Map<String, String> labels, int pod, int port, String path) throws Exception;
 
     /**
-     * Resume after deployment is back to exactly #replicas pods.
-     * e.g. in case we deleted some pods, waiting on them to get back
+     * Replace #size of pods via delete.
      */
-    void resumeDeployment(String name, int replicas) throws Exception;
+    void replacePods(String prefix, int size) throws Exception;
 
     void scaleDeployment(String name, int replicas) throws Exception;
 

@@ -26,6 +26,7 @@ package org.jboss.arquillian.ce.adapter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -125,6 +126,37 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         OpenShiftResourceHandle handle = createRoleBinding(roleRefName, userName);
         addResourceHandle(resourcesKey, handle);
         return handle;
+    }
+
+    protected abstract Map<String, String> getLabels(String prefix) throws Exception;
+
+    public void replacePods(String prefix, int size) throws Exception {
+        final int replicas = size;
+        final Set<String> deleted = new HashSet<>();
+        for (String pod : getPods()) {
+            if (pod.startsWith(prefix) && size > 0) {
+                deleted.add(pod);
+                deletePod(pod);
+                size--;
+            }
+        }
+        final Map<String, String> labels = getLabels(prefix);
+        Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
+            public boolean check() {
+                Set<String> pods = getProxy().getReadyPods(labels);
+                pods.removeAll(deleted);
+                boolean result = Operator.EQUAL.op(pods.size(), replicas);
+                if (result) {
+                    log.info(String.format("Pods are replaced: %s", pods));
+                }
+                return result;
+            }
+
+            @Override
+            public String toString() {
+                return String.format("(Required # of replaced pods: %s)", replicas);
+            }
+        });
     }
 
     public void delay(final Map<String, String> labels, final int replicas, final Operator op) throws Exception {

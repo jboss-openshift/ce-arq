@@ -357,6 +357,12 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
     }
 
+    protected Map<String, String> getLabels(String prefix) throws Exception {
+        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, prefix);
+        final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
+        return dc.getReplicaSelector();
+    }
+
     public void scaleDeployment(final String name, final int replicas) throws Exception {
         String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, name);
         final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
