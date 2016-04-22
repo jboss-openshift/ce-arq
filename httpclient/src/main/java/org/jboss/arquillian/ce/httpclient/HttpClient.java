@@ -23,11 +23,12 @@
 
 package org.jboss.arquillian.ce.httpclient;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface HttpClient {
+public interface HttpClient extends Closeable {
     HttpResponse execute(HttpRequest request) throws IOException;
 }

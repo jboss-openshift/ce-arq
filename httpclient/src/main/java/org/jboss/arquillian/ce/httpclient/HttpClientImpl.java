@@ -25,17 +25,23 @@ package org.jboss.arquillian.ce.httpclient;
 
 import java.io.IOException;
 
+import org.apache.http.impl.client.CloseableHttpClient;
+
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 class HttpClientImpl implements HttpClient {
-    private org.apache.http.client.HttpClient client;
+    private CloseableHttpClient client;
 
-    HttpClientImpl(org.apache.http.client.HttpClient client) {
+    public HttpClientImpl(CloseableHttpClient client) {
         this.client = client;
     }
 
     public HttpResponse execute(HttpRequest request) throws IOException {
         return new HttpResponseImpl(client.execute(HttpRequestImpl.class.cast(request).unwrap()));
+    }
+
+    public void close() throws IOException {
+        client.close();
     }
 }

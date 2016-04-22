@@ -72,11 +72,10 @@ import org.jboss.dmr.ModelNode;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
+    private static final String BOUND = "Bound";
+
     private final OpenShiftClient client;
     private Map<String, KubernetesList> templates = new ConcurrentHashMap<>();
-
-    private static final String STORAGE = "storage";
-    private static final String BOUND = "Bound";
 
     static OpenShiftConfig toOpenShiftConfig(Configuration configuration) {
         OpenShiftConfigBuilder builder = new OpenShiftConfigBuilder()
@@ -172,7 +171,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         mountSecret(podSpec, context.getMountSecret());
 
         Pod pod = new Pod();
-        pod.setApiVersion(Pod.ApiVersion.fromValue(configuration.getApiVersion()));
+        pod.setApiVersion(configuration.getApiVersion());
         pod.setMetadata(metadata);
         pod.setSpec(podSpec);
 
@@ -438,7 +437,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     private String deployService(String name, String apiVersion, String portName, int port, int containerPort, Map<String, String> selector) throws Exception {
         Service service = new Service();
 
-        service.setApiVersion(Service.ApiVersion.fromValue(apiVersion));
+        service.setApiVersion(apiVersion);
 
         ObjectMeta objectMeta = new ObjectMeta();
         service.setMetadata(objectMeta);
@@ -553,7 +552,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     private ReplicationController createReplicationController(String name, String apiVersion, Map<String, String> labels, int replicas, Map<String, String> selector, PodTemplateSpec podTemplate) throws Exception {
         ReplicationController rc = new ReplicationController();
 
-        rc.setApiVersion(ReplicationController.ApiVersion.fromValue(apiVersion));
+        rc.setApiVersion(apiVersion);
 
         ObjectMeta objectMeta = new ObjectMeta();
         rc.setMetadata(objectMeta);
