@@ -26,6 +26,7 @@ package org.jboss.arquillian.ce.httpclient;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.Registry;
@@ -50,14 +51,21 @@ public class HttpClientBuilder {
     public static HttpRequest doGET(String url) {
         return new HttpRequestImpl(new HttpGet(url));
     }
-
+    
     /*
-    * Allow httpClient to use untrusted connections
-    * The code below was tested with httpclient 4.3.6-redhat-1
-    * code example from; http://literatejava.com/networks/ignore-ssl-certificate-errors-apache-httpclient-4-4/
-    */
+     * Allow httpClient to use untrusted connections
+     * The code below was tested with httpclient 4.3.6-redhat-1
+     * code example from; http://literatejava.com/networks/ignore-ssl-certificate-errors-apache-httpclient-4-4/
+     */
     public static HttpClient untrustedConnectionClient() throws Exception {
+    	return untrustedConnectionClient(null);
+    }
+    
+    public static HttpClient untrustedConnectionClient(CookieStore cookieStore) throws Exception {
         org.apache.http.impl.client.HttpClientBuilder b = org.apache.http.impl.client.HttpClientBuilder.create();
+        
+        if (cookieStore != null)
+        	b.setDefaultCookieStore(cookieStore);
 
         // setup a Trust Strategy that allows all certificates.
         //
