@@ -23,6 +23,8 @@
 
 package org.jboss.arquillian.ce.ext;
 
+import static org.jboss.arquillian.ce.utils.Containers.isDeployedInCeContainer;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,10 +46,14 @@ public class LegacyDeploymentScenarioGenerator implements DeploymentScenarioGene
 
     public List<DeploymentDescription> generate(TestClass testClass) {
         List<DeploymentDescription> descriptions = delegate(testClass);
+
+        boolean inCeContainer = isDeployedInCeContainer();
+
         List<DeploymentDescription> copy = new ArrayList<>();
         for (DeploymentDescription description : descriptions) {
             Archive<?> archive = description.getArchive();
-            if (JavaArchive.class.isInstance(archive)) {
+            // only wrap in war, if it's in CE container
+            if (inCeContainer && JavaArchive.class.isInstance(archive)) {
                 JavaArchive jar = JavaArchive.class.cast(archive);
                 copy.add(new DeploymentDescription(description.getName(), toWar(jar)));
             } else {

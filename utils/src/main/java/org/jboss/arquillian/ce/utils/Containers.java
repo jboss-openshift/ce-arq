@@ -36,6 +36,24 @@ import java.util.logging.Logger;
 public class Containers {
     private static final Logger log = Logger.getLogger(Containers.class.getName());
 
+    private final static String[] CONTAINER_CLASSES = {
+        "org.jboss.arquillian.ce.wildfly.WildFlyCEContainer",
+        "org.jboss.arquillian.ce.template.TemplateCEContainer",
+        "org.jboss.arquillian.ce.web.WebCEContainer"
+    };
+
+    public static boolean isDeployedInCeContainer() {
+        ClassLoader cl = Containers.class.getClassLoader();
+        for (String containerClass : CONTAINER_CLASSES) {
+            try {
+                cl.loadClass(containerClass);
+                return true;
+            } catch (Exception ignored) {
+            }
+        }
+        return false;
+    }
+
     public static void delay(long startupTimeout, long checkPeriod, Checker checker) throws Exception {
         log.info(String.format("Applying checker [%s], timeout: %ss, check period: %sms", checker, startupTimeout, checkPeriod));
 
