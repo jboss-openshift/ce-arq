@@ -43,6 +43,11 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class HttpClientBuilder {
+    private org.apache.http.impl.client.HttpClientBuilder builder;
+
+    private HttpClientBuilder() {
+        builder = org.apache.http.impl.client.HttpClientBuilder.create();
+    }
 
     public static HttpRequest doPOST(String url) {
         return new HttpRequestImpl(new HttpPost(url));
@@ -51,22 +56,32 @@ public class HttpClientBuilder {
     public static HttpRequest doGET(String url) {
         return new HttpRequestImpl(new HttpGet(url));
     }
-    
+
     /*
      * Allow httpClient to use untrusted connections
      * The code below was tested with httpclient 4.3.6-redhat-1
      * code example from; http://literatejava.com/networks/ignore-ssl-certificate-errors-apache-httpclient-4-4/
      */
     public static HttpClient untrustedConnectionClient() throws Exception {
-    	return untrustedConnectionClient(null);
+        return create().untrustedConnectionClientBuilder().build();
     }
-    
-    public static HttpClient untrustedConnectionClient(CookieStore cookieStore) throws Exception {
-        org.apache.http.impl.client.HttpClientBuilder b = org.apache.http.impl.client.HttpClientBuilder.create();
-        
-        if (cookieStore != null)
-        	b.setDefaultCookieStore(cookieStore);
 
+    public static HttpClientBuilder create() {
+        return new HttpClientBuilder();
+    }
+
+    public HttpClient build() {
+        return new HttpClientImpl(builder.build());
+    }
+
+    public HttpClientBuilder setCookieStore(Object cookieStore) {
+        if (cookieStore != null && (cookieStore instanceof CookieStore)) {
+            builder.setDefaultCookieStore((CookieStore) cookieStore);
+        }
+        return this;
+    }
+
+    public HttpClientBuilder untrustedConnectionClientBuilder() throws Exception {
         // setup a Trust Strategy that allows all certificates.
         //
         SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy() {
@@ -75,7 +90,7 @@ public class HttpClientBuilder {
             }
 
         }).build();
-        b.setSslcontext(sslContext);
+        builder.setSslcontext(sslContext);
 
         // don't check Hostnames, either.
         //      -- use SSLConnectionSocketFactory.getDefaultHostnameVerifier(), if you don't want to weaken
@@ -94,10 +109,10 @@ public class HttpClientBuilder {
         // now, we create connection-manager using our Registry.
         //      -- allows multi-threaded use
         PoolingHttpClientConnectionManager connMgr = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
-        b.setConnectionManager(connMgr);
+        builder.setConnectionManager(connMgr);
 
         // finally, build the HttpClient;
         //      -- done!
-        return new HttpClientImpl(b.build());
+        return this;
     }
 }
