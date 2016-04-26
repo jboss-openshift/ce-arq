@@ -151,7 +151,10 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     public void deletePod(String podName) {
-        client.pods().inNamespace(configuration.getNamespace()).withName(podName).delete();
+        deletePod(podName, -1);
+    }
+    public void deletePod(String podName, long gracePeriodSeconds) {
+        client.pods().inNamespace(configuration.getNamespace()).withName(podName).withGracePeriod(gracePeriodSeconds).delete();
     }
 
     public String deployPod(String name, String env, RCContext context) throws Exception {

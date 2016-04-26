@@ -200,6 +200,10 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
     public void deletePod(String podName) {
         client.delete(client.get(ResourceKind.POD, podName, configuration.getNamespace()));
     }
+    public void deletePod(String podName, long gracePeriodSeconds) {
+        /* FIXME: Support gracePeriodSeconds parameter, just ignore it for now */
+        deletePod(podName);
+    }
 
     public String deployPod(String name, String env, RCContext context) throws Exception {
         Properties properties = getResourceProperties(name, env, context);
