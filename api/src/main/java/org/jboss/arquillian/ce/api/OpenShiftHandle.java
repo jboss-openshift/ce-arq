@@ -50,6 +50,5 @@ public interface OpenShiftHandle {
 
     List<String> getPods() throws Exception;
 
-    void deletePod(String podName) throws Exception;
     void deletePod(String podName, long gracePeriodSeconds) throws Exception;
 }

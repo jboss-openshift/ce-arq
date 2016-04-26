@@ -37,7 +37,9 @@ import java.util.logging.Level;
 
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.client.dsl.ClientPodResource;
 import io.fabric8.kubernetes.client.dsl.ClientRollableScallableResource;
+import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildList;
 import io.fabric8.openshift.api.model.DeploymentConfig;
@@ -150,11 +152,13 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.projects().withName(configuration.getNamespace()).delete();
     }
 
-    public void deletePod(String podName) {
-        deletePod(podName, -1);
-    }
     public void deletePod(String podName, long gracePeriodSeconds) {
-        client.pods().inNamespace(configuration.getNamespace()).withName(podName).withGracePeriod(gracePeriodSeconds).delete();
+        ClientPodResource<Pod, DoneablePod> resource = client.pods().inNamespace(configuration.getNamespace()).withName(podName);
+        Deletable<Boolean> deletable = resource;
+        if (gracePeriodSeconds >= 0) {
+            deletable = resource.withGracePeriod(gracePeriodSeconds);
+        }
+        deletable.delete();
     }
 
     public String deployPod(String name, String env, RCContext context) throws Exception {

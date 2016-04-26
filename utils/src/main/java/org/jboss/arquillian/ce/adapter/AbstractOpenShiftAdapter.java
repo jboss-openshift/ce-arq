@@ -137,7 +137,7 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         final Set<String> deleted = new HashSet<>();
         for (String pod : getProxy().getReadyPods(labels)) {
             deleted.add(pod);
-            deletePod(pod);
+            deletePod(pod, -1); // use default grace period?
             size--;
         }
 
