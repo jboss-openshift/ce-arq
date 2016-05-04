@@ -46,7 +46,17 @@ public interface OpenShiftHandle {
 
     void scaleDeployment(String name, int replicas) throws Exception;
 
-    String getLog(String name) throws Exception;
+    /**
+     * Get the logs for a given pod.
+     *
+     * Combines both arguments to find a matching pod.
+     *
+     * @param  prefix Pod's name prefix, may be null
+     * @param  labels The labels for selecting the pod, may be null
+     * @return The pod's log
+     * @throws Exception if a pod couldn't be found or if there's an error retrieving the log
+     */
+    String getLog(String prefix, Map<String, String> labels) throws Exception;
 
     List<String> getPods() throws Exception;
 

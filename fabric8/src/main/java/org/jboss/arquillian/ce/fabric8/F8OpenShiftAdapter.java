@@ -37,6 +37,7 @@ import java.util.logging.Level;
 
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.client.dsl.ClientNonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.ClientPodResource;
 import io.fabric8.kubernetes.client.dsl.ClientRollableScallableResource;
 import io.fabric8.kubernetes.client.dsl.Deletable;
@@ -501,9 +502,27 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return podNames;
     }
 
-    public String getLog(String name) throws Exception {
-        PodList list = client.pods().inNamespace(configuration.getNamespace()).list();
-        String actualName = getActualName(name, list.getItems(), "No pod found starting with " + name);
+    public String getLog(String prefix, Map<String, String> labels) throws Exception {
+        List<Pod> pods;
+        ClientNonNamespaceOperation<Pod, PodList, DoneablePod, ClientPodResource<Pod, DoneablePod>> allPods = client.pods().inNamespace(configuration.getNamespace());
+
+        if (labels == null) {
+            pods = allPods.list().getItems();
+        } else {
+            pods = allPods.withLabels(labels).list().getItems();
+        }
+
+        String actualName;
+
+        if (prefix != null) {
+            actualName = getActualName(prefix, pods, "No pod found starting with " + prefix + " and labels " + labels);
+        } else {
+            try {
+                actualName = pods.get(0).getMetadata().getName();
+            } catch (IndexOutOfBoundsException e) {
+                throw new Exception("No pod found with labels " + labels, e);
+            }
+        }
         log.info("Retrieving logs from pod " + actualName);
         return client.pods().inNamespace(configuration.getNamespace()).withName(actualName).getLog();
     }

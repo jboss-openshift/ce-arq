@@ -348,7 +348,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     public void resumeDeployment(String name, int replicas) throws Exception {
-        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, name);
+        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, name, null);
         final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
         final Map<String, String> labels = dc.getReplicaSelector();
         try {
@@ -359,13 +359,13 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     protected Map<String, String> getLabels(String prefix) throws Exception {
-        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, prefix);
+        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, prefix, null);
         final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
         return dc.getReplicaSelector();
     }
 
     public void scaleDeployment(final String name, final int replicas) throws Exception {
-        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, name);
+        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, name, null);
         final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
         final Map<String, String> labels = dc.getReplicaSelector();
         dc.setReplicas(replicas);
@@ -377,8 +377,8 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
     }
 
-    private String getFirstResource(String kind, String prefix) throws Exception {
-        List<IResource> list = client.list(kind, configuration.getNamespace());
+    private String getFirstResource(String kind, String prefix, Map<String, String> labels) throws Exception {
+        List<IResource> list = client.list(kind, configuration.getNamespace(), labels);
         for (IResource r : list) {
             String name = r.getName();
             if (name.startsWith(prefix)) {
@@ -388,8 +388,8 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         throw new Exception(String.format("No resource [%s] found starting with %s", kind, prefix));
     }
 
-    public String getLog(String name) throws Exception {
-        String podName = getFirstResource(ResourceKind.POD, name);
+    public String getLog(String prefix, Map<String, String> labels) throws Exception {
+        String podName = getFirstResource(ResourceKind.POD, prefix, labels);
         final IPod pod = client.get(ResourceKind.POD, podName, configuration.getNamespace());
         OpenShiftBinaryPodLogRetrieval l = new OpenShiftBinaryPodLogRetrieval(pod, client);
         try (Reader reader = new InputStreamReader(l.getLogs(false), "UTF-8")) {
