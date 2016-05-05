@@ -515,13 +515,12 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         String actualName;
 
         if (prefix != null) {
-            actualName = getActualName(prefix, pods, "No pod found starting with " + prefix + " and labels " + labels);
+            actualName = getActualName(prefix, pods, String.format("No pod found starting with '%s' and labels %s.", prefix, labels));
         } else {
-            try {
-                actualName = pods.get(0).getMetadata().getName();
-            } catch (IndexOutOfBoundsException e) {
-                throw new Exception("No pod found with labels " + labels, e);
+            if (pods.isEmpty()) {
+                throw new Exception("No pod found with labels " + labels);
             }
+            actualName = pods.get(0).getMetadata().getName();
         }
         log.info("Retrieving logs from pod " + actualName);
         return client.pods().inNamespace(configuration.getNamespace()).withName(actualName).getLog();

@@ -378,7 +378,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     private String getFirstResource(String kind, String prefix, Map<String, String> labels) throws Exception {
-        List<IResource> list = client.list(kind, configuration.getNamespace(), labels);
+        List<IResource> list = (labels != null) ? client.list(kind, configuration.getNamespace(), labels) : client.list(kind, configuration.getNamespace());
         for (IResource r : list) {
             String name = r.getName();
             if (name.startsWith(prefix)) {
