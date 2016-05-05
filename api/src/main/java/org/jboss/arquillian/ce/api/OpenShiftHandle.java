@@ -38,6 +38,8 @@ public interface OpenShiftHandle {
     InputStream execute(int pod, int port, String path) throws Exception;
 
     InputStream execute(Map<String, String> labels, int pod, int port, String path) throws Exception;
+    
+    String exec(String labelKey, String labelValue, int waitSeconds, String ... input) throws Exception;
 
     /**
      * Replace #size of pods via delete.

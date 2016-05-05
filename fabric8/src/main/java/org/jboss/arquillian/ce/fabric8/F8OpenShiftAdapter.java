@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.fabric8;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -37,10 +38,14 @@ import java.util.logging.Level;
 
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ClientNonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.ClientPodResource;
 import io.fabric8.kubernetes.client.dsl.ClientRollableScallableResource;
 import io.fabric8.kubernetes.client.dsl.Deletable;
+import io.fabric8.kubernetes.client.dsl.ExecListener;
+import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildList;
 import io.fabric8.openshift.api.model.DeploymentConfig;
@@ -55,6 +60,7 @@ import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
 import io.fabric8.openshift.client.dsl.ClientTemplateResource;
+
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.api.model.OpenShiftResource;
@@ -70,6 +76,8 @@ import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.dmr.ModelNode;
+
+import com.squareup.okhttp.Response;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -107,6 +115,75 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     public F8OpenShiftAdapter(OpenShiftClient client, Configuration configuration) {
         super(configuration);
         this.client = client;
+    }
+    
+    public String exec(String labelKey, String labelValue, int waitSeconds, String ... input) throws Exception {
+		String master = configuration.getKubernetesMaster();
+
+		io.fabric8.kubernetes.client.Config config = new io.fabric8.kubernetes.client.ConfigBuilder().withMasterUrl(master).build();
+        final KubernetesClient client = new DefaultKubernetesClient(config);
+        		
+        try {
+	        Pod targetPod = null;
+	        List<Pod> pods = client.inAnyNamespace().pods().list().getItems();
+	        for (Pod pod : pods) {
+	        	String label = pod.getMetadata().getLabels().get(labelKey);
+	        	if (label != null && label.equals(labelValue)){
+	        		targetPod = pod;
+	        		break;
+	        	}
+	        }
+	        
+	        if (targetPod == null)
+	        	throw new IllegalStateException("No such pod: " + labelKey + "=" + labelValue);
+	         
+	        ByteArrayOutputStream output = null;
+	        try {
+		        output = new ByteArrayOutputStream();
+		        try {
+		        	ExecWatch watch = client.inNamespace(targetPod.getMetadata().getNamespace()).pods().withName(targetPod.getMetadata().getName())
+			            .readingInput(System.in)
+			            .writingOutput(output)
+			            .writingError(System.err)
+			            .withTTY()
+			            .usingListener(new SimpleListener())
+			            .exec(input);
+		        } catch (Exception e){
+		        	e.printStackTrace();
+		        	throw e;
+		        }
+		        
+		        Thread.sleep(waitSeconds * 1000);
+		        
+		        output.flush();
+		        
+		        return output.toString();
+	        } finally {
+	        	if (output != null)
+	        		output.close();
+	        }
+        } finally {
+        	client.close();
+        }
+    }
+	
+	private static class SimpleListener implements ExecListener {
+
+        @Override
+        public void onOpen(Response response) {
+            System.out.println("Exec open");
+        }
+
+        @Override
+        public void onFailure(IOException e, Response response) {
+            System.err.println("Exec failure");
+            e.printStackTrace();
+        }
+
+        @Override
+        public void onClose(int code, String reason) {
+            System.out.println("Exec close");
+        }
     }
 
     protected Proxy createProxy() {

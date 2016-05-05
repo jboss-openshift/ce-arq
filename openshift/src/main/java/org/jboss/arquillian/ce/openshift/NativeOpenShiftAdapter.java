@@ -23,6 +23,7 @@
 
 package org.jboss.arquillian.ce.openshift;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -66,6 +67,7 @@ import com.openshift.restclient.model.authorization.IRoleBinding;
 import com.openshift.restclient.model.project.IProjectRequest;
 import com.openshift.restclient.model.template.IParameter;
 import com.openshift.restclient.model.template.ITemplate;
+
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.api.model.OpenShiftResource;
@@ -158,6 +160,20 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     protected Proxy createProxy() {
         return new NativeProxy(configuration, client);
+    }
+    
+    public String exec(String labelKey, String labelValue, int waitSeconds, String ... input) throws Exception {
+    	
+    	Map<String, String> labels = new HashMap<String,String>();
+    	labels.put(labelKey, labelValue);
+    	final List<IPod> pods = client.list(ResourceKind.POD, configuration.getNamespace(), labels);
+    	if (pods.isEmpty()) {
+            throw new IllegalStateException("No such pods: " + labels);
+        }
+    	
+        IPod targetPod = pods.get(0);
+        
+        return "NOT IMPLEMENTED";
     }
 
     public PortForwardContext createPortForwardContext(Map<String, String> labels, int port) {
