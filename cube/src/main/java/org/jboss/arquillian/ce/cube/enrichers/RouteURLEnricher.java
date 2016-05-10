@@ -59,7 +59,7 @@ public class RouteURLEnricher implements TestEnricher {
                 }
                 field.set(testCase, lookup(getRouteURLAnnotation(field.getAnnotations())));
             } catch (Exception e) {
-                throw new RuntimeException("Could not set RouteURL value on field " + field);
+                throw new RuntimeException("Could not set RouteURL value on field " + field, e);
             }
         }
     }
