@@ -141,39 +141,47 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
             size--;
         }
 
-        Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
-            public boolean check() {
-                Set<String> pods = getProxy().getReadyPods(labels);
-                pods.removeAll(deleted);
-                boolean result = Operator.EQUAL.op(pods.size(), replicas);
-                if (result) {
-                    log.info(String.format("Pods are replaced: %s", pods));
-                }
-                return result;
-            }
-
+        Containers.delay(configuration.getStartupTimeout(), 4000L, new PodCountChecker(labels, Operator.EQUAL, replicas) {
             @Override
-            public String toString() {
-                return String.format("(Required # of replaced pods: %s)", replicas);
+            protected Set<String> getReadyPods() {
+                Set<String> pods = super.getReadyPods();
+                pods.removeAll(deleted);
+                return pods;
             }
         });
     }
 
     public void delay(final Map<String, String> labels, final int replicas, final Operator op) throws Exception {
-        Containers.delay(configuration.getStartupTimeout(), 4000L, new Checker() {
-            public boolean check() {
-                Set<String> pods = getProxy().getReadyPods(labels);
-                boolean result = op.op(pods.size(), replicas);
-                if (result) {
-                    log.info(String.format("Pods are ready [%s]: %s", op, pods));
-                }
-                return result;
-            }
+        Containers.delay(configuration.getStartupTimeout(), 4000L, new PodCountChecker(labels, op, replicas));
+    }
 
-            @Override
-            public String toString() {
-                return String.format("(Required # of pods [%s]: %s)", op, replicas);
+    private class PodCountChecker implements Checker {
+        private final Map<String, String> labels;
+        private final Operator op;
+        private final int replicas;
+
+        public PodCountChecker(Map<String, String> labels, Operator op, int replicas) {
+            this.labels = labels;
+            this.op = op;
+            this.replicas = replicas;
+        }
+
+        public boolean check() {
+            Set<String> pods = getReadyPods();
+            boolean result = op.op(pods.size(), replicas);
+            if (result) {
+                log.info(String.format("Condition satisfied: number of pod(s) matching labels: %s is %s %s (pods: %s)", labels, op, replicas, pods));
             }
-        });
+            return result;
+        }
+
+        protected Set<String> getReadyPods() {
+            return getProxy().getReadyPods(labels);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Number of pod(s) matching labels: %s is %s %s", labels, op, replicas);
+        }
     }
 }
