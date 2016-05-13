@@ -132,10 +132,15 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
 
     public void replacePods(String prefix, int size) throws Exception {
         final Map<String, String> labels = getLabels(prefix);
-        final int replicas = size;
+
+        Set<String> readyPods = getProxy().getReadyPods(labels);
+        final int replicas = readyPods.size(); // return back to initial size
 
         final Set<String> deleted = new HashSet<>();
-        for (String pod : getProxy().getReadyPods(labels)) {
+        for (String pod : readyPods) {
+            if (size <= 0) {
+                break;
+            }
             deleted.add(pod);
             deletePod(pod, -1); // use default grace period?
             size--;
