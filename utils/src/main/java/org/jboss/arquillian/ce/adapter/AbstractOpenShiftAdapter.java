@@ -130,14 +130,11 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
 
     protected abstract Map<String, String> getLabels(String prefix) throws Exception;
 
-    public void replacePods(String prefix, int size) throws Exception {
+    public void replacePods(String prefix, int size, final int replicas) throws Exception {
         final Map<String, String> labels = getLabels(prefix);
 
-        Set<String> readyPods = getProxy().getReadyPods(labels);
-        final int replicas = readyPods.size(); // return back to initial size
-
         final Set<String> deleted = new HashSet<>();
-        for (String pod : readyPods) {
+        for (String pod : getProxy().getReadyPods(labels)) {
             if (size <= 0) {
                 break;
             }

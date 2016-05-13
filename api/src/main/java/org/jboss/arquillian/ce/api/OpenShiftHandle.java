@@ -43,8 +43,11 @@ public interface OpenShiftHandle {
 
     /**
      * Replace #size of pods via delete.
+     *
+     * @param size the number of pods to replace
+     * @param replicas the number of exepcted replicas after replace
      */
-    void replacePods(String prefix, int size) throws Exception;
+    void replacePods(String prefix, int size, int replicas) throws Exception;
 
     void scaleDeployment(String name, int replicas) throws Exception;
 
