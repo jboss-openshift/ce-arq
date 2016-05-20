@@ -153,6 +153,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return new F8Proxy(configuration, client);
     }
 
+    @Override
     public PortForwardContext createPortForwardContext(Map<String, String> labels, int port) {
         List<Pod> pods = client.pods().inNamespace(configuration.getNamespace()).withLabels(labels).list().getItems();
         if (pods.isEmpty()) {
@@ -394,10 +395,21 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
     private boolean existsMatchingPV(PersistentVolumeClaim pvc) {
         String targetClaimName = pvc.getMetadata().getName();
-        List<PersistentVolume> persistentVolumes = client.inAnyNamespace().persistentVolumes().list().getItems();
-        for (PersistentVolume persistentVolume : persistentVolumes) {
-            if (isBound(persistentVolume, targetClaimName, configuration.getNamespace())) {
-                return true;
+        final int TRIES = 3;
+        final int DELAY_BETWEEN_TRIES = 5;
+
+        for (int i = 1; i <= TRIES; i++) {
+            List<PersistentVolume> persistentVolumes = client.inAnyNamespace().persistentVolumes().list().getItems();
+            for (PersistentVolume persistentVolume : persistentVolumes) {
+                if (isBound(persistentVolume, targetClaimName, configuration.getNamespace())) {
+                    return true;
+                }
+            }
+            log.info(String.format("PV %s is not bound. Waiting %d seconds to try again (#%d try)", targetClaimName, DELAY_BETWEEN_TRIES, i));
+            try {
+                Thread.sleep(DELAY_BETWEEN_TRIES * 1000);
+            } catch (InterruptedException e) {
+                break;
             }
         }
         return false;
