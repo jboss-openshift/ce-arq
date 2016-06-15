@@ -51,6 +51,7 @@ import io.fabric8.openshift.api.model.DoneableTemplate;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.RoleBinding;
+import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.Template;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -463,6 +464,8 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             return new ImageStreamOpenShiftResourceHandle(content);
         } else if ("ServiceAccount".equalsIgnoreCase(kind)) {
             return new ServiceAccountOpenShiftResourceHandle(content);
+        } else if ("Route".equalsIgnoreCase(kind)) {
+            return new RouteOpenShiftResourceHandle(content);
         } else {
             throw new IllegalArgumentException(String.format("Kind '%s' not yet supported -- use Native OpenShift adapter!", kind));
         }
@@ -827,6 +830,20 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
         public void delete() {
             client.serviceAccounts().inNamespace(configuration.getNamespace()).delete(resource);
+        }
+    }
+
+    private class RouteOpenShiftResourceHandle extends AbstractOpenShiftResourceHandle<Route> {
+        public RouteOpenShiftResourceHandle(String content) {
+            super(content);
+        }
+
+        protected Route createResource(InputStream stream) {
+            return client.routes().inNamespace(configuration.getNamespace()).load(stream).create();
+        }
+
+        public void delete() {
+            client.routes().inNamespace(configuration.getNamespace()).delete(resource);
         }
     }
 }
