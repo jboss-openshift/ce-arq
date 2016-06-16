@@ -427,14 +427,16 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return false;
     }
 
-    private KubernetesList processTemplate(String templateURL, @javax.validation.constraints.NotNull List<ParameterValue> values, Map<String, String> labels) throws IOException {
+    private KubernetesList processTemplate(String templateURL, List<ParameterValue> values, Map<String, String> labels) throws IOException {
         try (InputStream stream = new URL(templateURL).openStream()) {
-            ClientTemplateResource<Template, KubernetesList, DoneableTemplate> template = client.templates().inNamespace(configuration.getNamespace()).load(stream);
-            if (template.get().getLabels() != null) {
-	         template.get().getLabels().putAll(labels);
-	     }
-            return template.process(values.toArray(new ParameterValue[values.size()]));
-	}
+            ClientTemplateResource<Template, KubernetesList, DoneableTemplate> templateHandle = client.templates().inNamespace(configuration.getNamespace()).load(stream);
+            Template template = templateHandle.get();
+            if (template.getLabels() == null) {
+                template.setLabels(new HashMap<String, String>());
+            }
+            template.getLabels().putAll(labels);
+            return templateHandle.process(values.toArray(new ParameterValue[values.size()]));
+        }
     }
 
     private KubernetesList createResources(KubernetesList list) {
