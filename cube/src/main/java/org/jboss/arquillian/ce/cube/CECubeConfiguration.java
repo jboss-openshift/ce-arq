@@ -27,6 +27,8 @@ import java.util.Map;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.ce.utils.TemplateConfiguration;
 
+import static org.jboss.arquillian.ce.utils.Strings.isNotNullOrEmpty;
+
 /**
  * CECubeConfiguration
  * <p/>

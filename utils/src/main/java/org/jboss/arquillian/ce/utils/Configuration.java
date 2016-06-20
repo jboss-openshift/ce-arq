@@ -46,8 +46,8 @@ public abstract class Configuration implements ContainerConfiguration, Configura
     private String kubernetesMaster = getSystemPropertyOrEnvVar("kubernetes.master");
     private String dockerUrl = getSystemPropertyOrEnvVar("docker.url");
 
-    private String openshiftUsername = getSystemPropertyOrEnvVar("openshift.username", "admin");
-    private String openshiftPassword = getSystemPropertyOrEnvVar("openshift.password", "admin");
+    private String openshiftUsername = getSystemPropertyOrEnvVar("openshift.username", "guest");
+    private String openshiftPassword = getSystemPropertyOrEnvVar("openshift.password", "guest");
 
     private String apiVersion = getSystemPropertyOrEnvVar("kubernetes.api.version", "v1");
     private String namespacePrefix = getSystemPropertyOrEnvVar("kubernetes.namespace.prefix", "cearq");
