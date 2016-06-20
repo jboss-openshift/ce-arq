@@ -23,6 +23,8 @@
 
 package org.jboss.arquillian.ce.httpclient;
 
+import org.apache.http.HttpEntity;
+
 import java.io.IOException;
 
 /**
@@ -36,4 +38,6 @@ public interface HttpResponse {
     int getResponseCode();
 
     String getResponseBodyAsString() throws IOException;
+
+    HttpEntity getEntity();
 }

@@ -18,9 +18,9 @@ DOCKER_URL=http://172.28.128.4:2375
 
 And **one way** of authentication, either username/password:
 
--Dopenshift.username=[OpenShift username], default is "admin"
+-Dopenshift.username=[OpenShift username], default is "guest"
 
--Dopenshift.password=[OpenShift password], default is "admin"
+-Dopenshift.password=[OpenShift password], default is "guest"
 
 Or auth token:
 
