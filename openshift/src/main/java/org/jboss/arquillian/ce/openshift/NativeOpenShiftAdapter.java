@@ -101,6 +101,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
 
         String token;
         IClient tmpClient = new ClientFactory().create(configuration.getKubernetesMaster(), new NoopSSLCertificateCallback());
+
         if (configuration.hasOpenshiftBasicAuth()) {
             tmpClient.setAuthorizationStrategy(new BasicAuthorizationStrategy(configuration.getOpenshiftUsername(), configuration.getOpenshiftPassword(), ""));
             IAuthorizationClient authClient = new AuthorizationClientFactory().create(tmpClient);

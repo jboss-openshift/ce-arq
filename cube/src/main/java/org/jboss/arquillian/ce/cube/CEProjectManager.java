@@ -22,11 +22,15 @@
  */
 package org.jboss.arquillian.ce.cube;
 
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.openshift.api.model.DoneableProjectRequest;
 import io.fabric8.openshift.api.model.Project;
 import org.arquillian.cube.openshift.impl.client.OpenShiftClient;
+import org.jboss.arquillian.ce.cube.oauth.OauthInterceptor;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
+
+import java.util.logging.Logger;
 
 /**
  * CEProjectManager
@@ -36,7 +40,13 @@ import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
  * @author Rob Cernich
  */
 public class CEProjectManager {
+
+    private Logger log = Logger.getLogger(CEProjectManager.class.getName());
+
+    private OauthInterceptor oauth = new OauthInterceptor();
+
     private Project createdProject;
+
 
     /**
      * If we're creating the project used to run the tests, we need to do that
@@ -46,7 +56,24 @@ public class CEProjectManager {
      * <p>
      * TODO: consider creating a new project for each test case.
      */
-    public void createProject(@Observes(precedence = 10) OpenShiftClient client, CECubeConfiguration config) {
+    public void createProject(@Observes(precedence = 10) OpenShiftClient client, CECubeConfiguration config) throws Exception {
+
+        //token is valid?
+        try {
+            //just do a request somewhere that requires authentication
+            client.getClientExt().inAnyNamespace().oAuthAccessTokens().list();
+        } catch (io.fabric8.kubernetes.client.KubernetesClientException e) {
+            String actualToken = client.getClientExt().getConfiguration().getOauthToken();
+            if (actualToken != null) {
+                log.warning(String.format("The token %s has expired, revalidating the token.", actualToken));
+                client.getClientExt().getConfiguration().setOauthToken(oauth.getToken(config.getKubernetesMaster(), config.getOpenshiftUsername(), config.getOpenshiftPassword()));
+            } else {
+                String token = oauth.getToken(config.getKubernetesMaster(), config.getOpenshiftUsername(), config.getOpenshiftPassword());
+                throw new KubernetesClientException("Kubeconfig is not initialized, please perform the following command and try again: [oc login --token=" + token +" " +
+                        " --server=" + config.getKubernetesMaster() +"]");
+            }
+        }
+
         Project existing = null;
         try {
             existing = client.getClientExt().projects().withName(config.getNamespace()).get();
@@ -56,10 +83,10 @@ public class CEProjectManager {
         if (existing == null) {
             DoneableProjectRequest projectRequest = client.getClientExt().projectrequests().createNew();
             projectRequest
-                .withDescription("auto-generated project for arquillian testing")
-                .withNewMetadata()
-                .withName(config.getNamespace())
-                .endMetadata();
+                    .withDescription("auto-generated project for arquillian testing")
+                    .withNewMetadata()
+                    .withName(config.getNamespace())
+                    .endMetadata();
             projectRequest.done();
             createdProject = client.getClientExt().projects().withName(config.getNamespace()).get();
         }
@@ -75,5 +102,5 @@ public class CEProjectManager {
             createdProject = null;
         }
     }
-
+    
 }
