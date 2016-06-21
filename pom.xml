@@ -32,7 +32,7 @@
         <version.meta-inf>1.6</version.meta-inf>
         <version.servlet-api>2.5</version.servlet-api>
         <version.junit>4.10</version.junit>
-        <version.surefire.plugin>2.12.1</version.surefire.plugin>
+        <version.surefire.plugin>2.19.1</version.surefire.plugin>
         <version.dmr>1.2.0.Final</version.dmr>
         <version.javax.ejb>1.0.0.Final</version.javax.ejb>
         <version.httpclient>4.3.6</version.httpclient>
