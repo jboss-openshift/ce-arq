@@ -23,9 +23,8 @@
 
 package org.jboss.arquillian.ce.httpclient;
 
-import org.apache.http.HttpEntity;
-
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -39,5 +38,5 @@ public interface HttpResponse {
 
     String getResponseBodyAsString() throws IOException;
 
-    HttpEntity getEntity();
+    InputStream getResponseAsStream() throws IOException;
 }

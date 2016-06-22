@@ -24,9 +24,9 @@
 package org.jboss.arquillian.ce.httpclient;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 
 /**
@@ -64,9 +64,7 @@ class HttpResponseImpl implements HttpResponse {
         return EntityUtils.toString(response.getEntity());
     }
 
-    public HttpEntity getEntity(){
-        return response.getEntity();
+    public InputStream getResponseAsStream() throws IOException {
+        return response.getEntity().getContent();
     }
-
-
 }
