@@ -57,7 +57,7 @@ public class CEProjectManager {
         //token is valid?
         try {
             //just do a request somewhere that requires authentication
-            client.getClientExt().inAnyNamespace().oAuthAccessTokens().list();
+            client.getClientExt().inAnyNamespace().projects().list();
         } catch (io.fabric8.kubernetes.client.KubernetesClientException e) {
             String actualToken = client.getClientExt().getConfiguration().getOauthToken();
             if (actualToken != null) {
