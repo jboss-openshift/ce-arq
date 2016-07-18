@@ -54,7 +54,8 @@ import io.fabric8.openshift.api.model.RoleBinding;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.Template;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
-import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import io.fabric8.openshift.client.NamespacedOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
@@ -81,7 +82,7 @@ import org.jboss.dmr.ModelNode;
 public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     private static final String BOUND = "Bound";
 
-    private final OpenShiftClient client;
+    private final NamespacedOpenShiftClient client;
     private Map<String, KubernetesList> templates = new ConcurrentHashMap<>();
 
     static OpenShiftConfig toOpenShiftConfig(Configuration configuration) {
@@ -98,9 +99,9 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return builder.build();
     }
 
-    static CeOpenShiftClient create(Configuration configuration) {
+    static NamespacedOpenShiftClient create(Configuration configuration) {
         OpenShiftConfig config = toOpenShiftConfig(configuration);
-        return new CeOpenShiftClient(config);
+        return new DefaultOpenShiftClient(config);
     }
 
     public F8OpenShiftAdapter(Configuration configuration) {
@@ -108,7 +109,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         this.client = create(configuration);
     }
 
-    public F8OpenShiftAdapter(OpenShiftClient client, Configuration configuration) {
+    public F8OpenShiftAdapter(NamespacedOpenShiftClient client, Configuration configuration) {
         super(configuration);
         this.client = client;
     }
