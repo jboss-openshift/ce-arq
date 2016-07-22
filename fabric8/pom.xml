@@ -11,7 +11,6 @@
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>arquillian-ce-fabric8</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Arquillian Container OpenShift Fabric8</name>
     <description>Cloud Enablement Fabric8</description>

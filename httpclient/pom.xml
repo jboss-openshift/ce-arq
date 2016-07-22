@@ -11,14 +11,9 @@
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>arquillian-ce-httpclient</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Arquillian Container OpenShift Http Client support</name>
     <description>Cloud Enablement integrations for Http Client</description>
-
-    <properties>
-        <version.eap>7.5.5.Final-redhat-3</version.eap>
-    </properties>
 
     <dependencies>
 

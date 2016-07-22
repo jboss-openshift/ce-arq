@@ -15,22 +15,6 @@
     <name>Arquillian Container Cube Integration</name>
     <description>Cloud Enablement integration with Arquillian Cube</description>
 
-    <properties>
-        <version.arquillian.cube>1.0.0.Final-SNAPSHOT</version.arquillian.cube>
-    </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-        		<groupId>org.arquillian.cube</groupId>
-            	<artifactId>arquillian-cube-parent</artifactId>
-                <version>${version.arquillian.cube}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
