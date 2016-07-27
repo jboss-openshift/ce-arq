@@ -37,8 +37,29 @@ class HttpClientImpl implements HttpClient {
         this.client = client;
     }
 
-    public HttpResponse execute(HttpRequest request) throws IOException {
-        return new HttpResponseImpl(client.execute(HttpRequestImpl.class.cast(request).unwrap()));
+    public HttpResponse execute(HttpRequest request) throws IOException, InterruptedException {
+        return execute(request, new HttpClientExecuteOptions.Builder().build());
+    }
+
+    public HttpResponse execute(HttpRequest request, HttpClientExecuteOptions options) throws IOException, InterruptedException {
+        HttpResponse response = null;
+
+        for (int i = 0; i < options.getTries(); i++) {
+            try {
+                response = new HttpResponseImpl(client.execute(HttpRequestImpl.class.cast(request).unwrap()));
+                if (options.getDesiredStatusCode() == -1 || response.getResponseCode() == options.getDesiredStatusCode())
+                    break;
+                System.err.println(String.format("Execute error: Got code %d, expected %d. Trying again in %d seconds",
+                        response.getResponseCode(), options.getDesiredStatusCode(), options.getDelay()));
+            } catch (IOException e) {
+                if (i + 1 == options.getTries())
+                    throw e;
+                System.err.println(String.format("Execute error: %s. Trying again in %d seconds", e, options.getDelay()));
+            }
+            Thread.sleep(options.getDelay() * 1000);
+        }
+
+        return response;
     }
 
     public void close() throws IOException {

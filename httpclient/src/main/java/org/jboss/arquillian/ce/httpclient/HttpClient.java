@@ -30,5 +30,6 @@ import java.io.IOException;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public interface HttpClient extends Closeable {
-    HttpResponse execute(HttpRequest request) throws IOException;
+    HttpResponse execute(HttpRequest request) throws IOException, InterruptedException;
+    HttpResponse execute(HttpRequest request, HttpClientExecuteOptions options) throws IOException, InterruptedException;
 }
