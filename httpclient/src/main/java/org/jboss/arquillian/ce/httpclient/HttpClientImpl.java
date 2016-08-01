@@ -37,29 +37,41 @@ class HttpClientImpl implements HttpClient {
         this.client = client;
     }
 
-    public HttpResponse execute(HttpRequest request) throws IOException, InterruptedException {
+    public HttpResponse execute(HttpRequest request) throws IOException {
         return execute(request, new HttpClientExecuteOptions.Builder().build());
     }
 
-    public HttpResponse execute(HttpRequest request, HttpClientExecuteOptions options) throws IOException, InterruptedException {
-        HttpResponse response = null;
+    public HttpResponse execute(HttpRequest request, HttpClientExecuteOptions options) throws IOException {
+        IOException exception = null;
 
         for (int i = 0; i < options.getTries(); i++) {
             try {
-                response = new HttpResponseImpl(client.execute(HttpRequestImpl.class.cast(request).unwrap()));
-                if (options.getDesiredStatusCode() == -1 || response.getResponseCode() == options.getDesiredStatusCode())
-                    break;
-                System.err.println(String.format("Execute error: Got code %d, expected %d. Trying again in %d seconds",
-                        response.getResponseCode(), options.getDesiredStatusCode(), options.getDelay()));
+                HttpResponse response = new HttpResponseImpl(client.execute(HttpRequestImpl.class.cast(request).unwrap()));
+                if (options.getDesiredStatusCode() == -1 || response.getResponseCode() == options.getDesiredStatusCode()) {
+                    return response;
+                }
+                System.err.println(String.format("Response error: Got code %d, expected %d.", response.getResponseCode(), options.getDesiredStatusCode()));
             } catch (IOException e) {
-                if (i + 1 == options.getTries())
-                    throw e;
-                System.err.println(String.format("Execute error: %s. Trying again in %d seconds", e, options.getDelay()));
+                exception = e;
+                System.err.println(String.format("Execute error: %s.", e));
             }
-            Thread.sleep(options.getDelay() * 1000);
+
+            if (i + 1 < options.getTries()) {
+                System.err.println(String.format("Trying again in %d seconds.", options.getDelay()));
+                try {
+                    Thread.sleep(options.getDelay() * 1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    exception = new IOException(e);
+                }
+            }
         }
 
-        return response;
+        if (exception != null) {
+            throw exception;
+        } else {
+            throw new IOException("Failed to execute proper request!");
+        }
     }
 
     public void close() throws IOException {

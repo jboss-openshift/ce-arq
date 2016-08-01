@@ -28,7 +28,6 @@ package org.jboss.arquillian.ce.httpclient;
  * HttpClientExecuteOptions.Builder to create an instance.
  *
  * @author Jonh Wendell
- *
  */
 public class HttpClientExecuteOptions {
     private final int tries;
@@ -39,7 +38,7 @@ public class HttpClientExecuteOptions {
         tries = b.tries;
         delay = b.delay;
         desiredStatusCode = b.desiredStatusCode;
-    };
+    }
 
     public int getTries() {
         return tries;
@@ -61,8 +60,8 @@ public class HttpClientExecuteOptions {
         /**
          * How many tries should we do before giving up. Default value is 1.
          *
-         * @param value
-         * @return
+         * @param value number of tries
+         * @return this
          */
         public Builder tries(int value) {
             tries = value;
@@ -72,8 +71,8 @@ public class HttpClientExecuteOptions {
         /**
          * Delay, in seconds, between tries. Default value is 5.
          *
-         * @param value
-         * @return
+         * @param value delay
+         * @return this
          */
         public Builder delay(int value) {
             delay = value;
@@ -85,8 +84,8 @@ public class HttpClientExecuteOptions {
          * doesn't, another try is made (see {@link #tries(int)}). Default value
          * is -1, meaning we should not compare response codes.
          *
-         * @param value
-         * @return
+         * @param value desired status code
+         * @return this
          */
         public Builder desiredStatusCode(int value) {
             desiredStatusCode = value;
