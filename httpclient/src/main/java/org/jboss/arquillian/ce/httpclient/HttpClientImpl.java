@@ -25,6 +25,7 @@ package org.jboss.arquillian.ce.httpclient;
 
 import java.io.IOException;
 
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
@@ -43,17 +44,19 @@ class HttpClientImpl implements HttpClient {
 
     public HttpResponse execute(HttpRequest request, HttpClientExecuteOptions options) throws IOException {
         IOException exception = null;
+        HttpUriRequest r = HttpRequestImpl.class.cast(request).unwrap();
 
         for (int i = 0; i < options.getTries(); i++) {
             try {
-                HttpResponse response = new HttpResponseImpl(client.execute(HttpRequestImpl.class.cast(request).unwrap()));
+                HttpResponse response = new HttpResponseImpl(client.execute(r));
                 if (options.getDesiredStatusCode() == -1 || response.getResponseCode() == options.getDesiredStatusCode()) {
                     return response;
                 }
-                System.err.println(String.format("Response error: Got code %d, expected %d.", response.getResponseCode(), options.getDesiredStatusCode()));
+                System.err.println(String.format("Response error [URL:%s]: Got code %d, expected %d.", r.getURI(),
+                        response.getResponseCode(), options.getDesiredStatusCode()));
             } catch (IOException e) {
                 exception = e;
-                System.err.println(String.format("Execute error: %s.", e));
+                System.err.println(String.format("Execute error [URL:%s]: %s.", r.getURI(), e));
             }
 
             if (i + 1 < options.getTries()) {
@@ -61,16 +64,18 @@ class HttpClientImpl implements HttpClient {
                 try {
                     Thread.sleep(options.getDelay() * 1000);
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
                     exception = new IOException(e);
+                    break;
                 }
+            } else {
+                System.err.println(String.format("Giving up trying URL:%s after %d tries", r.getURI(), options.getTries()));
             }
         }
 
         if (exception != null) {
             throw exception;
         } else {
-            throw new IOException("Failed to execute proper request!");
+            throw new IOException(String.format("Failed to execute proper request. [URL:%s]", r.getURI()));
         }
     }
 
