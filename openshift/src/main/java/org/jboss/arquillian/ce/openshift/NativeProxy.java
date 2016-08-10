@@ -31,7 +31,7 @@ import javax.net.ssl.SSLContext;
 import com.openshift.restclient.IClient;
 import com.openshift.restclient.ResourceKind;
 import com.openshift.restclient.model.IPod;
-import com.squareup.okhttp.OkHttpClient;
+import okhttp3.OkHttpClient;
 import org.jboss.arquillian.ce.proxy.AbstractProxy;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.dmr.ModelNode;

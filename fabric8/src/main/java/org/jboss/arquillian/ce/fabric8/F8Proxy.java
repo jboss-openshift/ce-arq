@@ -25,17 +25,16 @@ package org.jboss.arquillian.ce.fabric8;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 
-import com.squareup.okhttp.OkHttpClient;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.kubernetes.client.Adapters;
 import io.fabric8.kubernetes.client.internal.SSLUtils;
 import io.fabric8.openshift.client.OpenShiftClient;
+import okhttp3.OkHttpClient;
 import org.jboss.arquillian.ce.proxy.AbstractProxy;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.OkHttpClientUtils;
@@ -63,12 +62,10 @@ public class F8Proxy extends AbstractProxy<Pod> {
     protected synchronized OkHttpClient getHttpClient() {
         if (httpClient == null) {
             OkHttpClient okHttpClient = Adapters.get(OkHttpClient.class).adapt(client);
-            OkHttpClientUtils.applyCookieHandler(okHttpClient);
-            //Increasing timeout to avoid this issue:
-            //Caused by: io.fabric8.kubernetes.client.KubernetesClientException: Error executing: GET at:
-            //https://localhost:8443/api/v1/namespaces/cearq-jws-tcznhcfw354/pods?labelSelector=deploymentConfig%3Djws-app. Cause: timeout
-            okHttpClient.setConnectTimeout(configuration.getHttpClientTimeout(), TimeUnit.SECONDS);
-            httpClient = okHttpClient;
+            OkHttpClient.Builder builder = okHttpClient.newBuilder(); // clone
+            OkHttpClientUtils.applyConnectTimeout(builder, configuration.getHttpClientTimeout());
+            OkHttpClientUtils.applyCookieJar(builder);
+            httpClient = builder.build();
         }
         return httpClient;
     }

@@ -33,11 +33,11 @@ import java.net.Socket;
 import java.util.List;
 import java.util.logging.Logger;
 
-import com.squareup.okhttp.Connection;
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+import okhttp3.Connection;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -75,7 +75,7 @@ public class PortForward {
                 while (server.isClosed() == false) {
                     try {
                         final Socket socket = server.accept();
-                        final Socket osSocket = interceptor.getConnection().getSocket();
+                        final Socket osSocket = interceptor.getConnection().socket();
 
                         Runnable writer = new Runnable() {
                             public void run() {
@@ -121,7 +121,7 @@ public class PortForward {
 
             public void close() throws IOException {
                 doClose(server);
-                doClose(interceptor.getConnection().getSocket());
+                doClose(interceptor.getConnection().socket());
             }
         };
     }

@@ -24,6 +24,7 @@
 package org.jboss.arquillian.ce.openshift;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
@@ -35,10 +36,12 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+import javassist.util.proxy.MethodHandler;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.jboss.arquillian.ce.utils.BytecodeUtils;
 import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.OkHttpClientUtils;
 
@@ -47,36 +50,31 @@ import org.jboss.arquillian.ce.utils.OkHttpClientUtils;
  */
 class HttpClientCreator {
     static class CeOkHttpClient extends OkHttpClient {
-        private SSLContext sslContext;
-
         SSLContext getSslContext() {
-            return sslContext;
-        }
-
-        private void setSslContext(SSLContext sslContext) {
-            this.sslContext = sslContext;
+            return null;
         }
     }
 
     static CeOkHttpClient createHttpClient(final Configuration configuration) {
         try {
-            CeOkHttpClient httpClient = new CeOkHttpClient();
+            OkHttpClient.Builder builder = new OkHttpClient.Builder();
 
             // Follow any redirects
-            httpClient.setFollowRedirects(true);
-            httpClient.setFollowSslRedirects(true);
+            builder.followRedirects(true);
+            builder.followSslRedirects(true);
 
             KeyManager[] keyManagers = null; // TODO
             TrustManager[] trustManagers = null; // TODO
+            X509TrustManager x509TrustManager = null;
 
             if (configuration.isTrustCerts()) {
-                httpClient.setHostnameVerifier(new HostnameVerifier() {
+                builder.hostnameVerifier(new HostnameVerifier() {
                     public boolean verify(String s, SSLSession sslSession) {
                         return true;
                     }
                 });
 
-                trustManagers = new TrustManager[]{new X509TrustManager() {
+                x509TrustManager = new X509TrustManager() {
                     public void checkClientTrusted(X509Certificate[] chain, String s) {
                     }
 
@@ -86,15 +84,15 @@ class HttpClientCreator {
                     public X509Certificate[] getAcceptedIssuers() {
                         return new X509Certificate[0];
                     }
-                }};
+                };
+                trustManagers = new TrustManager[]{x509TrustManager};
             }
 
-            SSLContext sslContext = SSLContext.getInstance("TLS");
+            final SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(keyManagers, trustManagers, new SecureRandom());
-            httpClient.setSslSocketFactory(sslContext.getSocketFactory());
-            httpClient.setSslContext(sslContext); // impl detail
+            builder.sslSocketFactory(sslContext.getSocketFactory(), x509TrustManager);
 
-            httpClient.interceptors().add(new Interceptor() {
+            builder.interceptors().add(new Interceptor() {
                 @Override
                 public Response intercept(Interceptor.Chain chain) throws IOException {
                     Request authReq = chain.request().newBuilder().addHeader("Authorization", "Bearer " + configuration.getToken()).build();
@@ -102,12 +100,22 @@ class HttpClientCreator {
                 }
             });
 
-            httpClient.setConnectTimeout(10, TimeUnit.SECONDS);
-            httpClient.setReadTimeout(10, TimeUnit.SECONDS);
+            OkHttpClientUtils.applyConnectTimeout(builder, configuration.getHttpClientTimeout());
+            builder.readTimeout(10, TimeUnit.SECONDS);
 
-            OkHttpClientUtils.applyCookieHandler(httpClient);
+            OkHttpClientUtils.applyCookieJar(builder);
 
-            return httpClient;
+            final OkHttpClient client = builder.build();
+
+            return BytecodeUtils.proxy(CeOkHttpClient.class, new MethodHandler() {
+                public Object invoke(Object self, Method method, Method proceed, Object[] args) throws Throwable {
+                    if ("getSslContext".equals(method.getName())) {
+                        return sslContext;
+                    } else {
+                        return method.invoke(client, args);
+                    }
+                }
+            });
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }

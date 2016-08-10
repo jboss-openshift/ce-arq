@@ -23,17 +23,17 @@
 
 package org.jboss.arquillian.ce.utils;
 
-import java.io.IOException;
-import java.net.CookieHandler;
-import java.net.HttpCookie;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
-import com.squareup.okhttp.OkHttpClient;
+import okhttp3.Cookie;
+import okhttp3.CookieJar;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 
 /**
  * Handle OkHttpClient.
@@ -41,59 +41,52 @@ import com.squareup.okhttp.OkHttpClient;
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
 public class OkHttpClientUtils {
-    private static final SimpleCookieHandler COOKIE_HANDLER = new SimpleCookieHandler();
+    private static final SimpleCookieJar COOKIE_JAR = new SimpleCookieJar();
 
-    public static void applyCookieHandler(OkHttpClient httpClient) {
-        COOKIE_HANDLER.clear(); // reset
-        httpClient.setCookieHandler(COOKIE_HANDLER);
+    public static void applyConnectTimeout(OkHttpClient.Builder builder, long timeout) {
+        //Increasing timeout to avoid this issue:
+        //Caused by: io.fabric8.kubernetes.client.KubernetesClientException: Error executing: GET at:
+        //https://localhost:8443/api/v1/namespaces/cearq-jws-tcznhcfw354/pods?labelSelector=deploymentConfig%3Djws-app. Cause: timeout
+        builder.connectTimeout(timeout, TimeUnit.SECONDS);
+    }
+
+    public static void applyCookieJar(OkHttpClient.Builder builder) {
+        COOKIE_JAR.clear(); // reset
+        builder.cookieJar(COOKIE_JAR);
     }
 
     /**
      * Just copy cookies based on proxy path.
      */
-    private static class SimpleCookieHandler extends CookieHandler {
+    private static class SimpleCookieJar implements CookieJar {
         private static final String _PROXY = "/proxy";
-        private Map<String, List<HttpCookie>> cookiesMap = new ConcurrentHashMap<>();
+        private Map<String, List<Cookie>> cookiesMap = new ConcurrentHashMap<>();
 
         private void clear() {
             cookiesMap.clear();
         }
 
-        private static String path(URI uri) {
-            String path = uri.getPath();
+        private static String path(HttpUrl url) {
+            String path = url.encodedPath();
             int p = path.indexOf(_PROXY);
             return path.substring(p + _PROXY.length());
         }
 
-        public synchronized Map<String, List<String>> get(URI uri, Map<String, List<String>> requestHeaders) throws IOException {
-            String path = path(uri);
-            List<String> list = new ArrayList<>();
-            for (Map.Entry<String, List<HttpCookie>> entry : cookiesMap.entrySet()) {
-                if (path.startsWith(entry.getKey())) {
-                    for (HttpCookie cookie : entry.getValue()) {
-                        list.add(cookie.toString());
-                    }
-                }
-            }
-            return list.isEmpty() ? Collections.<String, List<String>>emptyMap() : Collections.singletonMap("Cookie", list);
+        public synchronized void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
+            cookiesMap.put(path(url), cookies);
         }
 
-        public synchronized void put(URI uri, Map<String, List<String>> responseHeaders) throws IOException {
-            for (Map.Entry<String, List<String>> entry : responseHeaders.entrySet()) {
-                String headerKey = entry.getKey();
-                if (headerKey.equalsIgnoreCase("Set-Cookie") || headerKey.equalsIgnoreCase("Set-Cookie2")) {
-                    for (String headerValue : entry.getValue()) {
-                        for (HttpCookie cookie : HttpCookie.parse(headerValue)) {
-                            List<HttpCookie> cookies = cookiesMap.get(cookie.getPath());
-                            if (cookies == null) {
-                                cookies = new ArrayList<>();
-                                cookiesMap.put(cookie.getPath(), cookies);
-                            }
-                            cookies.add(cookie);
-                        }
+        public synchronized List<Cookie> loadForRequest(HttpUrl url) {
+            String path = path(url);
+            List<Cookie> list = new ArrayList<>();
+            for (Map.Entry<String, List<Cookie>> entry : cookiesMap.entrySet()) {
+                if (path.startsWith(entry.getKey())) {
+                    for (Cookie cookie : entry.getValue()) {
+                        list.add(cookie);
                     }
                 }
             }
+            return list.isEmpty() ? Collections.<Cookie>emptyList() : list;
         }
     }
 }
