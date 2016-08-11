@@ -37,9 +37,8 @@ public class OauthUtils {
 
         StringBuilder result = getResult(new BufferedReader(new InputStreamReader((response.getResponseAsStream()))));
 
-        log.info("Request result: " + result);
         String token = result.substring(result.indexOf("<code>") + 6, result.indexOf("</code>"));
-        log.info("Token: " + token);
+        log.info("Got token: " + token);
 
         return token;
     }
