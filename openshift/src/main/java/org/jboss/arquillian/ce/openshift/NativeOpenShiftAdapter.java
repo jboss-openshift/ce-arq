@@ -414,8 +414,13 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
     }
 
-    public List<String> getPods() throws Exception {
-        final List<IPod> pods = client.list(ResourceKind.POD, configuration.getNamespace());
+    public List<String> getPods(String prefix) throws Exception {
+        final List<IPod> pods;
+        if (prefix == null) {
+            pods = client.list(ResourceKind.POD, configuration.getNamespace());
+        } else {
+            pods = client.list(ResourceKind.POD, configuration.getNamespace(), getLabels(prefix));
+        }
         List<String> podNames = new ArrayList<>();
         for (IPod pod : pods) {
             podNames.add(pod.getName());

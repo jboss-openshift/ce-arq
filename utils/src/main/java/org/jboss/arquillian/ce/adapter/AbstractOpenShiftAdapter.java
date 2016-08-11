@@ -153,6 +153,10 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         });
     }
 
+    public List<String> getPods() throws Exception {
+        return getPods(null);
+    }
+
     public void delay(final Map<String, String> labels, final int replicas, final Operator op) throws Exception {
         Containers.delay(configuration.getStartupTimeout(), 4000L, new PodCountChecker(labels, op, replicas));
     }

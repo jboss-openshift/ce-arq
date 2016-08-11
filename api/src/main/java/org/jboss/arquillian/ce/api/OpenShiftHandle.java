@@ -49,6 +49,13 @@ public interface OpenShiftHandle {
      */
     void replacePods(String prefix, int size, int replicas) throws Exception;
 
+    /**
+     * Scale deployment to replicas.
+     *
+     * @param name     the RC name
+     * @param replicas replicas
+     * @throws Exception for any error
+     */
     void scaleDeployment(String name, int replicas) throws Exception;
 
     /**
@@ -63,7 +70,29 @@ public interface OpenShiftHandle {
      */
     String getLog(String prefix, Map<String, String> labels) throws Exception;
 
+    /**
+     * Get all pods.
+     *
+     * @return all pods
+     * @throws Exception for any error
+     */
     List<String> getPods() throws Exception;
 
+    /**
+     * Get all pods.
+     *
+     * @param prefix RC name, if null all pods are returned
+     * @return all pods
+     * @throws Exception for any error
+     */
+    List<String> getPods(String prefix) throws Exception;
+
+    /**
+     * Delete pod by name.
+     *
+     * @param podName pod name
+     * @param gracePeriodSeconds grace period, -1 if none / default
+     * @throws Exception for any error
+     */
     void deletePod(String podName, long gracePeriodSeconds) throws Exception;
 }

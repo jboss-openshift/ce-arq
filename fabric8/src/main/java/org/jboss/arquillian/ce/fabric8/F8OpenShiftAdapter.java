@@ -553,8 +553,13 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         delayDeployment(rc, name, replicas, Operator.EQUAL);
     }
 
-    public List<String> getPods() throws Exception {
-        PodList pods = client.pods().inNamespace(configuration.getNamespace()).list();
+    public List<String> getPods(String prefix) throws Exception {
+        PodList pods;
+        if (prefix == null) {
+            pods = client.pods().inNamespace(configuration.getNamespace()).list();
+        } else {
+            pods = client.pods().inNamespace(configuration.getNamespace()).withLabels(getLabels(prefix)).list();
+        }
         List<String> podNames = new ArrayList<>();
         for (Pod pod : pods.getItems()) {
             podNames.add(pod.getMetadata().getName());
