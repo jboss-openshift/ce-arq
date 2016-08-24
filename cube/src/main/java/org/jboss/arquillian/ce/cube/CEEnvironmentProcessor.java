@@ -164,10 +164,7 @@ public class CEEnvironmentProcessor {
                 log.warning(String.format("Empty labels for template: %s, namespace: %s", templateURL, configuration.getNamespace()));
             }
 
-            final Map<String, String> labels = new HashMap<>();
-            if (readLabels != null) {
-                labels.putAll(readLabels);
-            }
+            final Map<String, String> labels = new HashMap<>(readLabels);
             labels.put("test-case", tc.getJavaClass().getSimpleName().toLowerCase());
 
             if (executeProcessTemplate(template, configuration)) {
