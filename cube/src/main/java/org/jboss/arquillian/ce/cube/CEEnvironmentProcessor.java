@@ -31,6 +31,7 @@ import static org.jboss.arquillian.ce.utils.TemplateUtils.readTemplateUrl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -157,12 +158,17 @@ public class CEEnvironmentProcessor {
         final List<? extends OpenShiftResource> resources;
         try {
             final int replicas = readReplicas(tc);
-            final Map<String, String> labels = readLabels(template, configuration, resolver);
-            labels.put("test-case", tc.getJavaClass().getSimpleName().toLowerCase());
-            if (labels.isEmpty()) {
-                log.warning(String.format("Empty labels for template: %s, namespace: %s", templateURL,
-                    configuration.getNamespace()));
+
+            final Map<String, String> readLabels = readLabels(template, configuration, resolver);
+            if (readLabels.isEmpty()) {
+                log.warning(String.format("Empty labels for template: %s, namespace: %s", templateURL, configuration.getNamespace()));
             }
+
+            final Map<String, String> labels = new HashMap<>();
+            if (readLabels != null) {
+                labels.putAll(readLabels);
+            }
+            labels.put("test-case", tc.getJavaClass().getSimpleName().toLowerCase());
 
             if (executeProcessTemplate(template, configuration)) {
                 List<ParamValue> values = new ArrayList<>();
