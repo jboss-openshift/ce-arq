@@ -95,4 +95,11 @@ public interface OpenShiftHandle {
      * @throws Exception for any error
      */
     void deletePod(String podName, long gracePeriodSeconds) throws Exception;
+
+    // Jolokia support
+
+    /**
+     * Input is on purpose plain Object.
+     */
+    <T> T jolokia(Class<T> expectedReturnType, String podName, Object input) throws Exception;
 }

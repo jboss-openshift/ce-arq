@@ -85,6 +85,16 @@ public class ReflectionUtils {
 
     }
 
+    public static <T> T invoke(Class<?> clazz, String methodName, Class<?>[] parameterTypes, Object instance, Object[] args, Class<T> returnType) {
+        try {
+            Method method = clazz.getDeclaredMethod(methodName, parameterTypes);
+            method.setAccessible(true);
+            return returnType.cast(method.invoke(instance, args));
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     private static int getParameterCount(Method method) {
         return method.getParameterTypes().length; // use method.getParameterCount() on Java8
     }

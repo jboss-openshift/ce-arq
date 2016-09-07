@@ -44,6 +44,8 @@ public interface Proxy {
 
     PortForward createPortForward();
 
+    String url(String podName, String protocol, int port, String path, String parameters);
+
     String url(String podName, int port, String path, String parameters);
 
     String url(Map<String, String> labels, int index, int port, String path, String parameters);
@@ -51,6 +53,8 @@ public interface Proxy {
     Set<String> getReadyPods(Map<String, String> labels);
 
     <T> T post(String url, Class<T> returnType, Object requestObject) throws Exception;
+
+    InputStream post(String url, String encoding, byte[] bytes) throws Exception;
 
     InputStream post(String podName, int port, String path) throws Exception;
 

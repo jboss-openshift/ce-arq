@@ -23,8 +23,11 @@
 
 package org.jboss.arquillian.ce.adapter;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -40,8 +43,14 @@ import org.jboss.arquillian.ce.utils.Configuration;
 import org.jboss.arquillian.ce.utils.Containers;
 import org.jboss.arquillian.ce.utils.DeploymentContext;
 import org.jboss.arquillian.ce.utils.Operator;
+import org.jboss.arquillian.ce.utils.ReflectionUtils;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.core.api.Instance;
+import org.jolokia.client.request.J4pRequest;
+import org.jolokia.client.request.J4pResponse;
+import org.json.simple.JSONAware;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -159,6 +168,35 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
 
     public void delay(final Map<String, String> labels, final int replicas, final Operator op) throws Exception {
         Containers.delay(configuration.getStartupTimeout(), 4000L, new PodCountChecker(labels, op, replicas));
+    }
+
+
+    public <T> T jolokia(Class<T> expectedReturnType, String podName, Object input) throws Exception {
+        if (input instanceof J4pRequest == false) {
+            throw new IllegalArgumentException("Input must be a J4pRequest instance!");
+        }
+
+        Proxy proxy = getProxy();
+
+        String url = proxy.url(podName, "https", 8778, "/jolokia/", null);
+        log.info(String.format("Jolokia URL: %s", url));
+
+        J4pRequest request = (J4pRequest) input;
+        JSONObject jsonObject = ReflectionUtils.invoke(J4pRequest.class, "toJson", new Class[0], request, new Object[0], JSONObject.class);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (OutputStreamWriter out = new OutputStreamWriter(baos)) {
+            jsonObject.writeJSONString(out);
+            out.flush();
+        }
+        try (InputStream stream = proxy.post(url, "application/json", baos.toByteArray())) {
+            JSONParser parser = new JSONParser();
+            JSONAware parseResult = (JSONAware) parser.parse(new InputStreamReader(stream));
+            if (parseResult instanceof JSONObject == false) {
+                throw new IllegalStateException("Invalid JSON answer for a single request (expected a map but got a " + parseResult.getClass() + ")");
+            }
+            J4pResponse response = ReflectionUtils.invoke(J4pRequest.class, "createResponse", new Class[]{JSONObject.class}, request, new Object[]{parseResult}, J4pResponse.class);
+            return expectedReturnType.cast(response.getValue());
+        }
     }
 
     private class PodCountChecker implements Checker {

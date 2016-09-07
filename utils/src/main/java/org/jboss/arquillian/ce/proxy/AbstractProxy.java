@@ -51,6 +51,7 @@ import org.jboss.arquillian.ce.utils.ManagementHandleImpl;
  */
 public abstract class AbstractProxy<P> implements Proxy {
     private static final String PROXY_URL = "%s/api/%s/namespaces/%s/pods/%s:%s/proxy%s";
+    private static final String PROXY_URL_WITH_PROTOCOL = "%s/api/%s/namespaces/%s/pods/%s:%s:%s/proxy%s";
 
     private boolean sslContextSet;
     protected final Configuration configuration;
@@ -72,6 +73,11 @@ public abstract class AbstractProxy<P> implements Proxy {
 
     public PortForward createPortForward() {
         return new PortForward(getHttpClient());
+    }
+
+    public String url(String podName, String protocol, int port, String path, String parameters) {
+        String url = String.format(PROXY_URL_WITH_PROTOCOL, configuration.getKubernetesMaster(), configuration.getApiVersion(), configuration.getNamespace(), protocol, podName, port, path);
+        return (parameters != null && parameters.length() > 0) ? url + "?" + parameters : url;
     }
 
     public String url(String podName, int port, String path, String parameters) {
@@ -160,6 +166,23 @@ public abstract class AbstractProxy<P> implements Proxy {
         return null; // TODO
     }
 
+    public InputStream post(String url, String encoding, byte[] bytes) throws IOException {
+        final OkHttpClient httpClient = getHttpClient();
+
+        Request.Builder builder = new Request.Builder();
+        builder.url(url);
+
+        if (bytes != null) {
+            RequestBody body = RequestBody.create(MediaType.parse(encoding), bytes);
+            builder.post(body);
+        }
+
+        Request request = builder.build();
+        Response response = httpClient.newCall(request).execute();
+
+        return response.body().byteStream();
+    }
+
     public InputStream post(String podName, int port, String path) throws Exception {
         String url = url(podName, port, path, null);
         return getInputStream(url);
@@ -171,14 +194,7 @@ public abstract class AbstractProxy<P> implements Proxy {
     }
 
     private InputStream getInputStream(String url) throws IOException {
-        OkHttpClient httpClient = getHttpClient();
-        Request.Builder builder = new Request.Builder();
-        builder.url(url);
-
-        Request request = builder.build();
-        Response response = httpClient.newCall(request).execute();
-
-        return response.body().byteStream();
+        return post(url, "", null);
     }
 
     public int status(String url) {
