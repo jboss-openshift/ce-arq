@@ -162,6 +162,10 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
         });
     }
 
+    public Set<String> getReadyPods(String prefix) throws Exception {
+        return getProxy().getReadyPods(getLabels(prefix));
+    }
+
     public List<String> getPods() throws Exception {
         return getPods(null);
     }

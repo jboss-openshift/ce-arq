@@ -26,6 +26,7 @@ package org.jboss.arquillian.ce.api;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -69,6 +70,15 @@ public interface OpenShiftHandle {
      * @throws Exception if a pod couldn't be found or if there's an error retrieving the log
      */
     String getLog(String prefix, Map<String, String> labels) throws Exception;
+
+    /**
+     * Get ready pods.
+     *
+     * @param prefix the prefix
+     * @return ready pods
+     * @throws Exception for any error
+     */
+    Set<String> getReadyPods(String prefix) throws Exception;
 
     /**
      * Get all pods.
