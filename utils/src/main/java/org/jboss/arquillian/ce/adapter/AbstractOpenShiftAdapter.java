@@ -26,7 +26,6 @@ package org.jboss.arquillian.ce.adapter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -51,6 +50,7 @@ import org.jolokia.client.request.J4pResponse;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -188,15 +188,30 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
             jsonObject.writeJSONString(out);
             out.flush();
         }
-        try (InputStream stream = proxy.post(url, "application/json", baos.toByteArray())) {
-            JSONParser parser = new JSONParser();
-            JSONAware parseResult = (JSONAware) parser.parse(new InputStreamReader(stream));
-            if (parseResult instanceof JSONObject == false) {
-                throw new IllegalStateException("Invalid JSON answer for a single request (expected a map but got a " + parseResult.getClass() + ")");
+
+        byte[] bytes = baos.toByteArray(); // copy
+        baos.reset(); // re-use
+        try (InputStream stream = proxy.post(url, "application/json", bytes)) {
+            byte[] buffer = new byte[512];
+            int numRead;
+            while ((numRead = stream.read(buffer, 0, buffer.length)) >= 0) {
+                baos.write(buffer, 0, numRead);
             }
-            J4pResponse response = ReflectionUtils.invoke(J4pRequest.class, "createResponse", new Class[]{JSONObject.class}, request, new Object[]{parseResult}, J4pResponse.class);
-            return expectedReturnType.cast(response.getValue());
         }
+        String content = baos.toString();
+
+        JSONParser parser = new JSONParser();
+        JSONAware parseResult;
+        try {
+            parseResult = (JSONAware) parser.parse(content);
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("Invalid Jolokia response: " + content);
+        }
+        if (parseResult instanceof JSONObject == false) {
+            throw new IllegalStateException("Invalid JSON answer for a single request (expected a map but got a " + parseResult.getClass() + ")");
+        }
+        J4pResponse response = ReflectionUtils.invoke(J4pRequest.class, "createResponse", new Class[]{JSONObject.class}, request, new Object[]{parseResult}, J4pResponse.class);
+        return expectedReturnType.cast(response.getValue());
     }
 
     private class PodCountChecker implements Checker {
