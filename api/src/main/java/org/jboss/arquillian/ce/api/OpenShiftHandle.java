@@ -53,11 +53,11 @@ public interface OpenShiftHandle {
     /**
      * Scale deployment to replicas.
      *
-     * @param name     the RC name
+     * @param name     the RC prefix
      * @param replicas replicas
      * @throws Exception for any error
      */
-    void scaleDeployment(String name, int replicas) throws Exception;
+    void scaleDeployment(String prefix, int replicas) throws Exception;
 
     /**
      * Get the logs for a given pod.
@@ -105,6 +105,15 @@ public interface OpenShiftHandle {
      * @throws Exception for any error
      */
     void deletePod(String podName, long gracePeriodSeconds) throws Exception;
+
+    /**
+     * Do rolling upgrade.
+     *
+     * @param prefix the deployment config prefix
+     * @param wait   wait until rolling upgrade is done
+     * @throws Exception for any error
+     */
+    void rollingUpgrade(String prefix, boolean wait) throws Exception;
 
     // Jolokia support
 

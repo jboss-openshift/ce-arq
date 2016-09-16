@@ -40,12 +40,16 @@ import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.dsl.ClientNonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.ClientPodResource;
+import io.fabric8.kubernetes.client.dsl.ClientResource;
 import io.fabric8.kubernetes.client.dsl.ClientRollableScallableResource;
 import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildList;
 import io.fabric8.openshift.api.model.DeploymentConfig;
+import io.fabric8.openshift.api.model.DeploymentConfigList;
+import io.fabric8.openshift.api.model.DeploymentConfigStatus;
+import io.fabric8.openshift.api.model.DoneableDeploymentConfig;
 import io.fabric8.openshift.api.model.DoneableTemplate;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.Project;
@@ -67,7 +71,9 @@ import org.jboss.arquillian.ce.fabric8.model.F8DeploymentConfig;
 import org.jboss.arquillian.ce.portfwd.PortForwardContext;
 import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceHandle;
+import org.jboss.arquillian.ce.utils.Checker;
 import org.jboss.arquillian.ce.utils.Configuration;
+import org.jboss.arquillian.ce.utils.Containers;
 import org.jboss.arquillian.ce.utils.HookType;
 import org.jboss.arquillian.ce.utils.Operator;
 import org.jboss.arquillian.ce.utils.ParamValue;
@@ -203,6 +209,33 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             deletable = resource.withGracePeriod(gracePeriodSeconds);
         }
         deletable.delete();
+    }
+
+    public void rollingUpgrade(String prefix, boolean wait) throws Exception {
+        DeploymentConfigList list = client.deploymentConfigs().inNamespace(configuration.getNamespace()).list();
+        String actualName = getActualName(prefix, list.getItems(), "No such deployment config: " + prefix);
+        final ClientResource<DeploymentConfig, DoneableDeploymentConfig> ccr = client.deploymentConfigs().inNamespace(configuration.getNamespace()).withName(actualName);
+        List<Container> containers = ccr.get().getSpec().getTemplate().getSpec().getContainers();
+        if (containers.size() > 0) {
+            // there should be one to do upgrade
+            Container container = containers.get(0);
+            List<EnvVar> oldEnv = container.getEnv();
+            List<EnvVar> newEnv = new ArrayList<>(oldEnv);
+            newEnv.add(new EnvVar("_DUMMY", "_VALUE", null));
+            container.setEnv(newEnv);
+            ccr.edit().editSpec().editTemplate().editSpec().withContainers(containers).endSpec().endTemplate().endSpec().done();
+        }
+        if (wait) {
+            final int replicas = ccr.get().getSpec().getReplicas();
+            Containers.delay(configuration.getStartupTimeout(), 3000L, new Checker() {
+                public boolean check() {
+                    DeploymentConfigStatus status = ccr.get().getStatus();
+                    Map<String, Object> additionalProperties = status.getAdditionalProperties();
+                    Number updatedReplicas = (Number) additionalProperties.get("updatedReplicas");
+                    return (updatedReplicas != null && replicas == updatedReplicas.intValue());
+                }
+            });
+        }
     }
 
     public String deployPod(String name, String env, RCContext context) throws Exception {
@@ -529,18 +562,18 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.services().inNamespace(namespace).withName(serviceName).get();
     }
 
-    private ClientRollableScallableResource<ReplicationController, DoneableReplicationController> getReplicationController(String name) throws Exception {
+    private ClientRollableScallableResource<ReplicationController, DoneableReplicationController> getReplicationController(String prefix) throws Exception {
         ReplicationControllerList list = client.replicationControllers().inNamespace(configuration.getNamespace()).list();
-        String actualName = getActualName(name, list.getItems(), "No RC found starting with " + name);
+        String actualName = getActualName(prefix, list.getItems(), "No RC found starting with " + prefix);
         return client.replicationControllers().inNamespace(configuration.getNamespace()).withName(actualName);
     }
 
-    private void delayDeployment(ReplicationController rc, String name, int replicas, Operator op) throws Exception {
+    private void delayDeployment(ReplicationController rc, String prefix, int replicas, Operator op) throws Exception {
         final Map<String, String> labels = rc.getSpec().getSelector();
         try {
             delay(labels, replicas, op);
         } catch (Exception e) {
-            throw new DeploymentException(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);
+            throw new DeploymentException(String.format("Timeout waiting for deployment %s to scale to %s pods", prefix, replicas), e);
         }
     }
 
@@ -548,9 +581,9 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return getReplicationController(prefix).get().getSpec().getSelector();
     }
 
-    public void scaleDeployment(final String name, final int replicas) throws Exception {
-        ReplicationController rc = getReplicationController(name).scale(replicas);
-        delayDeployment(rc, name, replicas, Operator.EQUAL);
+    public void scaleDeployment(final String prefix, final int replicas) throws Exception {
+        ReplicationController rc = getReplicationController(prefix).scale(replicas);
+        delayDeployment(rc, prefix, replicas, Operator.EQUAL);
     }
 
     public List<String> getPods(String prefix) throws Exception {

@@ -56,6 +56,7 @@ import com.openshift.restclient.authorization.IAuthorizationContext;
 import com.openshift.restclient.authorization.TokenAuthorizationStrategy;
 import com.openshift.restclient.capability.resources.IProjectTemplateProcessing;
 import com.openshift.restclient.model.IBuild;
+import com.openshift.restclient.model.IContainer;
 import com.openshift.restclient.model.IDeploymentConfig;
 import com.openshift.restclient.model.IPod;
 import com.openshift.restclient.model.IProject;
@@ -375,8 +376,8 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return dc.getReplicaSelector();
     }
 
-    public void scaleDeployment(final String name, final int replicas) throws Exception {
-        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, name, null);
+    public void scaleDeployment(final String prefix, final int replicas) throws Exception {
+        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, prefix, null);
         final IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
         final Map<String, String> labels = dc.getReplicaSelector();
         dc.setReplicas(replicas);
@@ -384,7 +385,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         try {
             delay(labels, replicas, Operator.EQUAL);
         } catch (Exception e) {
-            throw new Exception(String.format("Timeout waiting for deployment %s to scale to %s pods", name, replicas), e);
+            throw new Exception(String.format("Timeout waiting for deployment %s to scale to %s pods", prefix, replicas), e);
         }
     }
 
@@ -426,6 +427,20 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
             podNames.add(pod.getName());
         }
         return podNames;
+    }
+
+    public void rollingUpgrade(String prefix, boolean wait) throws Exception {
+        String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, prefix, null);
+        IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
+        Collection<IContainer> containers = dc.getContainers();
+        if (containers.size() > 0) {
+            dc.setEnvironmentVariable(containers.iterator().next().getName(), "_DUMMY", "_VALUE");
+        }
+        client.update(dc);
+        if (wait) {
+            // TODO
+            throw new UnsupportedOperationException("RollingUpgrade::wait not supported!");
+        }
     }
 
     public void cleanReplicationControllers(String... ids) throws Exception {
