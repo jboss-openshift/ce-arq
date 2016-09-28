@@ -600,6 +600,11 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return podNames;
     }
 
+    public String getLog(String podName) throws Exception {
+        log.info("Retrieving logs from pod " + podName);
+        return client.pods().inNamespace(configuration.getNamespace()).withName(podName).getLog();
+    }
+
     public String getLog(String prefix, Map<String, String> labels) throws Exception {
         List<Pod> pods;
         ClientNonNamespaceOperation<Pod, PodList, DoneablePod, ClientPodResource<Pod, DoneablePod>> allPods = client.pods().inNamespace(configuration.getNamespace());
@@ -620,8 +625,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             }
             actualName = pods.get(0).getMetadata().getName();
         }
-        log.info("Retrieving logs from pod " + actualName);
-        return client.pods().inNamespace(configuration.getNamespace()).withName(actualName).getLog();
+        return getLog(actualName);
     }
 
     private String getActualName(String prefix, Iterable<? extends HasMetadata> objects, String msg) throws Exception {

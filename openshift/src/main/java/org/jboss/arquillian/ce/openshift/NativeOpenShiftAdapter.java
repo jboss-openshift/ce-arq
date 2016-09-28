@@ -400,8 +400,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         throw new Exception(String.format("No resource [%s] found starting with %s", kind, prefix));
     }
 
-    public String getLog(String prefix, Map<String, String> labels) throws Exception {
-        String podName = getFirstResource(ResourceKind.POD, prefix, labels);
+    public String getLog(String podName) throws Exception {
         final IPod pod = client.get(ResourceKind.POD, podName, configuration.getNamespace());
         OpenShiftBinaryPodLogRetrieval l = new OpenShiftBinaryPodLogRetrieval(pod, client);
         try (Reader reader = new InputStreamReader(l.getLogs(false), "UTF-8")) {
@@ -413,6 +412,11 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
             }
             return writer.toString();
         }
+    }
+
+    public String getLog(String prefix, Map<String, String> labels) throws Exception {
+        String podName = getFirstResource(ResourceKind.POD, prefix, labels);
+        return getLog(podName);
     }
 
     public List<String> getPods(String prefix) throws Exception {

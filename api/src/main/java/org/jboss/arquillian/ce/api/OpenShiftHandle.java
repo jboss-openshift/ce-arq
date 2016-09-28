@@ -43,21 +43,41 @@ public interface OpenShiftHandle {
     String exec(Map<String, String> labels, int waitSeconds, String... input) throws Exception;
 
     /**
+     * Wait for ready pods.
+     *
+     * @param prefix   the RC prefix
+     * @param replicas the expected size od ready pods
+     * @throws Exception for any error
+     */
+    void waitForReadyPods(String prefix, int replicas) throws Exception;
+
+    /**
      * Replace #size of pods via delete.
      *
+     * @param prefix   the RC prefix
      * @param size the number of pods to replace
      * @param replicas the number of exepcted replicas after replace
+     * @throws Exception for any error
      */
     void replacePods(String prefix, int size, int replicas) throws Exception;
 
     /**
      * Scale deployment to replicas.
      *
-     * @param name     the RC prefix
+     * @param prefix   the RC prefix
      * @param replicas replicas
      * @throws Exception for any error
      */
     void scaleDeployment(String prefix, int replicas) throws Exception;
+
+    /**
+     * Get the logs for a given pod.
+     *
+     * @param podName the pod name
+     * @return The pod's log
+     * @throws Exception if a pod couldn't be found or if there's an error retrieving the log
+     */
+    String getLog(String podName) throws Exception;
 
     /**
      * Get the logs for a given pod.

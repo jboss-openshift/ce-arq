@@ -139,6 +139,11 @@ public abstract class AbstractOpenShiftAdapter implements OpenShiftAdapter {
 
     protected abstract Map<String, String> getLabels(String prefix) throws Exception;
 
+    public void waitForReadyPods(String prefix, int replicas) throws Exception {
+        final Map<String, String> labels = getLabels(prefix);
+        Containers.delay(configuration.getStartupTimeout(), 4000L, new PodCountChecker(labels, Operator.EQUAL, replicas));
+    }
+
     public void replacePods(String prefix, int size, final int replicas) throws Exception {
         final Map<String, String> labels = getLabels(prefix);
 
