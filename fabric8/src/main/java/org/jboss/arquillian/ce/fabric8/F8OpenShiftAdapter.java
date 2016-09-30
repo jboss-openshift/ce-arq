@@ -232,7 +232,12 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
                     DeploymentConfigStatus status = ccr.get().getStatus();
                     Map<String, Object> additionalProperties = status.getAdditionalProperties();
                     Number updatedReplicas = (Number) additionalProperties.get("updatedReplicas");
-                    return (updatedReplicas != null && replicas == updatedReplicas.intValue());
+                    if (updatedReplicas != null && replicas == updatedReplicas.intValue()) {
+                        Number availableReplicas = (Number) additionalProperties.get("availableReplicas");
+                        return (availableReplicas != null && replicas == availableReplicas.intValue());
+                    } else {
+                        return false;
+                    }
                 }
             });
         }
