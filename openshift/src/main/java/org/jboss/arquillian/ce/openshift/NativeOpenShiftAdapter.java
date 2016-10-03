@@ -414,6 +414,12 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         }
     }
 
+    public InputStream streamLog(String podName) throws Exception {
+        final IPod pod = client.get(ResourceKind.POD, podName, configuration.getNamespace());
+        OpenShiftBinaryPodLogRetrieval l = new OpenShiftBinaryPodLogRetrieval(pod, client);
+        return l.getLogs(false);
+    }
+
     public String getLog(String prefix, Map<String, String> labels) throws Exception {
         String podName = getFirstResource(ResourceKind.POD, prefix, labels);
         return getLog(podName);

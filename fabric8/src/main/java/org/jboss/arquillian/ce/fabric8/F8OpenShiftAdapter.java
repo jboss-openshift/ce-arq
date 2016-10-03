@@ -610,6 +610,10 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.pods().inNamespace(configuration.getNamespace()).withName(podName).getLog();
     }
 
+    public InputStream streamLog(String podName) throws Exception {
+        return client.pods().inNamespace(configuration.getNamespace()).withName(podName).watchLog().getOutput();
+    }
+
     public String getLog(String prefix, Map<String, String> labels) throws Exception {
         List<Pod> pods;
         ClientNonNamespaceOperation<Pod, PodList, DoneablePod, ClientPodResource<Pod, DoneablePod>> allPods = client.pods().inNamespace(configuration.getNamespace());

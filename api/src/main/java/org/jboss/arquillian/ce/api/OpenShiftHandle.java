@@ -80,6 +80,15 @@ public interface OpenShiftHandle {
     String getLog(String podName) throws Exception;
 
     /**
+     * Stream pod log into output stream.
+     *
+     * @param podName the pod name
+     * @return log as a stream
+     * @throws Exception for any error
+     */
+    InputStream streamLog(String podName) throws Exception;
+
+    /**
      * Get the logs for a given pod.
      *
      * Combines both arguments to find a matching pod.
