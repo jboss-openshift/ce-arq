@@ -126,11 +126,11 @@ public class CEEnvironmentProcessor {
      * In the future, this might be handled by stopping application Cube
      * objects, e.g. StopCube(application), DestroyCube(application).
      */
-    public void deleteEnvironment(@Observes(precedence = -10) AfterClass event, OpenShiftAdapter client, CECubeConfiguration configuration, TemplateDetails details) throws Exception {
-    	deleteEnvironment(event.getTestClass(), client, configuration, details);
+    public void deleteEnvironment(@Observes(precedence = -10) AfterClass event, OpenShiftAdapter client, CECubeConfiguration configuration) throws Exception {
+        deleteEnvironment(event.getTestClass(), client, configuration);
     }
     
-    private void deleteEnvironment(final TestClass testClass, OpenShiftAdapter client, CECubeConfiguration configuration, TemplateDetails details) throws Exception {
+    private void deleteEnvironment(final TestClass testClass, OpenShiftAdapter client, CECubeConfiguration configuration) throws Exception {
         if (configuration.performCleanup()) {
             log.info(String.format("Deleting environment for %s", testClass.getName()));
             client.deleteTemplate(testClass.getName());
@@ -179,7 +179,7 @@ public class CEEnvironmentProcessor {
                     // class name is template key
                 	resources = client.processTemplateAndCreateResources(tc.getName(), templateURL, values, labels);
                 } catch (Exception e){
-                	deleteEnvironment(tc, client, configuration, null);
+                    deleteEnvironment(tc, client, configuration);
                 	throw e;
                 }
             } else {
