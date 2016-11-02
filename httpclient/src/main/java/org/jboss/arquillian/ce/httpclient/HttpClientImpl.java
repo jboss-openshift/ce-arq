@@ -25,8 +25,10 @@ package org.jboss.arquillian.ce.httpclient;
 
 import java.io.IOException;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -45,10 +47,15 @@ class HttpClientImpl implements HttpClient {
     public HttpResponse execute(HttpRequest request, HttpClientExecuteOptions options) throws IOException {
         IOException exception = null;
         HttpUriRequest r = HttpRequestImpl.class.cast(request).unwrap();
+        CloseableHttpResponse rawResponse = null;
 
         for (int i = 0; i < options.getTries(); i++) {
             try {
-                HttpResponse response = new HttpResponseImpl(client.execute(r));
+                if (rawResponse != null) {
+                    EntityUtils.consume(rawResponse.getEntity());
+                }
+                rawResponse = client.execute(r);
+                HttpResponse response = new HttpResponseImpl(rawResponse);
                 if (options.getDesiredStatusCode() == -1 || response.getResponseCode() == options.getDesiredStatusCode()) {
                     return response;
                 }
