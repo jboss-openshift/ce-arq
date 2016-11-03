@@ -33,11 +33,13 @@ public class HttpClientExecuteOptions {
     private final int tries;
     private final int delay;
     private final int desiredStatusCode;
+    private final boolean raiseException;
 
     private HttpClientExecuteOptions(Builder b) {
         tries = b.tries;
         delay = b.delay;
         desiredStatusCode = b.desiredStatusCode;
+        raiseException = b.raiseException;
     }
 
     public int getTries() {
@@ -52,10 +54,15 @@ public class HttpClientExecuteOptions {
         return desiredStatusCode;
     }
 
+    public boolean getRaiseException() {
+        return raiseException;
+    }
+
     public static class Builder {
         private int tries = 1;
         private int delay = 5;
         private int desiredStatusCode = -1;
+        private boolean raiseException = false;
 
         /**
          * How many tries should we do before giving up. Default value is 1.
@@ -89,6 +96,18 @@ public class HttpClientExecuteOptions {
          */
         public Builder desiredStatusCode(int value) {
             desiredStatusCode = value;
+            return this;
+        }
+
+        /**
+         * If true, an exception will be raised if the desired status code does
+         * no match the response status code. Default value is false.
+         *
+         * @param value whether we should raise an exception
+         * @return this
+         */
+        public Builder raiseException(boolean value) {
+            raiseException = value;
             return this;
         }
 

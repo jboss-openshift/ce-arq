@@ -48,6 +48,7 @@ class HttpClientImpl implements HttpClient {
         IOException exception = null;
         HttpUriRequest r = HttpRequestImpl.class.cast(request).unwrap();
         CloseableHttpResponse rawResponse = null;
+        HttpResponse response = null;
 
         for (int i = 0; i < options.getTries(); i++) {
             try {
@@ -55,7 +56,7 @@ class HttpClientImpl implements HttpClient {
                     EntityUtils.consume(rawResponse.getEntity());
                 }
                 rawResponse = client.execute(r);
-                HttpResponse response = new HttpResponseImpl(rawResponse);
+                response = new HttpResponseImpl(rawResponse);
                 if (options.getDesiredStatusCode() == -1 || response.getResponseCode() == options.getDesiredStatusCode()) {
                     return response;
                 }
@@ -81,9 +82,11 @@ class HttpClientImpl implements HttpClient {
 
         if (exception != null) {
             throw exception;
-        } else {
+        } else if (options.getRaiseException()) {
             throw new IOException(String.format("Failed to execute proper request. [URL:%s]", r.getURI()));
         }
+
+        return response;
     }
 
     public void close() throws IOException {
