@@ -10,24 +10,27 @@ oadm policy add-cluster-role-to-user view joe --config=/etc/origin/master/admin.
 
 To run tests against EAP, one **must** set these system properties / env vars (use your numbers / paths!):
 
-KUBERNETES_MASTER=https://172.28.128.4:8443
+`KUBERNETES_MASTER=https://172.28.128.4:8443`
 
 When using Docker you **must** set this
 
-DOCKER_URL=http://172.28.128.4:2375
+`DOCKER_URL=http://172.28.128.4:2375`
 
 And **one way** of authentication, either username/password:
 
+```
 -Dopenshift.username=[OpenShift username], default is "guest"
 
 -Dopenshift.password=[OpenShift password], default is "guest"
+```
 
 Or auth token:
 
--Dkubernetes.auth.token=[OpenShift OAuth token; oc whoami -t]
+`-Dkubernetes.auth.token=[OpenShift OAuth token; oc whoami -t]`
 
 Additional properties you **can** set / change.
 
+```
 -Dfrom.name=[Docker parent / from image name]
 
 -Ddeployment.dir=[EAP deployment directory], default is "/opt/eap/standalone/deployments/"
@@ -69,3 +72,4 @@ Additional properties you **can** set / change.
 -Ddocker.email=[Email]
  
 -Ddocker.address=[Address]
+```
