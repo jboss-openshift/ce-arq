@@ -67,6 +67,13 @@ public class NativeProxy extends AbstractProxy<IPod> {
 
     protected boolean isReady(IPod pod) {
         ModelNode root = ModelNode.fromJSONString(pod.toJson());
+
+        ModelNode metadata = root.get("metadata");
+        ModelNode ts = metadata.get("deletionTimestamp");
+        if (ts.isDefined() && ts.asString() != null) {
+            return false;
+        }
+
         ModelNode statusNode = root.get("status");
         ModelNode phaseNode = statusNode.get("phase");
         if (!phaseNode.isDefined() || !"Running".equalsIgnoreCase(phaseNode.asString())) {
