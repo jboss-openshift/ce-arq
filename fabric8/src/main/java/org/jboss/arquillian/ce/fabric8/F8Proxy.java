@@ -80,12 +80,14 @@ public class F8Proxy extends AbstractProxy<Pod> {
 
     protected boolean isReady(Pod pod) {
         PodStatus status = pod.getStatus();
-        if ("Running".equalsIgnoreCase(status.getPhase())) {
-            List<PodCondition> conditions = status.getConditions();
-            if (conditions != null) {
-                for (PodCondition condition : conditions) {
-                    if ("Ready".equalsIgnoreCase(condition.getType())) {
-                        return "True".equalsIgnoreCase(condition.getStatus());
+        if (pod.getMetadata().getDeletionTimestamp() == null) {
+            if ("Running".equalsIgnoreCase(status.getPhase())) {
+                List<PodCondition> conditions = status.getConditions();
+                if (conditions != null) {
+                    for (PodCondition condition : conditions) {
+                        if ("Ready".equalsIgnoreCase(condition.getType())) {
+                            return "True".equalsIgnoreCase(condition.getStatus());
+                        }
                     }
                 }
             }
