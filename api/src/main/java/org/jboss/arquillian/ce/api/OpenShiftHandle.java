@@ -136,13 +136,13 @@ public interface OpenShiftHandle {
     void deletePod(String podName, long gracePeriodSeconds) throws Exception;
 
     /**
-     * Do rolling upgrade.
+     * Trigger deployment config update
      *
      * @param prefix the deployment config prefix
-     * @param wait   wait until rolling upgrade is done
+     * @param wait   wait until update is done
      * @throws Exception for any error
      */
-    void rollingUpgrade(String prefix, boolean wait) throws Exception;
+    void triggerDeploymentConfigUpdate(String prefix, boolean wait) throws Exception;
 
     // Jolokia support
 

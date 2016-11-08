@@ -439,7 +439,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return podNames;
     }
 
-    public void rollingUpgrade(String prefix, boolean wait) throws Exception {
+    public void triggerDeploymentConfigUpdate(String prefix, boolean wait) throws Exception {
         String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, prefix, null);
         IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
         Collection<IContainer> containers = dc.getContainers();
@@ -449,7 +449,7 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         client.update(dc);
         if (wait) {
             // TODO
-            throw new UnsupportedOperationException("RollingUpgrade::wait not supported!");
+            throw new UnsupportedOperationException("triggerDeploymentConfigUpdate::wait not supported!");
         }
     }
 

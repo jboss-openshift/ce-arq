@@ -211,7 +211,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         deletable.delete();
     }
 
-    public void rollingUpgrade(String prefix, boolean wait) throws Exception {
+    public void triggerDeploymentConfigUpdate(String prefix, boolean wait) throws Exception {
         DeploymentConfigList list = client.deploymentConfigs().inNamespace(configuration.getNamespace()).list();
         String actualName = getActualName(prefix, list.getItems(), "No such deployment config: " + prefix);
         final ClientResource<DeploymentConfig, DoneableDeploymentConfig> ccr = client.deploymentConfigs().inNamespace(configuration.getNamespace()).withName(actualName);
