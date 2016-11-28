@@ -680,7 +680,11 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         if (mountSecret != null) {
             Volume volume = new Volume();
             volume.setName(mountSecret.volumeName());
-            volume.setSecret(new SecretVolumeSource(mountSecret.secretName()));
+
+            SecretVolumeSource svc = new SecretVolumeSource();
+            svc.setSecretName(mountSecret.secretName());
+            volume.setSecret(svc);
+
             ps.setVolumes(Collections.singletonList(volume));
         }
     }
