@@ -23,16 +23,22 @@
 
 package org.jboss.arquillian.ce.fabric8;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
@@ -64,6 +70,8 @@ import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
 import io.fabric8.openshift.client.dsl.ClientTemplateResource;
 import okhttp3.Response;
+
+import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
 import org.jboss.arquillian.ce.api.MountSecret;
 import org.jboss.arquillian.ce.api.model.OpenShiftResource;
@@ -81,6 +89,10 @@ import org.jboss.arquillian.ce.utils.Port;
 import org.jboss.arquillian.ce.utils.RCContext;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.dmr.ModelNode;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -487,19 +499,32 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     protected OpenShiftResourceHandle createResourceFromStream(InputStream stream) throws IOException {
-        ModelNode json;
-        try {
-            json = ModelNode.fromJSONStream(stream);
+    	
+    	try {
+    		String content = IOUtils.toString(stream, StandardCharsets.UTF_8);
+	        
+    		try {
+	        	ModelNode json;
+	            json = ModelNode.fromJSONString(content);
+	            String kind = json.get("kind").asString();
+	            
+	            content = json.toJSONString(true);
+	            return createResourceFromString(kind, content);
+	        } catch (IllegalArgumentException e) {
+	        	StringTokenizer tokenizer = new StringTokenizer(content.trim(),":\n");
+	        	tokenizer.nextToken();
+	        	String kind = tokenizer.nextToken().trim();
+	        	
+	        	return createResourceFromString(kind, content);
+	        }
+	        
         } finally {
             stream.close();
         }
-        String kind = json.get("kind").asString();
-        return createResourceFromJson(kind, json);
     }
-
-    private OpenShiftResourceHandle createResourceFromJson(String kind, ModelNode json) {
-        String content = json.toJSONString(true);
-        if ("List".equalsIgnoreCase(kind)) {
+    
+    private OpenShiftResourceHandle createResourceFromString(String kind, String content) {
+    	if ("List".equalsIgnoreCase(kind)) {
             return new ListOpenShiftResourceHandle(content);
         } else if ("Secret".equalsIgnoreCase(kind)) {
             return new SecretOpenShiftResourceHandle(content);
