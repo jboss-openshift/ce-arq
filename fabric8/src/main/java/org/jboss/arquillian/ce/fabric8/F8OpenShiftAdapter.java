@@ -41,7 +41,6 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.dsl.ClientNonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.ClientPodResource;
 import io.fabric8.kubernetes.client.dsl.ClientResource;
-import io.fabric8.kubernetes.client.dsl.ClientRollableScallableResource;
 import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.openshift.api.model.Build;
@@ -54,6 +53,7 @@ import io.fabric8.openshift.api.model.DoneableTemplate;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.RoleBinding;
+import io.fabric8.openshift.api.model.RoleBindingBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.Template;
 import io.fabric8.openshift.api.model.WebHookTriggerBuilder;
@@ -62,6 +62,7 @@ import io.fabric8.openshift.client.NamespacedOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
 import io.fabric8.openshift.client.ParameterValue;
+import io.fabric8.openshift.client.dsl.ClientDeployableScalableResource;
 import io.fabric8.openshift.client.dsl.ClientTemplateResource;
 import okhttp3.Response;
 import org.jboss.arquillian.ce.adapter.AbstractOpenShiftAdapter;
@@ -527,12 +528,14 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         final RoleBinding roleBinding = client
             .roleBindings()
             .inNamespace(configuration.getNamespace())
-            .createNew()
-            .withNewMetadata().withName(roleRefName + "-" + subjectName).endMetadata()
-            .withNewRoleRef().withName(roleRefName).endRoleRef()
-            .addToUserNames(userName)
-            .addNewSubject().withKind("ServiceAccount").withNamespace(configuration.getNamespace()).withName(subjectName).endSubject()
-            .done();
+            .create(
+                new RoleBindingBuilder()
+                .withNewMetadata().withName(roleRefName + "-" + subjectName).endMetadata()
+                .withNewRoleRef().withName(roleRefName).endRoleRef()
+                .addToUserNames(userName)
+                .addNewSubject().withKind("ServiceAccount").withNamespace(configuration.getNamespace()).withName(subjectName).endSubject()
+                .build()
+            );
         return new OpenShiftResourceHandle() {
             public void delete() {
                 client.roleBindings().inNamespace(configuration.getNamespace()).delete(roleBinding);
@@ -567,14 +570,14 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         return client.services().inNamespace(namespace).withName(serviceName).get();
     }
 
-    private ClientRollableScallableResource<ReplicationController, DoneableReplicationController> getReplicationController(String prefix) throws Exception {
-        ReplicationControllerList list = client.replicationControllers().inNamespace(configuration.getNamespace()).list();
-        String actualName = getActualName(prefix, list.getItems(), "No RC found starting with " + prefix);
-        return client.replicationControllers().inNamespace(configuration.getNamespace()).withName(actualName);
+    private ClientDeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig> getDC(String prefix) throws Exception {
+        DeploymentConfigList list = client.deploymentConfigs().inNamespace(configuration.getNamespace()).list();
+        String actualName = getActualName(prefix, list.getItems(), "No DC found starting with " + prefix);
+        return client.deploymentConfigs().inNamespace(configuration.getNamespace()).withName(actualName);
     }
 
-    private void delayDeployment(ReplicationController rc, String prefix, int replicas, Operator op) throws Exception {
-        final Map<String, String> labels = rc.getSpec().getSelector();
+    private void delayDeployment(DeploymentConfig dc, String prefix, int replicas, Operator op) throws Exception {
+        final Map<String, String> labels = dc.getSpec().getSelector();
         try {
             delay(labels, replicas, op);
         } catch (Exception e) {
@@ -583,12 +586,12 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
     }
 
     protected Map<String, String> getLabels(String prefix) throws Exception {
-        return getReplicationController(prefix).get().getSpec().getSelector();
+        return getDC(prefix).get().getSpec().getSelector();
     }
 
     public void scaleDeployment(final String prefix, final int replicas) throws Exception {
-        ReplicationController rc = getReplicationController(prefix).scale(replicas);
-        delayDeployment(rc, prefix, replicas, Operator.EQUAL);
+        DeploymentConfig dc = getDC(prefix).scale(replicas);
+        delayDeployment(dc, prefix, replicas, Operator.EQUAL);
     }
 
     public List<String> getPods(String prefix) throws Exception {
