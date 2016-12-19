@@ -1,11 +1,5 @@
 # Cloud Enablement Arquillian Support
 
-# PersistentVolumes and PersistentVolumeClaims
-
-In order to test PVs and PVCs the OpenShift user running the tests must have the permissions to view PVs. To set the permissions for the user (e.g. joe):
-
-oadm policy add-cluster-role-to-user view joe --config=/etc/origin/master/admin.kubeconfig
-
 # EAP
 
 To run tests against EAP, one **must** set these system properties / env vars (use your numbers / paths!):

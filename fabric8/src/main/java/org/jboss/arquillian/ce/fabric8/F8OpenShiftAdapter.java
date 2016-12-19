@@ -380,7 +380,6 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
 
         List<OpenShiftResource> retVal = new ArrayList<>();
         for (DeploymentConfig dc : configs) {
-            verifyPersistentVolumes(dc, claims);
             verifyServiceAccounts(dc);
             retVal.add(new F8DeploymentConfig(dc));
         }
@@ -395,76 +394,6 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
                 throw new Exception("Missing required ServiceAccount: " + serviceAccountName);
             }
         }
-    }
-
-    private Volume getVolume(DeploymentConfig dc, String name) {
-        List<Volume> volumes = dc.getSpec().getTemplate().getSpec().getVolumes();
-        for (Volume volume : volumes) {
-            if (volume.getName().equals(name)) {
-                return volume;
-            }
-        }
-        return null;
-    }
-
-    private PersistentVolumeClaim getPersistentVolumeClaim(List<PersistentVolumeClaim> claims, String claimName) {
-        for (PersistentVolumeClaim pvc : claims) {
-            if (pvc.getMetadata().getName().equals(claimName))
-                return pvc;
-        }
-        return null;
-    }
-
-    private void verifyPersistentVolumes(DeploymentConfig dc, List<PersistentVolumeClaim> claims) throws Exception {
-        List<Container> containers = dc.getSpec().getTemplate().getSpec().getContainers();
-        for (Container container : containers) {
-            List<VolumeMount> volumeMounts = container.getVolumeMounts();
-            for (VolumeMount volumeMount : volumeMounts) {
-                Volume volume = getVolume(dc, volumeMount.getName());
-                if (volume != null && volume.getPersistentVolumeClaim() != null) {
-                    String claimName = volume.getPersistentVolumeClaim().getClaimName();
-                    PersistentVolumeClaim pvc = getPersistentVolumeClaim(claims, claimName);
-                    if (pvc != null) {
-                        if (!existsMatchingPV(pvc)) {
-                            throw new Exception(String.format("Missing PersistentVolume '%s' for PersistentVolumenClaim '%s'.", volume.getName(), claimName));
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private boolean existsMatchingPV(PersistentVolumeClaim pvc) {
-        String targetClaimName = pvc.getMetadata().getName();
-        final int TRIES = 3;
-        final int DELAY_BETWEEN_TRIES = 5;
-
-        for (int i = 1; i <= TRIES; i++) {
-            List<PersistentVolume> persistentVolumes = client.inAnyNamespace().persistentVolumes().list().getItems();
-            for (PersistentVolume persistentVolume : persistentVolumes) {
-                if (isBound(persistentVolume, targetClaimName, configuration.getNamespace())) {
-                    return true;
-                }
-            }
-            log.info(String.format("PV %s is not bound. Waiting %d seconds to try again (#%d try)", targetClaimName, DELAY_BETWEEN_TRIES, i));
-            try {
-                Thread.sleep(DELAY_BETWEEN_TRIES * 1000);
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
-        return false;
-    }
-
-    private boolean isBound(PersistentVolume pv, String targetClaimName, String targetNamespace) {
-        ObjectReference claimRef = pv.getSpec().getClaimRef();
-        if (claimRef != null && claimRef.getName().equals(targetClaimName) && claimRef.getNamespace().equals(targetNamespace)) {
-            String status = pv.getStatus().getPhase();
-            if (status.equals(BOUND)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private KubernetesList processTemplate(String templateURL, List<ParameterValue> values, Map<String, String> labels) throws IOException {
