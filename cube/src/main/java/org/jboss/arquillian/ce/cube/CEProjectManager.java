@@ -31,6 +31,7 @@ import org.arquillian.cube.openshift.impl.client.OpenShiftClient;
 import org.jboss.arquillian.ce.cube.oauth.OauthUtils;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
+import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 
 /**
  * CEProjectManager
@@ -52,7 +53,7 @@ public class CEProjectManager {
      * <p>
      * TODO: consider creating a new project for each test case.
      */
-    public void createProject(@Observes(precedence = 10) OpenShiftClient client, CECubeConfiguration config) throws Exception {
+    public void createProject(@Observes(precedence = 10) final OpenShiftClient client, final CECubeConfiguration config) throws Exception {
 
         //token is valid?
         try {
@@ -86,6 +87,14 @@ public class CEProjectManager {
             projectRequest.done();
             createdProject = client.getClientExt().projects().withName(config.getNamespace()).get();
         }
+        
+        // Cleanup Environment if a SIGTERM is sent to Arquillian.
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+    		@Override
+    		public void run() {
+    			cleanupEnvironment(client, config);
+    		}
+    	});
     }
 
     /**
@@ -93,10 +102,13 @@ public class CEProjectManager {
      * OpenShiftClient is closed.
      */
     public void deleteProject(@Observes(precedence = -100) AfterSuite event, OpenShiftClient client, CECubeConfiguration config) {
-        if (createdProject != null && config.performCleanup()) {
+        cleanupEnvironment(client, config);
+    }
+
+	private void cleanupEnvironment(OpenShiftClient client, CECubeConfiguration config) {
+		if (createdProject != null && config.performCleanup()) {
             client.getClientExt().projects().withName(createdProject.getMetadata().getName()).delete();
             createdProject = null;
         }
-    }
-
+	}
 }
