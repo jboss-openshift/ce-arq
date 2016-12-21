@@ -40,7 +40,7 @@ public class Strings {
 
     private static String getSystemPropertyOrEnvVar(String systemPropertyName, String envVarName, String defaultValue) {
         String answer = System.getProperty(systemPropertyName);
-        if (answer != null) {
+        if (answer != null && !answer.equals("")) {
             return checkForNone(answer);
         }
 
