@@ -39,6 +39,8 @@ import org.jboss.arquillian.ce.api.OpenShiftResource;
 import org.jboss.arquillian.ce.api.OpenShiftResources;
 import org.jboss.arquillian.ce.api.RoleBinding;
 import org.jboss.arquillian.ce.api.RoleBindings;
+import org.jboss.arquillian.ce.api.Template;
+import org.jboss.arquillian.ce.api.TemplateResources;
 import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.shrinkwrap.api.Archive;
@@ -58,6 +60,7 @@ public class OpenShiftResourceFactory {
     private static final OSRFinder OSR_FINDER = new OSRFinder();
     private static final RBFinder RB_FINDER = new RBFinder();
     private static final ARSAFinder ARSA_FINDER = new ARSAFinder();
+    private static final TEMPFinder TEMP_FINDER = new TEMPFinder();
 
     public static void createResources(String resourcesKey, OpenShiftAdapter adapter, Archive<?> archive, Class<?> testClass, Properties properties) {
         try {
@@ -91,7 +94,7 @@ public class OpenShiftResourceFactory {
                 log.info(String.format("Creating new OpenShift resource: %s", file));
                 adapter.createResource(resourcesKey, stream);
             }
-            
+
             List<RoleBinding> roleBindings = new ArrayList<>();
             RB_FINDER.findAnnotations(roleBindings, testClass);
             for (RoleBinding rb : roleBindings) {
@@ -115,6 +118,34 @@ public class OpenShiftResourceFactory {
         }
     }
 
+    /**
+     * Aggregates a list of templates specified by @Template
+     */
+    public static List<Template> getTemplates(Class<?> testClass) {
+        try {
+            List<Template> templates = new ArrayList<>();
+            TEMP_FINDER.findAnnotations(templates, testClass);
+            return templates;
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /**
+     * Returns true if templates are to be instantiated synchronously and false if
+     * asynchronously.
+     */
+    public static boolean syncInstantiation(Class<?> testClass) {
+    	List<Template> templates = new ArrayList<>();
+        TemplateResources tr = TEMP_FINDER.findAnnotations(templates, testClass);
+        if (tr == null) {
+        	/* Default to synchronous instantiation */
+        	return true;
+        } else {
+        	return tr.syncInstantiation();
+        }
+    }
+
     public static void deleteResources(String resourcesKey, OpenShiftAdapter adapter) {
         try {
             adapter.deleteResources(resourcesKey);
@@ -131,9 +162,9 @@ public class OpenShiftResourceFactory {
 
         protected abstract V[] toSingles(U u);
 
-        void findAnnotations(List<V> annotations, Class<?> testClass) {
+        U findAnnotations(List<V> annotations, Class<?> testClass) {
             if (testClass == Object.class) {
-                return;
+                return null;
             }
 
             U anns = testClass.getAnnotation(getWrapperType());
@@ -150,6 +181,7 @@ public class OpenShiftResourceFactory {
             }
 
             findAnnotations(annotations, testClass.getSuperclass());
+	    return anns;
         }
 
     }
@@ -193,6 +225,24 @@ public class OpenShiftResourceFactory {
 
         protected AddRoleToServiceAccount[] toSingles(AddRoleToServiceAccountWrapper roleBindings) {
             return roleBindings.value();
+        }
+    }
+
+    private static class TEMPFinder extends Finder<TemplateResources, Template> {
+        protected Class<TemplateResources> getWrapperType() {
+            return TemplateResources.class;
+        }
+
+        protected Class<Template> getSingleType() {
+            return Template.class;
+        }
+
+        protected Template[] toSingles(TemplateResources templateResources) {
+            return templateResources.templates();
+        }
+
+        protected boolean syncInstantiation(TemplateResources templateResources) {
+            return templateResources.syncInstantiation();
         }
     }
 }
