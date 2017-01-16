@@ -70,7 +70,7 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 public class CEEnvironmentProcessor {
 
     private final Logger log = Logger.getLogger(CEEnvironmentProcessor.class.getName());
-    private List<Template> templates;
+    private List<Template> templates = Collections.emptyList();
 
     public interface TemplateDetails {
         List<List<? extends OpenShiftResource>> getResources();
