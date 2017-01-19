@@ -14,7 +14,7 @@
     <!-- Artifact Configuration -->
     <groupId>org.jboss.arquillian.container</groupId>
     <artifactId>arquillian-parent-ce</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0.Final</version>
     <packaging>pom</packaging>
 
     <name>Arquillian Container Parent CE</name>
@@ -23,7 +23,7 @@
 
     <scm>
         <developerConnection>scm:git:ssh://github.com/jboss-openshift/ce-arq.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>1.0.0.Final</tag>
     </scm>
 
     <!-- Properties -->
