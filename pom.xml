@@ -16,8 +16,15 @@
     <artifactId>arquillian-parent-ce</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+
     <name>Arquillian Container Parent CE</name>
     <description>Cloud Enablement integrations for the Arquillian Project</description>
+    <url>https://github.com/jboss-openshift/ce-arq</url>
+
+    <scm>
+        <developerConnection>scm:git:ssh://github.com/jboss-openshift/ce-arq.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
 
     <!-- Properties -->
     <properties>
@@ -273,6 +280,14 @@
                         </execution>
                     </executions>
                 </plugin>
+            <plugin>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <pushChanges>false</pushChanges>
+                    <localCheckout>true</localCheckout>
+                </configuration>
+            </plugin>
             </plugins>
         </pluginManagement>
     </build>
