@@ -243,11 +243,10 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             Containers.delay(configuration.getStartupTimeout(), 3000L, new Checker() {
                 public boolean check() {
                     DeploymentConfigStatus status = ccr.get().getStatus();
-                    Map<String, Object> additionalProperties = status.getAdditionalProperties();
-                    Number updatedReplicas = (Number) additionalProperties.get("updatedReplicas");
-                    if (updatedReplicas != null && replicas == updatedReplicas.intValue()) {
-                        Number availableReplicas = (Number) additionalProperties.get("availableReplicas");
-                        return (availableReplicas != null && replicas == availableReplicas.intValue());
+                    Integer updatedReplicas = status.getUpdatedReplicas();
+                    if (updatedReplicas != null && replicas == updatedReplicas) {
+                        Integer availableReplicas = status.getAvailableReplicas();
+                        return (availableReplicas != null && replicas == availableReplicas);
                     } else {
                         return false;
                     }
