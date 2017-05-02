@@ -136,13 +136,26 @@ public interface OpenShiftHandle {
     void deletePod(String podName, long gracePeriodSeconds) throws Exception;
 
     /**
-     * Trigger deployment config update
+     * Trigger deployment config update. A dummy variable is inserted into
+     * deployment config in order to trigger the redeployment.
      *
      * @param prefix the deployment config prefix
      * @param wait   wait until update is done
      * @throws Exception for any error
      */
     void triggerDeploymentConfigUpdate(String prefix, boolean wait) throws Exception;
+
+    /**
+     * Trigger deployment config update
+     *
+     * @param prefix    the deployment config prefix
+     * @param wait      wait until update is done
+     * @param variables Environment variables to insert into the deployment. If null
+     *                  or empty, a dummy variable is inserted in order to trigger
+     *                  the redeployment.
+     * @throws Exception for any error
+     */
+    void triggerDeploymentConfigUpdate(String prefix, boolean wait, Map<String, String> variables) throws Exception;
 
     // Jolokia support
 
