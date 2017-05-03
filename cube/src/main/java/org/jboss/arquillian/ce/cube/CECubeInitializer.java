@@ -61,6 +61,7 @@ public class CECubeInitializer {
     }
     
     public void createOpenShiftAdapter(@Observes OpenShiftClient client, CECubeConfiguration configuration) {
+        configuration.setClient(client);
         openShiftAdapterProducer.set(new F8OpenShiftAdapter(client.getClientExt(), configuration));
     }
 }

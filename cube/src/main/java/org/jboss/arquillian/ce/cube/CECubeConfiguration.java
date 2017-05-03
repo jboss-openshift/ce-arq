@@ -24,6 +24,7 @@ package org.jboss.arquillian.ce.cube;
 
 import java.util.Map;
 
+import org.arquillian.cube.openshift.impl.client.OpenShiftClient;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.ce.utils.TemplateConfiguration;
 
@@ -38,6 +39,8 @@ import static org.jboss.arquillian.ce.utils.Strings.isNotNullOrEmpty;
  */
 public class CECubeConfiguration extends TemplateConfiguration {
     private static final long serialVersionUID = 1L;
+
+    private OpenShiftClient client;
 
     private String routerHost = Strings.getSystemPropertyOrEnvVar("openshift.router.host");
     private int routerHttpPort = Integer.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.router.httpPort", "80"));
@@ -113,5 +116,20 @@ public class CECubeConfiguration extends TemplateConfiguration {
             return defaultValue;
         }
         return value;
+    }
+
+    public void setClient(OpenShiftClient client) {
+        this.client = client;
+    }
+
+    @Override
+    public String getToken() {
+        String token = super.getToken();
+
+        if ((token == null || token.isEmpty()) && (client != null)) {
+            token = client.getClientExt().getConfiguration().getOauthToken();
+        }
+
+        return token;
     }
 }
