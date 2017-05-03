@@ -224,7 +224,7 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
         deletable.delete();
     }
 
-    public void triggerDeploymentConfigUpdate(String prefix, boolean wait) throws Exception {
+    public void triggerDeploymentConfigUpdate(String prefix, boolean wait, Map<String, String> variables) throws Exception {
         DeploymentConfigList list = client.deploymentConfigs().inNamespace(configuration.getNamespace()).list();
         String actualName = getActualName(prefix, list.getItems(), "No such deployment config: " + prefix);
         final ClientResource<DeploymentConfig, DoneableDeploymentConfig> ccr = client.deploymentConfigs().inNamespace(configuration.getNamespace()).withName(actualName);
@@ -234,8 +234,16 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             Container container = containers.get(0);
             List<EnvVar> oldEnv = container.getEnv();
             List<EnvVar> newEnv = new ArrayList<>(oldEnv);
-            newEnv.add(new EnvVar("_DUMMY", "_VALUE", null));
+
+            if (variables != null && !variables.isEmpty()) {
+                for (Map.Entry<String, String> variable : variables.entrySet()) {
+                    newEnv.add(new EnvVar(variable.getKey(), variable.getValue(), null));
+                }
+            } else {
+                newEnv.add(new EnvVar("_DUMMY", "_VALUE", null));
+            }
             container.setEnv(newEnv);
+
             ccr.edit().editSpec().editTemplate().editSpec().withContainers(containers).endSpec().endTemplate().endSpec().done();
         }
         if (wait) {
@@ -243,17 +251,20 @@ public class F8OpenShiftAdapter extends AbstractOpenShiftAdapter {
             Containers.delay(configuration.getStartupTimeout(), 3000L, new Checker() {
                 public boolean check() {
                     DeploymentConfigStatus status = ccr.get().getStatus();
-                    Map<String, Object> additionalProperties = status.getAdditionalProperties();
-                    Number updatedReplicas = (Number) additionalProperties.get("updatedReplicas");
-                    if (updatedReplicas != null && replicas == updatedReplicas.intValue()) {
-                        Number availableReplicas = (Number) additionalProperties.get("availableReplicas");
-                        return (availableReplicas != null && replicas == availableReplicas.intValue());
+                    Integer updatedReplicas = status.getUpdatedReplicas();
+                    if (updatedReplicas != null && replicas == updatedReplicas) {
+                        Integer availableReplicas = status.getAvailableReplicas();
+                        return (availableReplicas != null && replicas == availableReplicas);
                     } else {
                         return false;
                     }
                 }
             });
         }
+    }
+
+    public void triggerDeploymentConfigUpdate(String prefix, boolean wait) throws Exception {
+        triggerDeploymentConfigUpdate(prefix, wait, null);
     }
 
     public String deployPod(String name, String env, RCContext context) throws Exception {

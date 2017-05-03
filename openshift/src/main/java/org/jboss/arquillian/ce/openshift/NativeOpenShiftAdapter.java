@@ -439,18 +439,29 @@ public class NativeOpenShiftAdapter extends AbstractOpenShiftAdapter {
         return podNames;
     }
 
-    public void triggerDeploymentConfigUpdate(String prefix, boolean wait) throws Exception {
+    public void triggerDeploymentConfigUpdate(String prefix, boolean wait, Map<String, String> variables) throws Exception {
         String dcName = getFirstResource(ResourceKind.DEPLOYMENT_CONFIG, prefix, null);
         IDeploymentConfig dc = client.get(ResourceKind.DEPLOYMENT_CONFIG, dcName, configuration.getNamespace());
         Collection<IContainer> containers = dc.getContainers();
         if (containers.size() > 0) {
-            dc.setEnvironmentVariable(containers.iterator().next().getName(), "_DUMMY", "_VALUE");
+            String containerName = containers.iterator().next().getName();
+            if (variables != null && !variables.isEmpty()) {
+                for (Map.Entry<String, String> variable : variables.entrySet()) {
+                    dc.setEnvironmentVariable(containerName, variable.getKey(), variable.getValue());
+                }
+            } else {
+                dc.setEnvironmentVariable(containerName, "_DUMMY", "_VALUE");
+            }
         }
         client.update(dc);
         if (wait) {
             // TODO
             throw new UnsupportedOperationException("triggerDeploymentConfigUpdate::wait not supported!");
         }
+    }
+
+    public void triggerDeploymentConfigUpdate(String prefix, boolean wait) throws Exception {
+        triggerDeploymentConfigUpdate(prefix, wait, null);
     }
 
     public void cleanReplicationControllers(String... ids) throws Exception {
