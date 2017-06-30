@@ -49,7 +49,6 @@ public class RemoteConfigurationResourceProvider implements ResourceProvider {
     public static String toProperties(ConfigurationHandle configuration) {
         try {
             Properties properties = new Properties();
-            properties.put("docker.url", check(configuration.getDockerUrl()));
             properties.put("kubernetes.master", check(configuration.getKubernetesMaster()));
             properties.put("kubernetes.api.version", check(configuration.getApiVersion()));
             properties.put("kubernetes.namespace", check(configuration.getNamespace()));
@@ -86,10 +85,6 @@ public class RemoteConfigurationResourceProvider implements ResourceProvider {
         }
 
         return new ConfigurationHandle() {
-            public String getDockerUrl() {
-                return properties.getProperty("docker.url");
-            }
-
             public String getKubernetesMaster() {
                 return properties.getProperty("kubernetes.master");
             }

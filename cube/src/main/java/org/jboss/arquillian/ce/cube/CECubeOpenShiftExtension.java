@@ -23,17 +23,25 @@
 package org.jboss.arquillian.ce.cube;
 
 import org.jboss.arquillian.ce.cube.enrichers.RouteURLEnricher;
+import org.jboss.arquillian.ce.ext.ExternalDeploymentScenarioGenerator;
+import org.jboss.arquillian.ce.ext.LocalConfigurationResourceProvider;
+import org.jboss.arquillian.ce.ext.OpenShiftHandleResourceProvider;
+import org.jboss.arquillian.ce.ext.UtilsArchiveAppender;
+import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
+import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.jboss.arquillian.test.spi.TestEnricher;
+import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 
 public class CECubeOpenShiftExtension implements LoadableExtension {
     public void register(ExtensionBuilder builder) {
         builder.observer(CECubeInitializer.class)
-               .observer(CubeOpenShiftOverrider.class)
-               .observer(CEProjectManager.class)
-               .observer(CEEnvironmentProcessor.class)
-               .observer(CEApplicationHandler.class);
+               .observer(CEEnvironmentProcessor.class);
 
         builder.service(TestEnricher.class, RouteURLEnricher.class);
+        builder.service(ResourceProvider.class, OpenShiftHandleResourceProvider.class);
+        builder.service(ResourceProvider.class, LocalConfigurationResourceProvider.class);
+        builder.service(AuxiliaryArchiveAppender.class, UtilsArchiveAppender.class);
+        builder.service(DeploymentScenarioGenerator.class, ExternalDeploymentScenarioGenerator.class);
     }
 }

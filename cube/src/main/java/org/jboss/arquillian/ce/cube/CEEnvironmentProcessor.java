@@ -169,7 +169,7 @@ public class CEEnvironmentProcessor {
     	StringResolver resolver;
     	String templateURL;
     	
-        if (configuration.performCleanup()) {
+        if (configuration.getCubeConfiguration().isNamespaceCleanupEnabled()) {
             log.info(String.format("Deleting environment for %s", testClass.getName()));
             for(Template template : templates) {
             	// Delete pods and services related to each template

@@ -28,12 +28,12 @@ import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodCondition;
-import io.fabric8.kubernetes.api.model.PodStatus;
-import io.fabric8.kubernetes.client.Adapters;
-import io.fabric8.kubernetes.client.internal.SSLUtils;
-import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.kubernetes.api.model.v2_2.Pod;
+import io.fabric8.kubernetes.api.model.v2_2.PodCondition;
+import io.fabric8.kubernetes.api.model.v2_2.PodStatus;
+import io.fabric8.kubernetes.clnt.v2_2.Adapters;
+import io.fabric8.kubernetes.clnt.v2_2.internal.SSLUtils;
+import io.fabric8.openshift.clnt.v2_2.OpenShiftClient;
 import okhttp3.OkHttpClient;
 import org.jboss.arquillian.ce.proxy.AbstractProxy;
 import org.jboss.arquillian.ce.utils.Configuration;

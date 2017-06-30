@@ -28,7 +28,7 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.api.model.v2_2.Route;
 import org.arquillian.cube.impl.util.ReflectionUtil;
 import org.arquillian.cube.openshift.impl.client.OpenShiftClient;
 import org.jboss.arquillian.ce.cube.CECubeConfiguration;
@@ -95,6 +95,9 @@ public class RouteURLEnricher implements TestEnricher {
             throw new IllegalArgumentException("Must specify a route name!");
         }
         final CECubeConfiguration config = configurationInstance.get();
+        if (config == null) {
+            throw new NullPointerException("CECubeConfiguration is null!");
+        }
         final String host = config.getRouterHost();
         if (host == null || host.length() == 0) {
             throw new IllegalArgumentException("Must specify routerHost!");

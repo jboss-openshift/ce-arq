@@ -28,8 +28,6 @@ import org.arquillian.cube.openshift.impl.client.OpenShiftClient;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.ce.utils.TemplateConfiguration;
 
-import static org.jboss.arquillian.ce.utils.Strings.isNotNullOrEmpty;
-
 /**
  * CECubeConfiguration
  * <p/>
@@ -50,11 +48,6 @@ public class CECubeConfiguration extends TemplateConfiguration {
     public static CECubeConfiguration fromMap(final Map<String, String> props) {
         //XXX: need to rename arq.ce-cube properties.  arq extension properties cannot contain '.'
         final CECubeConfiguration config = new CECubeConfiguration();
-        config.setApiVersion(getProperty(props, "kubernetesApiVersion", config.getApiVersion()));
-        config.setIgnoreCleanup(Boolean.valueOf(getProperty(props, "kubernetesIgnoreCleanup", Boolean.toString(config.isIgnoreCleanup()))));
-        config.setKubernetesMaster(getProperty(props, "kubernetesMaster", config.getKubernetesMaster()));
-        config.setNamespacePrefix(getProperty(props, "kubernetesNamespacePrefix", config.getNamespacePrefix()));
-        config.setNamespace(getProperty(props, "kubernetesNamespace", config.getNamespace()));
         config.setOpenshiftPassword(getProperty(props, "openshiftPassword", config.getOpenshiftPassword()));
         config.setOpenshiftUsername(getProperty(props, "openshiftUsername", config.getOpenshiftUsername()));
         config.setRouterHost(getProperty(props, "routerHost", config.routerHost));
@@ -69,7 +62,6 @@ public class CECubeConfiguration extends TemplateConfiguration {
         config.setToken(getProperty(props, "kubernetesAuthToken", config.getToken()));
         config.setTrustCerts(Boolean.valueOf(getProperty(props, "kubernetesTrustCerts", Boolean.toString(config.isTrustCerts()))));
         config.loadApplications(props);
-        config.validate();
         return config;
     }
     

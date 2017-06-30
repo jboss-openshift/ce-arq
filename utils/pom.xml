@@ -86,6 +86,10 @@
             <artifactId>jolokia-client-java</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.arquillian.cube</groupId>
+            <artifactId>arquillian-cube-openshift</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
