@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  * @author Marko Luksa
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 public @interface TemplateParameter {
     String name();
     String value();

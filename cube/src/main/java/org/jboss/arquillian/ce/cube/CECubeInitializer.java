@@ -53,15 +53,18 @@ public class CECubeInitializer {
     @ApplicationScoped
     private InstanceProducer<OpenShiftAdapter> openShiftAdapterProducer;
 
-    public void configure(@Observes ArquillianDescriptor arquillianDescriptor) {
+    public void configure(@Observes org.arquillian.cube.kubernetes.api.Configuration cubeConfig, ArquillianDescriptor arquillianDescriptor) {
         // read in our configuration
         CECubeConfiguration config = CECubeConfiguration.fromMap(arquillianDescriptor.extension("ce-cube").getExtensionProperties());
+        config.setCubeConfiguration(cubeConfig);
+        config.validate();
+
         configurationProducer.set(config);
         configurationHandleProducer.set(config);
     }
-    
+
     public void createOpenShiftAdapter(@Observes OpenShiftClient client, CECubeConfiguration configuration) {
         configuration.setClient(client);
-        openShiftAdapterProducer.set(new F8OpenShiftAdapter(client.getClientExt(), configuration));
+        openShiftAdapterProducer.set(new F8OpenShiftAdapter(client.getClient(), configuration));
     }
 }

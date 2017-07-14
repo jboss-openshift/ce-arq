@@ -35,12 +35,12 @@ import org.jboss.arquillian.ce.api.model.DeploymentConfig;
  */
 public class F8DeploymentConfig implements DeploymentConfig {
 
-    private final io.fabric8.openshift.api.model.DeploymentConfig delegate;
+    private final io.fabric8.openshift.api.model.v2_5.DeploymentConfig delegate;
 
     /**
      * Create a new F8DeploymentConfig.
      */
-    public F8DeploymentConfig(final io.fabric8.openshift.api.model.DeploymentConfig delegate) {
+    public F8DeploymentConfig(final io.fabric8.openshift.api.model.v2_5.DeploymentConfig delegate) {
         this.delegate = delegate;
     }
 

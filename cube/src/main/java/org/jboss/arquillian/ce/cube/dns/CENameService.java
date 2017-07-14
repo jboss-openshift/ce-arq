@@ -22,8 +22,8 @@
  */
 package org.jboss.arquillian.ce.cube.dns;
 
-import io.fabric8.openshift.api.model.Route;
-import io.fabric8.openshift.api.model.RouteList;
+import io.fabric8.openshift.api.model.v2_5.Route;
+import io.fabric8.openshift.api.model.v2_5.RouteList;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

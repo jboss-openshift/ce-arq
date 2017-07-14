@@ -36,12 +36,11 @@ import org.jboss.arquillian.ce.proxy.Proxy;
 import org.jboss.arquillian.ce.utils.Operator;
 import org.jboss.arquillian.ce.utils.ParamValue;
 import org.jboss.arquillian.ce.utils.RCContext;
-import org.jboss.arquillian.ce.utils.RegistryLookup;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
  */
-public interface OpenShiftAdapter extends Closeable, RegistryLookup, OpenShiftHandle {
+public interface OpenShiftAdapter extends Closeable, OpenShiftHandle {
     Proxy getProxy();
 
     PortForwardContext createPortForwardContext(Map<String, String> labels, int port);

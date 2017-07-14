@@ -29,8 +29,6 @@ package org.jboss.arquillian.ce.api;
 public interface ConfigurationHandle {
     String getKubernetesMaster();
 
-    String getDockerUrl();
-
     String getApiVersion();
 
     String getNamespace();
