@@ -29,8 +29,6 @@ Additional properties you **can** set / change.
 
 -Ddeployment.dir=[EAP deployment directory], default is "/opt/eap/standalone/deployments/"
 
--Dkubernetes.ignore.cleanup=(true|false) -- do we leave the test image, pod and services still running after the test is finished, default is "false"
-
 -Dcontainer.mgmt.port=[EAP container management port], default is 9990
 
 -Ddocker.username=[OpenShift username]

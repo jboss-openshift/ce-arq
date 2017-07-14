@@ -28,12 +28,13 @@ import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 
-import io.fabric8.kubernetes.api.model.v2_2.Pod;
-import io.fabric8.kubernetes.api.model.v2_2.PodCondition;
-import io.fabric8.kubernetes.api.model.v2_2.PodStatus;
-import io.fabric8.kubernetes.clnt.v2_2.Adapters;
-import io.fabric8.kubernetes.clnt.v2_2.internal.SSLUtils;
-import io.fabric8.openshift.clnt.v2_2.OpenShiftClient;
+import io.fabric8.kubernetes.api.model.v2_5.Pod;
+import io.fabric8.kubernetes.api.model.v2_5.PodCondition;
+import io.fabric8.kubernetes.api.model.v2_5.PodStatus;
+import io.fabric8.kubernetes.clnt.v2_5.Adapters;
+import io.fabric8.kubernetes.clnt.v2_5.internal.SSLUtils;
+import io.fabric8.openshift.clnt.v2_5.OpenShiftClient;
+import io.fabric8.openshift.clnt.v2_5.NamespacedOpenShiftClient;
 import okhttp3.OkHttpClient;
 import org.jboss.arquillian.ce.proxy.AbstractProxy;
 import org.jboss.arquillian.ce.utils.Configuration;
@@ -46,7 +47,7 @@ public class F8Proxy extends AbstractProxy<Pod> {
     private final OpenShiftClient client;
     private OkHttpClient httpClient;
 
-    public F8Proxy(Configuration configuration, OpenShiftClient client) {
+    public F8Proxy(Configuration configuration, NamespacedOpenShiftClient client) {
         super(configuration);
         this.client = client;
     }
