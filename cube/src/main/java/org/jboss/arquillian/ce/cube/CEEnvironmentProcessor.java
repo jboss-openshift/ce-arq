@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.arquillian.cube.kubernetes.api.Configuration;
+import org.arquillian.cube.openshift.impl.client.CubeOpenShiftConfiguration;
 import org.arquillian.cube.openshift.impl.client.OpenShiftClient;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.api.Template;
@@ -49,6 +51,7 @@ import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.event.container.AfterStart;
+import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
@@ -77,6 +80,9 @@ public class CEEnvironmentProcessor {
     }
 
     @Inject
+    private Instance<Configuration> configurationInstance;
+
+    @Inject
     @ClassScoped
     private InstanceProducer<TemplateDetails> templateDetailsProducer;
 
@@ -95,7 +101,8 @@ public class CEEnvironmentProcessor {
         log.info(String.format("Creating environment for %s", testClass.getName()));
         OpenShiftResourceFactory.createResources(testClass.getName(), client, null, testClass.getJavaClass(), configuration.getProperties());
         processTemplateResources(testClass, client, configuration);
-        registerRoutes(configuration, openshiftClient);
+        final CubeOpenShiftConfiguration config = (CubeOpenShiftConfiguration) configurationInstance.get();
+        registerRoutes(config, openshiftClient);
     }
 
     /**
@@ -185,7 +192,7 @@ public class CEEnvironmentProcessor {
         }
     }
 
-    private void registerRoutes(CECubeConfiguration configuration, OpenShiftClient client) {
+    private void registerRoutes(CubeOpenShiftConfiguration configuration, OpenShiftClient client) {
         CENameService.setRoutes(client.getClientExt().routes().list(), configuration.getRouterHost());
     }
 

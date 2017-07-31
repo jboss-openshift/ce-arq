@@ -40,9 +40,6 @@ public class CECubeConfiguration extends TemplateConfiguration {
 
     private OpenShiftClient client;
 
-    private String routerHost = Strings.getSystemPropertyOrEnvVar("openshift.router.host");
-    private int routerHttpPort = Integer.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.router.httpPort", "80"));
-    private int routerHttpsPort = Integer.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.router.httpsPort", "443"));
     private int routerSniPort = Integer.valueOf(Strings.getSystemPropertyOrEnvVar("openshift.router.sniPort", "443"));
 
     public static CECubeConfiguration fromMap(final Map<String, String> props) {
@@ -50,9 +47,6 @@ public class CECubeConfiguration extends TemplateConfiguration {
         final CECubeConfiguration config = new CECubeConfiguration();
         config.setOpenshiftPassword(getProperty(props, "openshiftPassword", config.getOpenshiftPassword()));
         config.setOpenshiftUsername(getProperty(props, "openshiftUsername", config.getOpenshiftUsername()));
-        config.setRouterHost(getProperty(props, "routerHost", config.routerHost));
-        config.setRouterHttpPort(Integer.valueOf(getProperty(props, "routerHttpPort", Integer.toString(config.routerHttpPort))));
-        config.setRouterHttpsPort(Integer.valueOf(getProperty(props, "routerHttpsPort", Integer.toString(config.routerHttpsPort))));
         config.setRouterSniPort(Integer.valueOf(getProperty(props, "routerSniPort", Integer.toString(config.routerSniPort))));
         config.setStartupTimeout(Long.valueOf(getProperty(props, "arquillianStartupTimeout", Long.toString(config.getStartupTimeout()))));
         config.setTemplateLabels(getProperty(props, "openshiftTemplateLabels", config.getTemplateLabelsRaw()));
@@ -68,30 +62,6 @@ public class CECubeConfiguration extends TemplateConfiguration {
     private void loadApplications(Map<String, String> props) {
         //TODO: parse application properties, e.g. templates, parms, env, role bindings, etc.
         // this might replace @Template
-    }
-
-    public String getRouterHost() {
-        return routerHost;
-    }
-
-    public void setRouterHost(String routerHost) {
-        this.routerHost = routerHost;
-    }
-
-    public int getRouterHttpPort() {
-        return routerHttpPort;
-    }
-
-    public void setRouterHttpPort(int routerHttpPort) {
-        this.routerHttpPort = routerHttpPort;
-    }
-
-    public int getRouterHttpsPort() {
-        return routerHttpsPort;
-    }
-
-    public void setRouterHttpsPort(int routerHttpsPort) {
-        this.routerHttpsPort = routerHttpsPort;
     }
 
     public int getRouterSniPort() {
