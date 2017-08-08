@@ -57,6 +57,8 @@ import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.event.suite.AfterClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 
+import io.fabric8.kubernetes.api.model.v2_5.Event;
+
 /**
  * CEEnvironmentProcessor
  * <p>
@@ -131,12 +133,23 @@ public class CEEnvironmentProcessor {
         });
     }
 
+    private void logEvents(OpenShiftClient client, CECubeConfiguration configuration) {
+        StringBuilder b = new StringBuilder("\nLogged events from Openshift:\n\n");
+
+        for (Event event : client.getClientExt().events().inNamespace(configuration.getNamespace()).list().getItems()) {
+            b.append(String.format("[%s] [%s]: (%s) %s\n", event.getLastTimestamp(), event.getType(), event.getReason(), event.getMessage()));
+        }
+        b.append("\nEnd of Openshift events\n\n");
+
+        log.info(b.toString());
+    }
+
     /**
      * Wait for the template resources to come up after the test container has
      * been started. This allows the test container and the template resources
      * to come up in parallel.
      */
-    public void waitForDeployments(@Observes(precedence = -100) AfterStart event, OpenShiftAdapter client, TemplateDetails details, TestClass testClass) throws Exception {
+    public void waitForDeployments(@Observes(precedence = -100) AfterStart event, OpenShiftAdapter client, TemplateDetails details, TestClass testClass, CECubeConfiguration configuration, OpenShiftClient openshiftClient) throws Exception {
         if (testClass == null) {
             // nothing to do, since we're not in ClassScoped context
             return;
@@ -151,6 +164,7 @@ public class CEEnvironmentProcessor {
                 delay(client, resources);
             }
         } catch (Throwable t) {
+            logEvents(openshiftClient, configuration);
             throw new DeploymentException("Error waiting for template resources to deploy: " + testClass.getName(), t);
         }
     }
