@@ -298,36 +298,6 @@
                 <skipTests>true</skipTests>
             </properties>
         </profile>
-
-        <profile>
-            <id>eap6</id>
-
-            <activation>
-                <property>
-                    <name>eap6</name>
-                </property>
-            </activation>
-
-            <properties>
-                <version.eap>7.5.5.Final-redhat-3</version.eap>
-                <skipTests>true</skipTests>
-            </properties>
-
-            <modules>
-                <module>eap6</module>
-                <module>mgmtclient</module>
-            </modules>
-            
-	        <dependencyManagement>
-	            <dependencies>
-	                <dependency>
-	                    <groupId>org.jboss.as</groupId>
-	                    <artifactId>jboss-as-arquillian-common</artifactId>
-	                    <version>${version.eap}</version>
-	                </dependency>
-	            </dependencies>
-	        </dependencyManagement>
-        </profile>
     </profiles>
 
 </project>
