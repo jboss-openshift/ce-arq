@@ -22,28 +22,15 @@
  */
 package org.jboss.arquillian.ce.cube;
 
-import static org.jboss.arquillian.ce.utils.TemplateUtils.addParameterValues;
-import static org.jboss.arquillian.ce.utils.TemplateUtils.executeProcessTemplate;
-import static org.jboss.arquillian.ce.utils.TemplateUtils.readLabels;
-import static org.jboss.arquillian.ce.utils.TemplateUtils.readParameters;
-import static org.jboss.arquillian.ce.utils.TemplateUtils.readReplicas;
-import static org.jboss.arquillian.ce.utils.TemplateUtils.readTemplateUrl;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-
+import io.fabric8.kubernetes.api.model.v2_5.Event;
 import org.arquillian.cube.kubernetes.api.Configuration;
 import org.arquillian.cube.openshift.impl.client.CubeOpenShiftConfiguration;
 import org.arquillian.cube.openshift.impl.client.OpenShiftClient;
+import org.arquillian.cube.openshift.impl.dns.ArqCubeNameService;
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.api.Template;
 import org.jboss.arquillian.ce.api.model.DeploymentConfig;
 import org.jboss.arquillian.ce.api.model.OpenShiftResource;
-import org.jboss.arquillian.ce.cube.dns.CENameService;
 import org.jboss.arquillian.ce.resources.OpenShiftResourceFactory;
 import org.jboss.arquillian.ce.utils.Operator;
 import org.jboss.arquillian.ce.utils.ParamValue;
@@ -60,7 +47,19 @@ import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.event.suite.AfterClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 
-import io.fabric8.kubernetes.api.model.v2_5.Event;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import static org.jboss.arquillian.ce.utils.TemplateUtils.addParameterValues;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.executeProcessTemplate;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.readLabels;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.readParameters;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.readReplicas;
+import static org.jboss.arquillian.ce.utils.TemplateUtils.readTemplateUrl;
 
 /**
  * CEEnvironmentProcessor
@@ -104,37 +103,35 @@ public class CEEnvironmentProcessor {
         OpenShiftResourceFactory.createResources(testClass.getName(), client, null, testClass.getJavaClass(), configuration.getProperties());
         processTemplateResources(testClass, client, configuration);
         final CubeOpenShiftConfiguration config = (CubeOpenShiftConfiguration) configurationInstance.get();
-        registerRoutes(config, openshiftClient);
     }
 
     /**
      * Instantiates the templates specified by @Template within @TemplateResources
      */
     private void processTemplateResources(TestClass testClass, OpenShiftAdapter client, CECubeConfiguration configuration) throws DeploymentException {
-    	List<? extends OpenShiftResource> resources;
-    	final List<List<? extends OpenShiftResource>> RESOURCES = new ArrayList<List<? extends OpenShiftResource>>(); 
-    	templates = OpenShiftResourceFactory.getTemplates(testClass.getJavaClass());
-    	boolean sync_instantiation = OpenShiftResourceFactory.syncInstantiation(testClass.getJavaClass());
+        List<? extends OpenShiftResource> resources;
+        final List<List<? extends OpenShiftResource>> RESOURCES = new ArrayList<List<? extends OpenShiftResource>>();
+        templates = OpenShiftResourceFactory.getTemplates(testClass.getJavaClass());
+        boolean sync_instantiation = OpenShiftResourceFactory.syncInstantiation(testClass.getJavaClass());
 
     	/* Instantiate templates */
-      	for (Template template : templates) {
-    		resources = processTemplate(template, testClass, client, configuration);
-    		if (sync_instantiation) {
-    			/* synchronous template instantiation */
-    			RESOURCES.add(resources);
-    		} else {
+        for (Template template : templates) {
+            resources = processTemplate(template, testClass, client, configuration);
+            if (sync_instantiation) {
+                /* synchronous template instantiation */
+                RESOURCES.add(resources);
+            } else {
     			/* asynchronous template instantiation */
-    			try {
-    				delay(client, resources);
-    			}
-    			catch (Throwable t) {
-    				throw new DeploymentException("Error waiting for template resources to deploy: " + testClass.getName(), t);
-    			}
-    		}
-      	}
+                try {
+                    delay(client, resources);
+                } catch (Throwable t) {
+                    throw new DeploymentException("Error waiting for template resources to deploy: " + testClass.getName(), t);
+                }
+            }
+        }
         templateDetailsProducer.set(new TemplateDetails() {
             @Override
-            public  List<List<? extends OpenShiftResource>> getResources() {
+            public List<List<? extends OpenShiftResource>> getResources() {
                 return RESOURCES;
             }
         });
@@ -167,7 +164,7 @@ public class CEEnvironmentProcessor {
         }
         log.info(String.format("Waiting for environment for %s", testClass.getName()));
         try {
-       	    for (List<? extends OpenShiftResource> resources : details.getResources()) {
+            for (List<? extends OpenShiftResource> resources : details.getResources()) {
                 delay(client, resources);
             }
         } catch (Throwable t) {
@@ -187,15 +184,15 @@ public class CEEnvironmentProcessor {
     }
 
     private void deleteEnvironment(final TestClass testClass, OpenShiftAdapter client, CECubeConfiguration configuration) throws Exception {
-    	StringResolver resolver;
-    	String templateURL;
-    	
+        StringResolver resolver;
+        String templateURL;
+
         if (configuration.getCubeConfiguration().isNamespaceCleanupEnabled()) {
             log.info(String.format("Deleting environment for %s", testClass.getName()));
-            for(Template template : templates) {
-            	// Delete pods and services related to each template
-            	resolver = Strings.createStringResolver(configuration.getProperties());
-            	templateURL = readTemplateUrl(template, configuration, false, resolver);
+            for (Template template : templates) {
+                // Delete pods and services related to each template
+                resolver = Strings.createStringResolver(configuration.getProperties());
+                templateURL = readTemplateUrl(template, configuration, false, resolver);
 
                 client.deleteTemplate(testClass.getName() + templateURL);
             }
@@ -206,11 +203,7 @@ public class CEEnvironmentProcessor {
         }
     }
 
-    private void registerRoutes(CubeOpenShiftConfiguration configuration, OpenShiftClient client) {
-        CENameService.setRoutes(client.getClientExt().routes().list(), configuration.getRouterHost());
-    }
-
-    private List<? extends OpenShiftResource> processTemplate(Template  template, TestClass tc, OpenShiftAdapter client, CECubeConfiguration configuration) throws DeploymentException {
+    private List<? extends OpenShiftResource> processTemplate(Template template, TestClass tc, OpenShiftAdapter client, CECubeConfiguration configuration) throws DeploymentException {
         final StringResolver resolver = Strings.createStringResolver(configuration.getProperties());
         final String templateURL = readTemplateUrl(template, configuration, false, resolver);
 
@@ -241,17 +234,17 @@ public class CEEnvironmentProcessor {
                 log.info(String.format("Applying OpenShift template: %s", templateURL));
                 try {
                     // class name + templateUrl is template key
-                	resources = client.processTemplateAndCreateResources(tc.getName() + templateURL, templateURL, values, labels);
-                } catch (Exception e){
+                    resources = client.processTemplateAndCreateResources(tc.getName() + templateURL, templateURL, values, labels);
+                } catch (Exception e) {
                     deleteEnvironment(tc, client, configuration);
-                	throw e;
+                    throw e;
                 }
             } else {
                 log.info(String.format("Ignoring template [%s] processing ...", templateURL));
                 resources = Collections.emptyList();
             }
 
-	    return resources;
+            return resources;
         } catch (Throwable t) {
             throw new DeploymentException("Cannot deploy template: " + templateURL, t);
         }

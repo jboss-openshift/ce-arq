@@ -29,7 +29,7 @@
     <!-- Properties -->
     <properties>
         <version.arquillian>1.1.13.Final</version.arquillian>
-        <version.arquillian.cube>1.8.0</version.arquillian.cube>
+        <version.arquillian.cube>1.8.1</version.arquillian.cube>
         <version.dockerjava>2.1.3</version.dockerjava>
         <version.ok-http-client>3.8.0</version.ok-http-client>
         <version.openshift.client>4.0.3.Final</version.openshift.client>
@@ -301,6 +301,3 @@
     </profiles>
 
 </project>
-
-
-
