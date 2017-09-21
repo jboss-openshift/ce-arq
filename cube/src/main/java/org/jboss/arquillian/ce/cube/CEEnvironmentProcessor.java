@@ -60,7 +60,7 @@ import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.event.suite.AfterClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 
-import io.fabric8.kubernetes.api.model.v2_5.Event;
+import io.fabric8.kubernetes.api.model.v2_6.Event;
 
 /**
  * CEEnvironmentProcessor
