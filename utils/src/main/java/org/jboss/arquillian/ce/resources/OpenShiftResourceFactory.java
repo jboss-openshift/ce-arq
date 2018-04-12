@@ -23,18 +23,23 @@
 
 package org.jboss.arquillian.ce.resources;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.ce.adapter.OpenShiftAdapter;
 import org.jboss.arquillian.ce.api.AddRoleToServiceAccount;
 import org.jboss.arquillian.ce.api.AddRoleToServiceAccountWrapper;
+import org.jboss.arquillian.ce.api.OpenShiftImageStreamResource;
 import org.jboss.arquillian.ce.api.OpenShiftResource;
 import org.jboss.arquillian.ce.api.OpenShiftResources;
 import org.jboss.arquillian.ce.api.RoleBinding;
@@ -45,6 +50,9 @@ import org.jboss.arquillian.ce.utils.StringResolver;
 import org.jboss.arquillian.ce.utils.Strings;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.Node;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 /**
  * @author <a href="mailto:ales.justin@jboss.org">Ales Justin</a>
@@ -95,6 +103,50 @@ public class OpenShiftResourceFactory {
                 adapter.createResource(resourcesKey, stream);
             }
 
+            // This part of the code is responsible for deploying image streams.
+            // Usually when we run a test we want to use a custom image to test it with. Images
+            // are defined in image streams so we need to edit the main image stream and change the
+            // the image definition.
+            if (testClass.isAnnotationPresent(OpenShiftImageStreamResource.class)) {
+                OpenShiftImageStreamResource imageStream = testClass.getAnnotation(OpenShiftImageStreamResource.class);
+
+                // First of all resolve any properties
+                String url = resolver.resolve(imageStream.url());
+                String image = resolver.resolve(imageStream.image());
+                boolean insecure = Boolean.valueOf(resolver.resolve(imageStream.insecure()));
+
+                JSONParser parser = new JSONParser();
+
+                // Parse the image stream
+                JSONObject definition = (JSONObject) parser.parse(new BufferedReader(new InputStreamReader(new URL(url).openStream())));
+                JSONArray items = (JSONArray) definition.get("items");
+
+                if (items.size() > 1) {
+                    throw new IllegalArgumentException("Multiple image streams defined in single file are not supported");
+                }
+
+                JSONObject is = (JSONObject) items.get(0);
+                JSONObject tags = (JSONObject) ((JSONArray) ((JSONObject) is.get("spec")).get("tags")).get(0);
+                JSONObject from = (JSONObject) tags.get("from");
+
+                // Finally, replace the image name
+                from.put("name", image);
+
+                // Make sure the importPolicy is set correctly
+                Map<String, Object> importPolicy = new HashMap<>();
+                importPolicy.put("insecure", insecure);
+                tags.put("importPolicy", new JSONObject(importPolicy));
+
+                // Add the 'openshift.io/image.insecureRepository' annotation as well
+                JSONObject annotations = (JSONObject) ((JSONObject) is.get("metadata")).get("annotations");
+                annotations.put("openshift.io/image.insecureRepository", insecure);
+
+                log.info(String.format("Creating new OpenShift image stream resource from %s", url));
+                log.info(definition.toJSONString());
+
+                adapter.createResource(resourcesKey, new ByteArrayInputStream(definition.toJSONString().getBytes()));
+            }
+
             List<RoleBinding> roleBindings = new ArrayList<>();
             RB_FINDER.findAnnotations(roleBindings, testClass);
             for (RoleBinding rb : roleBindings) {
@@ -136,13 +188,13 @@ public class OpenShiftResourceFactory {
      * asynchronously.
      */
     public static boolean syncInstantiation(Class<?> testClass) {
-    	List<Template> templates = new ArrayList<>();
+        List<Template> templates = new ArrayList<>();
         TemplateResources tr = TEMP_FINDER.findAnnotations(templates, testClass);
         if (tr == null) {
-        	/* Default to synchronous instantiation */
-        	return true;
+            /* Default to synchronous instantiation */
+            return true;
         } else {
-        	return tr.syncInstantiation();
+            return tr.syncInstantiation();
         }
     }
 
@@ -181,7 +233,7 @@ public class OpenShiftResourceFactory {
             }
 
             findAnnotations(annotations, testClass.getSuperclass());
-	    return anns;
+            return anns;
         }
 
     }
